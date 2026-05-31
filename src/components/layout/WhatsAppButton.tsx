@@ -6,7 +6,6 @@ import { useState } from 'react'
 
 const number = '234701002613'
 const options = [
-  ['Start Operational Review', "Hello NEXORA, I'd like to start an Operational Review."],
   ['Talk to NEXORA', "Hello NEXORA, I'd like to understand how you improve operations."],
   ['Chat With Our Team', "Hello NEXORA, I'd like to speak with your team."],
 ]
@@ -22,6 +21,9 @@ export default function WhatsAppButton() {
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-white/55">NEXORA Customer Intelligence</p>
             <p className="mb-3 text-sm text-steel">Choose a conversation path.</p>
             <div className="grid gap-2">
+              <a href="/operational-reviews#operational-review-chatbot" onClick={() => setOpen(false)} className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-frost transition hover:bg-white/[0.07]">
+                Start Website Review
+              </a>
               {options.map(([label, text]) => (
                 <a key={label} target="_blank" rel="noreferrer" href={`https://wa.me/${number}?text=${encodeURIComponent(text)}`} className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-frost transition hover:bg-white/[0.07]">
                   {label}

@@ -6,69 +6,82 @@ import { motion } from 'framer-motion'
 
 type ReviewAnswers = Record<string, string | string[]>
 
-const stepLabels = ['Identity', 'Profile', 'Industry', 'Communication', 'Workflow', 'Payments', 'Visibility', 'Readiness']
+type ReviewQuestion = {
+  key: string
+  section: string
+  prompt: string
+  helper?: string
+  kind: 'text' | 'textarea' | 'choice' | 'multi'
+  options?: string[]
+  optional?: boolean
+  show?: (answers: ReviewAnswers) => boolean
+}
 
 const initialAnswers: ReviewAnswers = {
-  business_name: '',
-  industry: '',
-  contact_person: '',
-  position: '',
-  phone_number: '',
-  email: '',
-  location: '',
-  team_size: '',
-  customer_volume: '',
-  revenue_estimate: '',
-  business_maturity: '',
-  current_tools: '',
-  school_type: '',
-  student_count: '',
-  staff_count: '',
-  campuses: '',
-  parent_communication_method: '',
-  fee_tracking_method: '',
-  admission_workflow: '',
-  result_attendance_management: '',
-  solar_team_size: '',
-  installation_volume: '',
-  average_installation_value: '',
-  customer_payment_structure: '',
-  installment_tracking_method: '',
-  maintenance_request_process: '',
-  field_coordination_method: '',
-  customer_followup_structure: '',
-  business_type: '',
-  operational_scale: '',
   communication_methods: [],
-  main_communication_problems: '',
-  workflow_tracking: '',
-  manual_processes: '',
-  repetitive_tasks: '',
-  approval_processes: '',
-  operational_bottlenecks: '',
-  payment_tracking: '',
-  outstanding_balances: '',
-  payment_reminder_process: '',
-  payment_tracking_challenges: '',
-  followup_handling: '',
-  followup_owner: '',
-  missed_followups: '',
-  reminders_used: '',
-  reports_needed: '',
-  hard_to_track_numbers: '',
-  desired_dashboard: '',
-  growth_break_point: '',
-  automate_first: '',
-  open_to_digitizing: '',
-  wants_followup_consultation: '',
-  additional_notes: '',
 }
+
+const questions: ReviewQuestion[] = [
+  { key: 'business_name', section: 'Business identity', prompt: 'What is the business or school name?', kind: 'text', helper: 'This helps us label the operational review correctly.' },
+  { key: 'industry', section: 'Business identity', prompt: 'Which industry best describes the organization?', kind: 'choice', options: ['School', 'Solar Company', 'SME/Other'] },
+  { key: 'contact_person', section: 'Business identity', prompt: 'Who should NEXORA contact about this review?', kind: 'text', helper: "Enter the contact person's full name." },
+  { key: 'position', section: 'Business identity', prompt: 'What is their position or role?', kind: 'text', helper: 'Founder, administrator, operations lead, principal, manager, or similar.' },
+  { key: 'phone_number', section: 'Business identity', prompt: 'What WhatsApp or phone number should we use to send updates about the report?', kind: 'text', helper: 'NEXORA will use this to communicate the review outcome and next steps.' },
+  { key: 'email', section: 'Business identity', prompt: 'What email address should receive the operational review report?', kind: 'text' },
+  { key: 'location', section: 'Business identity', prompt: 'Where is the organization located?', kind: 'text', helper: 'City, state, and country.' },
+  { key: 'team_size', section: 'Business profile', prompt: 'How large is the team?', kind: 'text', helper: 'Approximate staff or team size is fine.' },
+  { key: 'customer_volume', section: 'Business profile', prompt: 'What is the current customer or student volume?', kind: 'text', helper: 'For schools, use student count. For solar companies, use active customers or monthly inquiries.' },
+  { key: 'revenue_estimate', section: 'Business profile', prompt: 'What is the estimated revenue level?', kind: 'text', optional: true, helper: 'You can skip this if you prefer.' },
+  { key: 'business_maturity', section: 'Business profile', prompt: 'What stage best describes the organization?', kind: 'choice', options: ['Early', 'Growing', 'Established', 'Scaling'] },
+  { key: 'current_tools', section: 'Business profile', prompt: 'What tools or software are currently used to run operations?', kind: 'textarea', helper: 'Examples: WhatsApp, Excel, notebooks, accounting software, school portal, CRM, field tools.' },
+  { key: 'school_type', section: 'School profile', prompt: 'What type of school is it?', kind: 'choice', options: ['Nursery', 'Primary', 'Secondary', 'Hybrid'], show: (answers) => answers.industry === 'School' },
+  { key: 'student_count', section: 'School profile', prompt: 'How many students are currently enrolled?', kind: 'text', show: (answers) => answers.industry === 'School' },
+  { key: 'staff_count', section: 'School profile', prompt: 'How many staff members does the school have?', kind: 'text', show: (answers) => answers.industry === 'School' },
+  { key: 'campuses', section: 'School profile', prompt: 'How many campuses or branches does the school operate?', kind: 'text', show: (answers) => answers.industry === 'School' },
+  { key: 'parent_communication_method', section: 'School profile', prompt: 'How does the school currently communicate with parents?', kind: 'textarea', show: (answers) => answers.industry === 'School' },
+  { key: 'fee_tracking_method', section: 'School profile', prompt: 'How are school fees, balances, and payment reminders tracked?', kind: 'textarea', show: (answers) => answers.industry === 'School' },
+  { key: 'admission_workflow', section: 'School profile', prompt: 'How does the admission workflow currently move from inquiry to enrollment?', kind: 'textarea', show: (answers) => answers.industry === 'School' },
+  { key: 'result_attendance_management', section: 'School profile', prompt: 'How are results, attendance, and academic reports managed?', kind: 'textarea', show: (answers) => answers.industry === 'School' },
+  { key: 'solar_team_size', section: 'Solar profile', prompt: 'How large is the solar operations team?', kind: 'text', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'installation_volume', section: 'Solar profile', prompt: 'What is the installation volume?', kind: 'text', helper: 'Weekly or monthly installation volume is fine.', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'average_installation_value', section: 'Solar profile', prompt: 'What is the average installation value?', kind: 'text', optional: true, show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'customer_payment_structure', section: 'Solar profile', prompt: 'How do customers usually pay?', kind: 'textarea', helper: 'Full payment, deposit, installment, pay-as-you-go, or another structure.', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'installment_tracking_method', section: 'Solar profile', prompt: 'How are installments and payment milestones tracked?', kind: 'textarea', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'maintenance_request_process', section: 'Solar profile', prompt: 'How are maintenance requests received and resolved?', kind: 'textarea', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'field_coordination_method', section: 'Solar profile', prompt: 'How are field teams coordinated for jobs and updates?', kind: 'textarea', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'customer_followup_structure', section: 'Solar profile', prompt: 'How are customer follow-ups handled after sale or installation?', kind: 'textarea', show: (answers) => answers.industry === 'Solar Company' },
+  { key: 'business_type', section: 'Business profile', prompt: 'What type of business is it?', kind: 'text', show: (answers) => answers.industry === 'SME/Other' },
+  { key: 'operational_scale', section: 'Business profile', prompt: 'How would you describe the current operational scale?', kind: 'textarea', helper: 'Branches, departments, locations, daily order volume, or active workflow volume.', show: (answers) => answers.industry === 'SME/Other' },
+  { key: 'communication_methods', section: 'Communication system', prompt: 'Which communication channels does the organization currently use?', kind: 'multi', options: ['WhatsApp', 'Calls', 'Physical visits', 'Email', 'Social media'] },
+  { key: 'main_communication_problems', section: 'Communication system', prompt: 'What are the main communication problems?', kind: 'textarea', helper: 'Think about delays, repeated questions, lost messages, missed updates, or unclear ownership.' },
+  { key: 'workflow_tracking', section: 'Workflow and operations', prompt: 'How is daily work currently tracked?', kind: 'textarea', helper: 'Tools, meetings, documents, chats, notebooks, dashboards, or informal updates.' },
+  { key: 'manual_processes', section: 'Workflow and operations', prompt: 'Which processes are still manual?', kind: 'textarea' },
+  { key: 'repetitive_tasks', section: 'Workflow and operations', prompt: 'What tasks does the team repeat often?', kind: 'textarea' },
+  { key: 'approval_processes', section: 'Workflow and operations', prompt: 'How do approvals currently work?', kind: 'textarea', helper: 'Requests, payments, admissions, installations, spending, or internal decisions.' },
+  { key: 'operational_bottlenecks', section: 'Workflow and operations', prompt: 'Where are the biggest operational bottlenecks?', kind: 'textarea' },
+  { key: 'payment_tracking', section: 'Payment and tracking', prompt: 'How are payments, fees, deposits, or balances tracked?', kind: 'textarea' },
+  { key: 'outstanding_balances', section: 'Payment and tracking', prompt: 'Are outstanding balances or debtors a challenge?', kind: 'textarea' },
+  { key: 'payment_reminder_process', section: 'Payment and tracking', prompt: 'How are payment reminders sent?', kind: 'textarea' },
+  { key: 'payment_tracking_challenges', section: 'Payment and tracking', prompt: 'What makes payment tracking difficult?', kind: 'textarea' },
+  { key: 'followup_handling', section: 'Follow-up system', prompt: 'How are follow-ups currently handled?', kind: 'textarea', helper: 'Customers, parents, leads, debtors, field updates, internal tasks, or pending requests.' },
+  { key: 'followup_owner', section: 'Follow-up system', prompt: 'Who owns follow-up inside the organization?', kind: 'text' },
+  { key: 'missed_followups', section: 'Follow-up system', prompt: 'What follow-ups are often missed?', kind: 'textarea' },
+  { key: 'reminders_used', section: 'Follow-up system', prompt: 'Are reminders currently used?', kind: 'choice', options: ['Yes', 'Partly', 'No'] },
+  { key: 'reports_needed', section: 'Reporting and visibility', prompt: 'What reports are needed most?', kind: 'textarea' },
+  { key: 'hard_to_track_numbers', section: 'Reporting and visibility', prompt: 'What numbers are hard to track today?', kind: 'textarea' },
+  { key: 'desired_dashboard', section: 'Reporting and visibility', prompt: 'What would the organization want to see in one dashboard?', kind: 'textarea' },
+  { key: 'growth_break_point', section: 'Growth and readiness', prompt: 'What would break first if the business grows 2x?', kind: 'textarea' },
+  { key: 'automate_first', section: 'Growth and readiness', prompt: 'What should be automated first?', kind: 'textarea' },
+  { key: 'open_to_digitizing', section: 'Growth and readiness', prompt: 'Is the organization open to digitizing operations?', kind: 'choice', options: ['Yes', 'Partly', 'Not yet'] },
+  { key: 'wants_followup_consultation', section: 'Growth and readiness', prompt: 'Would you like a follow-up consultation after the review?', kind: 'choice', options: ['Yes', 'No'] },
+  { key: 'additional_notes', section: 'Growth and readiness', prompt: 'Anything else NEXORA should understand before reviewing the operations?', kind: 'textarea', optional: true },
+]
 
 const textInputClass =
   'min-h-12 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-steel/55 focus:border-signal/60 focus:bg-white/[0.055]'
 
 const textareaClass =
-  'min-h-28 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-steel/55 focus:border-signal/60 focus:bg-white/[0.055]'
+  'min-h-32 w-full rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-steel/55 focus:border-signal/60 focus:bg-white/[0.055]'
 
 function toNumber(value: string) {
   const cleaned = value.replace(/[^\d.]/g, '')
@@ -81,6 +94,11 @@ function createReviewId() {
   return `web-review-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
 }
 
+function formatAnswer(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value.length ? value.join(', ') : 'Skipped'
+  return value?.trim() || 'Skipped'
+}
+
 function splitPainPoints(values: string[]) {
   return values
     .flatMap((value) => value.split(/[,\n]/))
@@ -89,19 +107,16 @@ function splitPainPoints(values: string[]) {
 }
 
 function deriveInfrastructureMaturity(answers: ReviewAnswers) {
-  const tools = String(answers.current_tools || '').trim()
-  const workflow = String(answers.workflow_tracking || '').trim()
-  const digitizing = String(answers.open_to_digitizing || '').trim()
-
-  if (!tools && !workflow) return 'Needs assessment'
-  if (/paper|manual|notebook|physical/i.test(`${tools} ${workflow}`)) return 'Manual operations'
-  if (/yes|open/i.test(digitizing)) return 'Ready for structured digitization'
+  const text = `${answers.current_tools || ''} ${answers.workflow_tracking || ''} ${answers.open_to_digitizing || ''}`
+  if (!text.trim()) return 'Needs assessment'
+  if (/paper|manual|notebook|physical/i.test(text)) return 'Manual operations'
+  if (/yes|open/i.test(text)) return 'Ready for structured digitization'
   return 'Tool-assisted operations'
 }
 
 function derivePaymentPotential(answers: ReviewAnswers) {
-  const paymentText = `${answers.outstanding_balances || ''} ${answers.payment_tracking_challenges || ''}`
-  if (/yes|many|high|debt|outstanding|unpaid|late/i.test(paymentText)) return 'Payment recovery opportunity'
+  const text = `${answers.outstanding_balances || ''} ${answers.payment_tracking_challenges || ''}`
+  if (/yes|many|high|debt|outstanding|unpaid|late/i.test(text)) return 'Payment recovery opportunity'
   if (String(answers.payment_tracking || '').trim()) return 'Payment visibility opportunity'
   return 'Needs assessment'
 }
@@ -111,29 +126,29 @@ function buildPayload(answers: ReviewAnswers) {
   const profileData =
     industry === 'School'
       ? {
-          school_type: answers.school_type,
-          student_count: answers.student_count,
-          staff_count: answers.staff_count,
-          campuses: answers.campuses,
-          parent_communication_method: answers.parent_communication_method,
-          fee_tracking_method: answers.fee_tracking_method,
-          admission_workflow: answers.admission_workflow,
-          result_attendance_management: answers.result_attendance_management,
+          school_type: answers.school_type || '',
+          student_count: answers.student_count || '',
+          staff_count: answers.staff_count || '',
+          campuses: answers.campuses || '',
+          parent_communication_method: answers.parent_communication_method || '',
+          fee_tracking_method: answers.fee_tracking_method || '',
+          admission_workflow: answers.admission_workflow || '',
+          result_attendance_management: answers.result_attendance_management || '',
         }
       : industry === 'Solar Company'
         ? {
-            team_size: answers.solar_team_size || answers.team_size,
-            installation_volume: answers.installation_volume,
-            average_installation_value: answers.average_installation_value,
-            customer_payment_structure: answers.customer_payment_structure,
-            installment_tracking_method: answers.installment_tracking_method,
-            maintenance_request_process: answers.maintenance_request_process,
-            field_coordination_method: answers.field_coordination_method,
-            customer_followup_structure: answers.customer_followup_structure,
+            team_size: answers.solar_team_size || answers.team_size || '',
+            installation_volume: answers.installation_volume || '',
+            average_installation_value: answers.average_installation_value || '',
+            customer_payment_structure: answers.customer_payment_structure || '',
+            installment_tracking_method: answers.installment_tracking_method || '',
+            maintenance_request_process: answers.maintenance_request_process || '',
+            field_coordination_method: answers.field_coordination_method || '',
+            customer_followup_structure: answers.customer_followup_structure || '',
           }
         : {
-            business_type: answers.business_type,
-            operational_scale: answers.operational_scale,
+            business_type: answers.business_type || '',
+            operational_scale: answers.operational_scale || '',
           }
 
   return {
@@ -170,139 +185,36 @@ function buildPayload(answers: ReviewAnswers) {
   }
 }
 
-function Field({ label, name, value, onChange, placeholder, optional = false }: {
-  label: string
-  name: string
-  value: string
-  onChange: (name: string, value: string) => void
-  placeholder?: string
-  optional?: boolean
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">
-        {label}{optional ? ' / Optional' : ''}
-      </span>
-      <input
-        className={textInputClass}
-        name={name}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(name, event.target.value)}
-      />
-    </label>
-  )
-}
-
-function TextArea({ label, name, value, onChange, placeholder, optional = false }: {
-  label: string
-  name: string
-  value: string
-  onChange: (name: string, value: string) => void
-  placeholder?: string
-  optional?: boolean
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">
-        {label}{optional ? ' / Optional' : ''}
-      </span>
-      <textarea
-        className={textareaClass}
-        name={name}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(name, event.target.value)}
-      />
-    </label>
-  )
-}
-
-function ChoiceGroup({ label, name, value, options, onChange }: {
-  label: string
-  name: string
-  value: string
-  options: string[]
-  onChange: (name: string, value: string) => void
-}) {
-  return (
-    <div>
-      <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const active = value === option
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(name, option)}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
-                active
-                  ? 'border-signal/70 bg-signal/15 text-white shadow-[0_0_30px_rgba(79,140,255,0.15)]'
-                  : 'border-white/10 bg-white/[0.035] text-steel hover:border-white/20 hover:text-white'
-              }`}
-            >
-              {option}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function CheckboxGroup({ label, name, value, options, onChange }: {
-  label: string
-  name: string
-  value: string[]
-  options: string[]
-  onChange: (name: string, value: string[]) => void
-}) {
-  return (
-    <div>
-      <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const active = value.includes(option)
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onChange(name, active ? value.filter((item) => item !== option) : [...value, option])}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
-                active
-                  ? 'border-signal/70 bg-signal/15 text-white shadow-[0_0_30px_rgba(79,140,255,0.15)]'
-                  : 'border-white/10 bg-white/[0.035] text-steel hover:border-white/20 hover:text-white'
-              }`}
-            >
-              {option}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
+function isVisible(question: ReviewQuestion, answers: ReviewAnswers) {
+  return question.show ? question.show(answers) : true
 }
 
 export default function OperationalReviewChatbot() {
-  const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<ReviewAnswers>(initialAnswers)
+  const [index, setIndex] = useState(0)
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
-  const progress = useMemo(() => ((step + 1) / stepLabels.length) * 100, [step])
-  const industry = String(answers.industry || '')
 
-  const answer = (name: string) => String(answers[name] || '')
-  const answerArray = (name: string) => (Array.isArray(answers[name]) ? answers[name] as string[] : [])
+  const visibleQuestions = useMemo(() => questions.filter((question) => isVisible(question, answers)), [answers])
+  const safeIndex = Math.min(index, visibleQuestions.length - 1)
+  const currentQuestion = visibleQuestions[safeIndex]
+  const isComplete = index >= visibleQuestions.length
+  const progress = Math.round((Math.min(index + 1, visibleQuestions.length) / visibleQuestions.length) * 100)
 
-  const updateAnswer = (name: string, value: string) => {
-    setAnswers((current) => ({ ...current, [name]: value }))
+  const updateAnswer = (key: string, value: string | string[]) => {
+    setAnswers((current) => ({ ...current, [key]: value }))
     if (status === 'error') setStatus('idle')
   }
 
-  const updateArrayAnswer = (name: string, value: string[]) => {
-    setAnswers((current) => ({ ...current, [name]: value }))
-    if (status === 'error') setStatus('idle')
+  const goNext = () => {
+    setIndex((current) => Math.min(current + 1, visibleQuestions.length))
   }
+
+  const goBack = () => {
+    setIndex((current) => Math.max(current - 1, 0))
+  }
+
+  const selectedAnswer = currentQuestion ? answers[currentQuestion.key] : ''
+  const canContinue = !currentQuestion || currentQuestion.optional || (Array.isArray(selectedAnswer) ? selectedAnswer.length > 0 : Boolean(String(selectedAnswer || '').trim()))
 
   async function submitReview() {
     setStatus('submitting')
@@ -324,170 +236,36 @@ export default function OperationalReviewChatbot() {
     }
   }
 
-  const renderStep = () => {
-    if (step === 0) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Business or school name" name="business_name" value={answer('business_name')} onChange={updateAnswer} placeholder="NEXORA Model School" />
-          <ChoiceGroup label="Industry" name="industry" value={industry} options={['School', 'Solar Company', 'SME/Other']} onChange={updateAnswer} />
-          <Field label="Contact person" name="contact_person" value={answer('contact_person')} onChange={updateAnswer} placeholder="Full name" />
-          <Field label="Position or role" name="position" value={answer('position')} onChange={updateAnswer} placeholder="Founder, administrator, operations lead" />
-          <Field label="Phone number" name="phone_number" value={answer('phone_number')} onChange={updateAnswer} placeholder="0701002613" />
-          <Field label="Email" name="email" value={answer('email')} onChange={updateAnswer} placeholder="name@example.com" />
-          <div className="md:col-span-2">
-            <Field label="Location" name="location" value={answer('location')} onChange={updateAnswer} placeholder="City, state, country" />
-          </div>
-        </div>
-      )
-    }
-
-    if (step === 1) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Team size" name="team_size" value={answer('team_size')} onChange={updateAnswer} placeholder="Number of staff/team members" />
-          <Field label="Customer or student volume" name="customer_volume" value={answer('customer_volume')} onChange={updateAnswer} placeholder="Approximate active volume" />
-          <Field label="Revenue estimate" name="revenue_estimate" value={answer('revenue_estimate')} onChange={updateAnswer} placeholder="Monthly or annual estimate" optional />
-          <ChoiceGroup label="Business maturity" name="business_maturity" value={answer('business_maturity')} options={['Early', 'Growing', 'Established', 'Scaling']} onChange={updateAnswer} />
-          <div className="md:col-span-2">
-            <TextArea label="Current tools or software used" name="current_tools" value={answer('current_tools')} onChange={updateAnswer} placeholder="WhatsApp, Excel, notebooks, accounting tools, school portals, CRM, field tools..." />
-          </div>
-        </div>
-      )
-    }
-
-    if (step === 2 && industry === 'School') {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <ChoiceGroup label="School type" name="school_type" value={answer('school_type')} options={['Nursery', 'Primary', 'Secondary', 'Hybrid']} onChange={updateAnswer} />
-          <Field label="Student count" name="student_count" value={answer('student_count')} onChange={updateAnswer} placeholder="Approximate number" />
-          <Field label="Staff count" name="staff_count" value={answer('staff_count')} onChange={updateAnswer} placeholder="Teaching and non-teaching staff" />
-          <Field label="Number of campuses" name="campuses" value={answer('campuses')} onChange={updateAnswer} placeholder="1, 2, 3..." />
-          <TextArea label="Parent communication method" name="parent_communication_method" value={answer('parent_communication_method')} onChange={updateAnswer} placeholder="How parents currently receive updates and make requests" />
-          <TextArea label="School fee tracking method" name="fee_tracking_method" value={answer('fee_tracking_method')} onChange={updateAnswer} placeholder="How payments, balances, and reminders are handled" />
-          <TextArea label="Admission workflow" name="admission_workflow" value={answer('admission_workflow')} onChange={updateAnswer} placeholder="How inquiries become admitted students" />
-          <TextArea label="Results, attendance, and reports" name="result_attendance_management" value={answer('result_attendance_management')} onChange={updateAnswer} placeholder="How academic records and attendance are managed" />
-        </div>
-      )
-    }
-
-    if (step === 2 && industry === 'Solar Company') {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Solar team size" name="solar_team_size" value={answer('solar_team_size')} onChange={updateAnswer} placeholder="Sales, admin, engineers, field team" />
-          <Field label="Installation volume" name="installation_volume" value={answer('installation_volume')} onChange={updateAnswer} placeholder="Weekly or monthly installations" />
-          <Field label="Average installation value" name="average_installation_value" value={answer('average_installation_value')} onChange={updateAnswer} placeholder="Approximate project value" optional />
-          <TextArea label="Customer payment structure" name="customer_payment_structure" value={answer('customer_payment_structure')} onChange={updateAnswer} placeholder="Full payment, deposit, installments, pay-as-you-go..." />
-          <TextArea label="Installment/payment tracking" name="installment_tracking_method" value={answer('installment_tracking_method')} onChange={updateAnswer} placeholder="How payment milestones are tracked" />
-          <TextArea label="Maintenance request process" name="maintenance_request_process" value={answer('maintenance_request_process')} onChange={updateAnswer} placeholder="How customers report issues after installation" />
-          <TextArea label="Field coordination method" name="field_coordination_method" value={answer('field_coordination_method')} onChange={updateAnswer} placeholder="How technicians receive jobs and updates" />
-          <TextArea label="Customer follow-up structure" name="customer_followup_structure" value={answer('customer_followup_structure')} onChange={updateAnswer} placeholder="How post-sale and maintenance follow-ups happen" />
-        </div>
-      )
-    }
-
-    if (step === 2) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Business type" name="business_type" value={answer('business_type')} onChange={updateAnswer} placeholder="Retail, services, logistics, professional services..." />
-          <Field label="Operational scale" name="operational_scale" value={answer('operational_scale')} onChange={updateAnswer} placeholder="Branches, departments, locations, daily volume" />
-          <div className="md:col-span-2">
-            <TextArea label="Current operating structure" name="workflow_tracking" value={answer('workflow_tracking')} onChange={updateAnswer} placeholder="Briefly describe how work moves across the business today" />
-          </div>
-        </div>
-      )
-    }
-
-    if (step === 3) {
-      return (
-        <div className="grid gap-5">
-          <CheckboxGroup label="Current communication methods" name="communication_methods" value={answerArray('communication_methods')} options={['WhatsApp', 'Calls', 'Physical visits', 'Email', 'Social media']} onChange={updateArrayAnswer} />
-          <TextArea label="Main communication problems" name="main_communication_problems" value={answer('main_communication_problems')} onChange={updateAnswer} placeholder="Where information gets lost, delayed, repeated, or misunderstood" />
-        </div>
-      )
-    }
-
-    if (step === 4) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <TextArea label="How daily work is tracked" name="workflow_tracking" value={answer('workflow_tracking')} onChange={updateAnswer} placeholder="Tools, documents, meetings, chats, notebooks, dashboards..." />
-          <TextArea label="Manual processes" name="manual_processes" value={answer('manual_processes')} onChange={updateAnswer} placeholder="Work that still depends on paper, calls, manual typing, or repeated checking" />
-          <TextArea label="Repetitive tasks" name="repetitive_tasks" value={answer('repetitive_tasks')} onChange={updateAnswer} placeholder="Tasks the team repeats every day or week" />
-          <TextArea label="Approval processes" name="approval_processes" value={answer('approval_processes')} onChange={updateAnswer} placeholder="Who approves work, money, requests, admissions, installations, or decisions" />
-          <div className="md:col-span-2">
-            <TextArea label="Operational bottlenecks" name="operational_bottlenecks" value={answer('operational_bottlenecks')} onChange={updateAnswer} placeholder="What slows the business down most often" />
-          </div>
-        </div>
-      )
-    }
-
-    if (step === 5) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <TextArea label="Payment or fee tracking" name="payment_tracking" value={answer('payment_tracking')} onChange={updateAnswer} placeholder="How paid, unpaid, deposits, balances, and receipts are tracked" />
-          <TextArea label="Outstanding balances or debtors" name="outstanding_balances" value={answer('outstanding_balances')} onChange={updateAnswer} placeholder="Whether unpaid balances are common, and how they are monitored" />
-          <TextArea label="Payment reminder process" name="payment_reminder_process" value={answer('payment_reminder_process')} onChange={updateAnswer} placeholder="How reminders are sent and who sends them" />
-          <TextArea label="Payment tracking challenges" name="payment_tracking_challenges" value={answer('payment_tracking_challenges')} onChange={updateAnswer} placeholder="What is hard to confirm, reconcile, or follow up" />
-        </div>
-      )
-    }
-
-    if (step === 6) {
-      return (
-        <div className="grid gap-5 md:grid-cols-2">
-          <TextArea label="How follow-ups are handled" name="followup_handling" value={answer('followup_handling')} onChange={updateAnswer} placeholder="Parents, leads, customers, debtors, field updates, internal tasks..." />
-          <Field label="Who owns follow-up" name="followup_owner" value={answer('followup_owner')} onChange={updateAnswer} placeholder="Role or team responsible" />
-          <TextArea label="Follow-ups often missed" name="missed_followups" value={answer('missed_followups')} onChange={updateAnswer} placeholder="What usually falls through the cracks" />
-          <ChoiceGroup label="Are reminders currently used?" name="reminders_used" value={answer('reminders_used')} options={['Yes', 'Partly', 'No']} onChange={updateAnswer} />
-          <TextArea label="Reports needed" name="reports_needed" value={answer('reports_needed')} onChange={updateAnswer} placeholder="Daily, weekly, fee/payment, customer, admission, installation, staff, performance reports..." />
-          <TextArea label="Numbers that are hard to track" name="hard_to_track_numbers" value={answer('hard_to_track_numbers')} onChange={updateAnswer} placeholder="Metrics leadership cannot see quickly today" />
-          <div className="md:col-span-2">
-            <TextArea label="What should appear in one dashboard?" name="desired_dashboard" value={answer('desired_dashboard')} onChange={updateAnswer} placeholder="The numbers, alerts, and activities you want visible at a glance" />
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <div className="grid gap-5 md:grid-cols-2">
-        <TextArea label="What would break if the business grows 2x?" name="growth_break_point" value={answer('growth_break_point')} onChange={updateAnswer} placeholder="Communication, payments, customer support, reporting, staff coordination..." />
-        <TextArea label="What should be automated first?" name="automate_first" value={answer('automate_first')} onChange={updateAnswer} placeholder="The first workflow NEXORA should examine for automation" />
-        <ChoiceGroup label="Open to digitizing operations?" name="open_to_digitizing" value={answer('open_to_digitizing')} options={['Yes', 'Partly', 'Not yet']} onChange={updateAnswer} />
-        <ChoiceGroup label="Want a follow-up consultation?" name="wants_followup_consultation" value={answer('wants_followup_consultation')} options={['Yes', 'No']} onChange={updateAnswer} />
-        <div className="md:col-span-2">
-          <TextArea label="Additional notes" name="additional_notes" value={answer('additional_notes')} onChange={updateAnswer} placeholder="Anything else NEXORA should understand before reviewing your operations" optional />
-        </div>
-      </div>
-    )
-  }
+  const transcript = visibleQuestions.slice(Math.max(0, safeIndex - 4), safeIndex)
 
   if (status === 'success') {
     return (
-      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass mx-auto max-w-5xl rounded-[28px] p-6 md:p-8">
+      <motion.div id="operational-review-chatbot" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass mx-auto max-w-5xl rounded-[28px] p-6 md:p-8">
         <CheckCircle2 className="h-10 w-10 text-signal" />
         <h2 className="mt-6 text-3xl font-semibold tracking-tight text-white">Operational review received.</h2>
         <p className="mt-4 max-w-2xl text-base leading-8 text-steel">
-          {answer('wants_followup_consultation') === 'Yes'
-            ? 'Your review has been submitted. Our team will follow up to schedule the next step.'
-            : 'Your operational review has been submitted. NEXORA will review your workflow and follow up with recommendations.'}
+          {answers.wants_followup_consultation === 'Yes'
+            ? 'Your review has been submitted. NEXORA will follow up through the WhatsApp number or email you provided to schedule the next step.'
+            : 'Your operational review has been submitted. NEXORA will review your workflow and send recommendations through the WhatsApp number or email you provided.'}
         </p>
       </motion.div>
     )
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass mx-auto max-w-6xl rounded-[28px] p-5 md:p-8">
+    <motion.div id="operational-review-chatbot" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass mx-auto max-w-6xl rounded-[28px] p-5 md:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
           <span className="eyebrow">Website AI Operational Review</span>
           <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white md:text-5xl">Start Your Operational Review</h2>
           <p className="mt-4 text-base leading-8 text-steel">
-            Answer a few guided questions so NEXORA can understand your workflow, bottlenecks, and improvement opportunities.
+            Complete the guided review directly on this website. NEXORA will use your WhatsApp number or email only to send the report and next steps.
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-steel lg:min-w-64">
           <div className="flex items-center justify-between text-white">
-            <span>Step {step + 1} of {stepLabels.length}</span>
-            <span>{stepLabels[step]}</span>
+            <span>{isComplete ? 'Ready to submit' : `Question ${safeIndex + 1} of ${visibleQuestions.length}`}</span>
+            <span>{progress}%</span>
           </div>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-signal transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -496,7 +274,116 @@ export default function OperationalReviewChatbot() {
       </div>
 
       <div className="mt-8 rounded-[24px] border border-white/10 bg-black/10 p-4 md:p-6">
-        {renderStep()}
+        <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
+          <div className="flex justify-start">
+            <div className="max-w-[92%] rounded-[22px] rounded-tl-md border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-7 text-frost">
+              I will guide you through the same operational discovery process NEXORA uses before preparing recommendations.
+            </div>
+          </div>
+
+          {transcript.map((question) => (
+            <div key={question.key} className="space-y-3">
+              <div className="flex justify-start">
+                <div className="max-w-[92%] rounded-[22px] rounded-tl-md border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-7 text-frost">
+                  <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-steel">{question.section}</span>
+                  {question.prompt}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <div className="max-w-[92%] rounded-[22px] rounded-tr-md border border-signal/30 bg-signal/15 px-4 py-3 text-sm leading-7 text-white">
+                  {formatAnswer(answers[question.key])}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {!isComplete && currentQuestion ? (
+            <div className="flex justify-start">
+              <div className="max-w-[92%] rounded-[22px] rounded-tl-md border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-7 text-frost">
+                <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-steel">{currentQuestion.section}</span>
+                {currentQuestion.prompt}
+                {currentQuestion.optional ? <span className="ml-2 text-steel">(optional)</span> : null}
+                {currentQuestion.helper ? <p className="mt-2 text-xs leading-6 text-steel">{currentQuestion.helper}</p> : null}
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-start">
+              <div className="max-w-[92%] rounded-[22px] rounded-tl-md border border-white/10 bg-white/[0.045] px-4 py-3 text-sm leading-7 text-frost">
+                The website review is complete. Submit it now so NEXORA can prepare your operational intelligence report.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {!isComplete && currentQuestion ? (
+          <div className="mt-6">
+            {currentQuestion.kind === 'text' ? (
+              <input
+                className={textInputClass}
+                value={String(answers[currentQuestion.key] || '')}
+                placeholder="Type your answer here..."
+                onChange={(event) => updateAnswer(currentQuestion.key, event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && canContinue) goNext()
+                }}
+              />
+            ) : null}
+
+            {currentQuestion.kind === 'textarea' ? (
+              <textarea
+                className={textareaClass}
+                value={String(answers[currentQuestion.key] || '')}
+                placeholder="Type your answer here..."
+                onChange={(event) => updateAnswer(currentQuestion.key, event.target.value)}
+              />
+            ) : null}
+
+            {currentQuestion.kind === 'choice' ? (
+              <div className="flex flex-wrap gap-2">
+                {currentQuestion.options?.map((option) => {
+                  const active = answers[currentQuestion.key] === option
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateAnswer(currentQuestion.key, option)}
+                      className={`rounded-full border px-4 py-2 text-sm transition ${
+                        active
+                          ? 'border-signal/70 bg-signal/15 text-white shadow-[0_0_30px_rgba(79,140,255,0.15)]'
+                          : 'border-white/10 bg-white/[0.035] text-steel hover:border-white/20 hover:text-white'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+
+            {currentQuestion.kind === 'multi' ? (
+              <div className="flex flex-wrap gap-2">
+                {currentQuestion.options?.map((option) => {
+                  const values = Array.isArray(answers[currentQuestion.key]) ? answers[currentQuestion.key] as string[] : []
+                  const active = values.includes(option)
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateAnswer(currentQuestion.key, active ? values.filter((item) => item !== option) : [...values, option])}
+                      className={`rounded-full border px-4 py-2 text-sm transition ${
+                        active
+                          ? 'border-signal/70 bg-signal/15 text-white shadow-[0_0_30px_rgba(79,140,255,0.15)]'
+                          : 'border-white/10 bg-white/[0.035] text-steel hover:border-white/20 hover:text-white'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {status === 'error' && (
@@ -508,8 +395,8 @@ export default function OperationalReviewChatbot() {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
-          onClick={() => setStep((current) => Math.max(0, current - 1))}
-          disabled={step === 0 || status === 'submitting'}
+          onClick={goBack}
+          disabled={safeIndex === 0 || status === 'submitting'}
           className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-5 text-sm font-semibold text-steel transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -517,11 +404,18 @@ export default function OperationalReviewChatbot() {
         </button>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          {step < stepLabels.length - 1 ? (
+          {!isComplete && currentQuestion?.optional ? (
+            <button type="button" onClick={goNext} className="button-secondary inline-flex min-h-12 items-center justify-center rounded-full px-5 text-sm font-semibold">
+              Skip
+            </button>
+          ) : null}
+
+          {!isComplete ? (
             <button
               type="button"
-              onClick={() => setStep((current) => Math.min(stepLabels.length - 1, current + 1))}
-              className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition duration-300 hover:-translate-y-0.5"
+              onClick={goNext}
+              disabled={!canContinue}
+              className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45"
             >
               Continue
               <ArrowRight className="h-4 w-4" />
@@ -534,7 +428,7 @@ export default function OperationalReviewChatbot() {
               className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
             >
               {status === 'submitting' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {status === 'submitting' ? 'Submitting Review' : status === 'error' ? 'Retry Submission' : 'Submit Operational Review'}
+              {status === 'submitting' ? 'Submitting Website Review' : status === 'error' ? 'Retry Submission' : 'Submit Website Review'}
             </button>
           )}
         </div>
