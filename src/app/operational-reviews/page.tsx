@@ -3,6 +3,7 @@ import PremiumCard from '@/components/ui/PremiumCard'
 import Button from '@/components/ui/Button'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { PageBand, PageHero } from '@/components/sections/PageShell'
+import OperationalReviewChatbot from '@/components/sections/OperationalReviewChatbot'
 
 const deliverables: Array<[string, string, LucideIcon]> = [
   ['Operational Diagnosis', 'A clear picture of where inefficiencies, gaps, and bottlenecks live.', FileSearch],
@@ -29,6 +30,9 @@ export default function ReviewsPage() {
             ))}
           </div>
           <div className="mt-12 text-center"><Button href="/contact">Request Operational Review</Button></div>
+          <div className="mt-16">
+            <OperationalReviewChatbot />
+          </div>
         </div>
       </PageBand>
     </>
