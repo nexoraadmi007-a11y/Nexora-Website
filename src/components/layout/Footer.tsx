@@ -8,7 +8,7 @@ const groups = {
     ['0701002613 | 08103200200', 'tel:0701002613'],
     ['nexoraadmi007@gmail.com', 'mailto:nexoraadmi007@gmail.com'],
     ['Asero, Abeokuta, Ogun State', '/contact'],
-    ['WhatsApp', 'https://wa.me/234701002613'],
+    ['WhatsApp', 'https://wa.me/2347084193822'],
   ],
 }
 

@@ -4,7 +4,7 @@ import { MessageCircle, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 
-const number = '234701002613'
+const number = '2347084193822'
 const options = [
   ['Talk to NEXORA', "Hello NEXORA, I'd like to understand how you improve operations."],
   ['Chat With Our Team', "Hello NEXORA, I'd like to speak with your team."],

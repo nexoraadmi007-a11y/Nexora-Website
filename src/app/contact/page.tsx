@@ -8,7 +8,7 @@ import PremiumCard from '@/components/ui/PremiumCard'
 import Reveal from '@/components/ui/Reveal'
 import { PageHero } from '@/components/sections/PageShell'
 
-const number = '234701002613'
+const number = '2347084193822'
 const contactDetails: Array<[LucideIcon, string, string]> = [
   [Mail, 'Email', 'nexoraadmi007@gmail.com'],
   [Phone, 'Phone', '0701002613 | 08103200200'],
