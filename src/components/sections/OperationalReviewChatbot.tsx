@@ -18,7 +18,7 @@ type SpeechRecognitionConstructor = new () => {
   continuous: boolean
   interimResults: boolean
   lang: string
-  onresult: ((event: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null
+  onresult: ((event: { resultIndex: number; results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null
   onend: (() => void) | null
   onerror: (() => void) | null
   start: () => void
@@ -193,6 +193,39 @@ function TypingIndicator() {
   )
 }
 
+function RecordingWaveform({ transcript }: { transcript: string }) {
+  const bars = [12, 22, 14, 30, 18, 36, 20, 28, 16, 24, 12, 32]
+
+  return (
+    <div className="rounded-[24px] border border-signal/35 bg-signal/10 p-4 shadow-[0_0_30px_rgba(79,140,255,0.15)]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-signal shadow-[0_0_18px_rgba(79,140,255,.9)]" />
+            Recording voice answer
+          </div>
+          <p className="mt-1 text-xs leading-6 text-steel">Speak naturally. Review and edit the transcript before continuing.</p>
+        </div>
+        <div className="flex h-12 items-center gap-1.5 rounded-2xl border border-white/10 bg-black/10 px-4">
+          {bars.map((height, index) => (
+            <span
+              key={`${height}-${index}`}
+              className="w-1.5 animate-pulse rounded-full bg-signal/80"
+              style={{ height, animationDelay: `${index * 90}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      {transcript ? (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-xs leading-6 text-frost">
+          <span className="text-steel">Live transcript: </span>
+          {transcript}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function BotBubble({ section, children, helper }: { section?: string; children: React.ReactNode; helper?: string }) {
   return (
     <div className="flex justify-start">
@@ -223,6 +256,8 @@ export default function OperationalReviewChatbot() {
   const [isTyping, setIsTyping] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(true)
+  const [liveTranscript, setLiveTranscript] = useState('')
+  const [voiceError, setVoiceError] = useState('')
   const recognitionRef = useRef<InstanceType<SpeechRecognitionConstructor> | null>(null)
 
   const currentQuestion = auditQuestions[index]
@@ -234,6 +269,7 @@ export default function OperationalReviewChatbot() {
   const updateAnswer = (key: string, value: string | string[]) => {
     setAnswers((current) => ({ ...current, [key]: value }))
     if (status === 'error') setStatus('idle')
+    if (voiceError) setVoiceError('')
   }
 
   const visibleIntroFields = useMemo(() => {
@@ -290,6 +326,7 @@ export default function OperationalReviewChatbot() {
 
     if (!Recognition) {
       setVoiceSupported(false)
+      setVoiceError('Voice dictation is not available in this browser. Please type your answer instead.')
       return
     }
 
@@ -298,19 +335,29 @@ export default function OperationalReviewChatbot() {
     recognition.interimResults = true
     recognition.lang = 'en-US'
     recognition.onresult = (event) => {
-      let transcript = ''
-      for (let i = 0; i < event.results.length; i += 1) {
-        if (event.results[i].isFinal) transcript += event.results[i][0].transcript
+      let finalTranscript = ''
+      let interimTranscript = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const phrase = event.results[i][0].transcript
+        if (event.results[i].isFinal) finalTranscript += `${phrase} `
+        else interimTranscript += phrase
       }
-      appendVoiceText(transcript)
+
+      appendVoiceText(finalTranscript)
+      setLiveTranscript(interimTranscript.trim())
     }
     recognition.onerror = () => {
       setIsListening(false)
+      setVoiceError('Voice recording stopped unexpectedly. Please try again, or type/edit the transcript manually.')
     }
     recognition.onend = () => {
       setIsListening(false)
+      setLiveTranscript('')
     }
     recognitionRef.current = recognition
+    setVoiceError('')
+    setLiveTranscript('')
     recognition.start()
     setIsListening(true)
   }
@@ -319,6 +366,7 @@ export default function OperationalReviewChatbot() {
     recognitionRef.current?.stop()
     recognitionRef.current = null
     setIsListening(false)
+    setLiveTranscript('')
   }
 
   async function submitReview() {
@@ -478,6 +526,12 @@ export default function OperationalReviewChatbot() {
                 placeholder={currentQuestion.placeholder}
                 onChange={(event) => updateAnswer(currentQuestion.key, event.target.value)}
               />
+              {isListening ? <RecordingWaveform transcript={liveTranscript} /> : null}
+              {voiceError ? (
+                <div className="rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-xs leading-6 text-red-100">
+                  {voiceError}
+                </div>
+              ) : null}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs leading-6 text-steel">
                   {voiceSupported ? 'Use the microphone to dictate your answer, then edit the text if needed.' : 'Voice dictation is not supported in this browser. You can still type your answer.'}
