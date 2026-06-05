@@ -259,6 +259,9 @@ export default function OperationalReviewChatbot() {
   const [liveTranscript, setLiveTranscript] = useState('')
   const [voiceError, setVoiceError] = useState('')
   const recognitionRef = useRef<InstanceType<SpeechRecognitionConstructor> | null>(null)
+  const activeVoiceQuestionRef = useRef('')
+  const voiceBaseTextRef = useRef('')
+  const voiceSegmentsRef = useRef<Record<number, string>>({})
 
   const currentQuestion = auditQuestions[index]
   const isComplete = started && index >= auditQuestions.length
@@ -308,17 +311,6 @@ export default function OperationalReviewChatbot() {
     setIsTyping(false)
   }
 
-  const appendVoiceText = (text: string) => {
-    if (!currentQuestion || !text.trim()) return
-    setAnswers((current) => {
-      const existing = String(current[currentQuestion.key] || '')
-      return {
-        ...current,
-        [currentQuestion.key]: existing ? `${existing} ${text.trim()}` : text.trim(),
-      }
-    })
-  }
-
   const startListening = () => {
     if (!currentQuestion || typeof window === 'undefined') return
     const speechWindow = window as SpeechWindow
@@ -334,17 +326,30 @@ export default function OperationalReviewChatbot() {
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'en-US'
+    activeVoiceQuestionRef.current = currentQuestion.key
+    voiceBaseTextRef.current = String(answers[currentQuestion.key] || '').trim()
+    voiceSegmentsRef.current = {}
     recognition.onresult = (event) => {
-      let finalTranscript = ''
       let interimTranscript = ''
 
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const phrase = event.results[i][0].transcript
-        if (event.results[i].isFinal) finalTranscript += `${phrase} `
-        else interimTranscript += phrase
+        const phrase = event.results[i][0].transcript.trim()
+        if (event.results[i].isFinal) voiceSegmentsRef.current[i] = phrase
+        else interimTranscript += `${phrase} `
       }
 
-      appendVoiceText(finalTranscript)
+      const finalTranscript = Object.entries(voiceSegmentsRef.current)
+        .sort(([a], [b]) => Number(a) - Number(b))
+        .map(([, phrase]) => phrase)
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+      const combinedTranscript = [voiceBaseTextRef.current, finalTranscript].filter(Boolean).join(' ')
+
+      setAnswers((current) => ({
+        ...current,
+        [activeVoiceQuestionRef.current]: combinedTranscript,
+      }))
       setLiveTranscript(interimTranscript.trim())
     }
     recognition.onerror = () => {
@@ -365,6 +370,9 @@ export default function OperationalReviewChatbot() {
   const stopListening = () => {
     recognitionRef.current?.stop()
     recognitionRef.current = null
+    activeVoiceQuestionRef.current = ''
+    voiceBaseTextRef.current = ''
+    voiceSegmentsRef.current = {}
     setIsListening(false)
     setLiveTranscript('')
   }
