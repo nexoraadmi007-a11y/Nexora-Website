@@ -5,8 +5,8 @@ import Footer from '@/components/layout/Footer'
 import WhatsAppButton from '@/components/layout/WhatsAppButton'
 
 export const metadata: Metadata = {
-  title: 'NEXORA | Operational Intelligence Infrastructure',
-  description: 'NEXORA helps organizations identify inefficiencies, optimize workflows, and deploy intelligent operational infrastructure.',
+  title: 'NEXORA Institute | Building Africa\'s AI-ready workforce',
+  description: 'NEXORA Institute prepares students, NYSC corps members, professionals, executives, and organizations for the AI-powered future of work.',
   icons: {
     icon: '/nexora-mark.png',
   },

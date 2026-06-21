@@ -1,14 +1,13 @@
-import { AcademyLabs, FinalCTA, Hero, IndustriesPreview, ProblemSection, ProcessSection, WhatWeDo } from '@/components/sections/HomeSections'
+import { CommunitySection, FinalCTA, Hero, ProblemSection, ProgramsPreview, WhoWeServe } from '@/components/sections/HomeSections'
 
 export default function HomePage() {
   return (
     <>
       <Hero />
       <ProblemSection />
-      <IndustriesPreview />
-      <WhatWeDo />
-      <ProcessSection />
-      <AcademyLabs />
+      <WhoWeServe />
+      <ProgramsPreview />
+      <CommunitySection />
       <FinalCTA />
     </>
   )
