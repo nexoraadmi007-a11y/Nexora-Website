@@ -88,6 +88,15 @@ a { color: inherit; text-decoration: none; }
   padding: 112px 0;
 }
 
+.nexora-select {
+  color-scheme: dark;
+}
+
+.nexora-select option {
+  color: #e6eefc;
+  background: #07111f;
+}
+
 @media (max-width: 768px) {
   .section { padding: 76px 0; }
 }

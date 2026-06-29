@@ -1,10 +1,23 @@
 services:
   - type: web
     name: nexora-website
-    runtime: static
+    runtime: node
     buildCommand: npm ci --registry=https://registry.npmjs.org && npm run build
-    staticPublishPath: ./out
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    startCommand: npm run start -- -p $PORT
+    envVars:
+      - key: AIRTABLE_BASE_ID
+        value: appNkFVWpoI8ihHmA
+      - key: AIRTABLE_TOKEN
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_QUEUE_SECRET
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://www.nexoragroup.ink
