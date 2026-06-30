@@ -19,6 +19,7 @@ const commonFields: Field[] = [
   { name: 'phone', label: 'Phone / WhatsApp', type: 'tel', required: true },
   { name: 'occupation', label: 'Occupation' },
   { name: 'customerCategory', label: 'Customer category', type: 'select', options: ['NYSC currently serving', 'NYSC completed', 'Final-year student', 'Graduate', 'Young professional', 'Working professional', 'Business owner', 'Entrepreneur', 'Corporate representative', 'Other'] },
+  { name: 'referralCode', label: 'Referral code' },
 ]
 
 const fieldsByKind: Record<FormKind, Field[]> = {
@@ -110,7 +111,9 @@ export default function WebsiteForm({
     const formData = new FormData(form)
     const payload: Record<string, unknown> = { kind, ...context, ...sourceParams() }
     fields.forEach((field) => {
-      payload[field.name] = String(formData.get(field.name) || '').trim()
+      const value = String(formData.get(field.name) || '').trim()
+      if (field.name === 'referralCode' && !value) return
+      payload[field.name] = value
     })
 
     try {
@@ -152,7 +155,7 @@ export default function WebsiteForm({
                 {field.options?.map((option) => <option key={option}>{option}</option>)}
               </select>
             ) : (
-              <input name={field.name} required={field.required} type={field.type || 'text'} className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
+              <input name={field.name} required={field.required} defaultValue={field.name === 'referralCode' ? sourceParams().referralCode : undefined} type={field.type || 'text'} className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
             )}
           </label>
         ))}

@@ -76,7 +76,83 @@ async function airtable(path: string, init?: RequestInit) {
     const detail = await response.text()
     throw new Error(`Airtable ${response.status}: ${detail.slice(0, 240)}`)
   }
-  return response.json() as Promise<{ records?: Array<{ id: string }> }>
+  return response.json() as Promise<{ id?: string; fields?: Record<string, any>; records?: Array<{ id: string; fields?: Record<string, any> }> }>
+}
+
+function codeFromName(name: string, fallback: string) {
+  const letters = name.toUpperCase().replace(/[^A-Z0-9 ]/g, '').split(/\s+/).filter(Boolean)
+  const prefix = (letters[0]?.slice(0, 3) || 'NEX') + (letters[1]?.slice(0, 2) || '')
+  const suffix = fallback.replace(/[^a-zA-Z0-9]/g, '').slice(-5).toUpperCase() || Math.random().toString(36).slice(2, 7).toUpperCase()
+  return `NEX-${prefix}-${suffix}`
+}
+
+async function findAmbassadorByIdentity(email: string, phoneNumber: string, referralCode: string) {
+  const checks = [
+    referralCode ? `{Referral Code}='${escapeFormula(referralCode)}'` : '',
+    email ? `{Email}='${escapeFormula(email)}'` : '',
+    phoneNumber ? `{Phone Number}='${escapeFormula(phoneNumber)}'` : '',
+  ].filter(Boolean)
+  if (!checks.length) return null
+  const query = `${encodeURIComponent('Ambassadors')}?maxRecords=1&filterByFormula=${encodeURIComponent(`OR(${checks.join(',')})`)}`
+  const existing = await airtable(query)
+  return existing.records?.[0] || null
+}
+
+async function createOrUpdateAmbassador(input: {
+  fullName: string
+  email: string
+  phoneNumber: string
+  location: string
+  institution: string
+  nyscState: string
+  telegramUsername: string
+  estimatedReach: number
+  externalSubmissionId: string
+}) {
+  const referralCode = codeFromName(input.fullName, input.externalSubmissionId)
+  const existing = await findAmbassadorByIdentity(input.email, input.phoneNumber, referralCode)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'
+  const referralLink = `${baseUrl}/career-accelerator?ref=${encodeURIComponent(existing?.fields?.['Referral Code'] || referralCode)}`
+  const fields: Record<string, string | number | boolean> = {
+    'Ambassador Name': input.fullName,
+    'Ambassador ID': existing?.fields?.['Ambassador ID'] || `AMB-${Date.now()}`,
+    Contact: input.phoneNumber || input.email,
+    'Referral Code': existing?.fields?.['Referral Code'] || referralCode,
+    Institution: input.institution,
+    'NYSC State': input.nyscState,
+    Location: input.location,
+    Email: input.email,
+    'Phone Number': input.phoneNumber,
+    'Telegram Username': input.telegramUsername,
+    'Start Date': new Date().toISOString().slice(0, 10),
+    'Ambassador Status': 'Active',
+    'Members Reached': input.estimatedReach || 0,
+    'Total Referral Leads': existing?.fields?.['Total Referral Leads'] || 0,
+    'Paid Referral Count': existing?.fields?.['Paid Referral Count'] || 0,
+    'Commission Rate Percent': 5,
+    'Total Commission Earned': existing?.fields?.['Total Commission Earned'] || 0,
+    'Commission Paid': existing?.fields?.['Commission Paid'] || 0,
+    'Commission Balance': existing?.fields?.['Commission Balance'] || 0,
+    'Ambassador Referral Link': referralLink,
+    'Discount Eligibility Status': existing?.fields?.['Discount Eligibility Status'] || 'Not Eligible',
+    'Ambassador Score': existing?.fields?.['Ambassador Score'] || 0,
+    'Ambassador Level': existing?.fields?.['Ambassador Level'] || 'Bronze Ambassador',
+    Notes: `Created or refreshed from website ambassador registration ${input.externalSubmissionId}.`,
+  }
+
+  if (existing) {
+    const updated = await airtable(`${encodeURIComponent('Ambassadors')}/${existing.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ fields }),
+    })
+    return { id: existing.id, fields: updated.fields || fields }
+  }
+
+  const created = await airtable(encodeURIComponent('Ambassadors'), {
+    method: 'POST',
+    body: JSON.stringify({ fields }),
+  })
+  return { id: created.id || '', fields: created.fields || fields }
 }
 
 export async function POST(request: NextRequest) {
@@ -141,14 +217,46 @@ export async function POST(request: NextRequest) {
     for (const [field, value] of values) if (value) fields[field] = value
 
     const reach = Number(body.estimatedReach)
-    if (Number.isFinite(reach) && reach >= 0) fields['Estimated Reach'] = Math.round(reach)
+    const estimatedReach = Number.isFinite(reach) && reach >= 0 ? Math.round(reach) : 0
+    if (estimatedReach) fields['Estimated Reach'] = estimatedReach
+
+    const ambassador = await createOrUpdateAmbassador({
+      fullName,
+      email,
+      phoneNumber,
+      location: text(body.location, 160),
+      institution: text(body.institutionOrOrganization, 200),
+      nyscState: text(body.nyscState, 120),
+      telegramUsername: text(body.telegramUsername, 100),
+      estimatedReach,
+      externalSubmissionId,
+    })
+
+    const ambassadorId = ambassador.id
+    if (ambassadorId) {
+      ;(fields as Record<string, any>)['Created Ambassador'] = [ambassadorId]
+      fields['Registration Status'] = 'Approved'
+      fields['Processing Status'] = 'Processed'
+    }
 
     await airtable(encodeURIComponent(AIRTABLE_TABLE), {
       method: 'POST',
       body: JSON.stringify({ fields }),
     })
 
-    return NextResponse.json({ ok: true, registrationReference: externalSubmissionId }, { status: 201 })
+    const referralCode = String(ambassador.fields?.['Referral Code'] || '')
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'
+    return NextResponse.json({
+      ok: true,
+      registrationReference: externalSubmissionId,
+      ambassadorId: ambassador.fields?.['Ambassador ID'],
+      referralCode,
+      referralLinks: {
+        ngtp: `${baseUrl}/career-accelerator?ref=${encodeURIComponent(referralCode)}`,
+        batp: `${baseUrl}/business-ai-transformation?ref=${encodeURIComponent(referralCode)}`,
+        community: `${baseUrl}/community?ref=${encodeURIComponent(referralCode)}`,
+      },
+    }, { status: 201 })
   } catch (error) {
     console.error('Ambassador registration failed', error instanceof Error ? error.message : error)
     return NextResponse.json({ error: 'We could not submit your application. Please try again.' }, { status: 500 })
