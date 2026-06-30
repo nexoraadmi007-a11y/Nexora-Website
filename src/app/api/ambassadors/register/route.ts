@@ -254,7 +254,6 @@ export async function POST(request: NextRequest) {
       referralLinks: {
         ngtp: `${baseUrl}/career-accelerator?ref=${encodeURIComponent(referralCode)}`,
         batp: `${baseUrl}/business-ai-transformation?ref=${encodeURIComponent(referralCode)}`,
-        community: `${baseUrl}/community?ref=${encodeURIComponent(referralCode)}`,
       },
     }, { status: 201 })
   } catch (error) {

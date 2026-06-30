@@ -6,7 +6,7 @@ import { CheckCircle2, Network, ShieldCheck, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error'
-type ReferralLinks = { ngtp?: string; batp?: string; community?: string }
+type ReferralLinks = { ngtp?: string; batp?: string }
 
 function submissionId() {
   return globalThis.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -105,7 +105,6 @@ export default function AmbassadorApplicationForm() {
                 {referralCode ? <ReferralValue label="Referral code" value={referralCode} onCopy={copy} /> : null}
                 {referralLinks.ngtp ? <ReferralValue label="NGTP referral link" value={referralLinks.ngtp} onCopy={copy} /> : null}
                 {referralLinks.batp ? <ReferralValue label="BATP referral link" value={referralLinks.batp} onCopy={copy} /> : null}
-                {referralLinks.community ? <ReferralValue label="Community referral link" value={referralLinks.community} onCopy={copy} /> : null}
               </div>
               {message ? <p className="mt-4 text-sm text-[#7fd3a6]">{message}</p> : null}
               <button type="button" onClick={reset} className="button-secondary mt-9 min-h-12 w-fit rounded-lg px-6 text-sm font-semibold">Submit another application</button>
