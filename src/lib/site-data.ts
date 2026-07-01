@@ -59,21 +59,21 @@ export type Cohort = {
 
 const fallbackPrograms: Program[] = [
   {
-    name: 'NEXORA Graduate Training Program',
+    name: 'Career Accelerator',
     code: 'NGTP',
     family: 'Career',
-    audience: 'NYSC members, graduates, final-year students, and young professionals.',
+    audience: 'NYSC members, 500-level students, graduates, and young professionals.',
     audienceType: 'Career',
     slug: 'career-accelerator',
     duration: '4 weeks',
     price: 25000,
-    description: 'A practical AI career pathway for NYSC members, graduates, final-year students, and young professionals.',
-    curriculum: 'AI foundations and workplace productivity\nCareer assets and professional communication\nData, reporting, content, and automation workflows\nPortfolio, monetization, and career action planning',
-    cta: 'Apply for NGTP',
+    description: 'A practical 4-week track for people who want AI skills, stronger career assets, job readiness, and freelance-ready proof of work.',
+    curriculum: 'AI productivity, ChatGPT, and workplace execution\nExcel, Power BI, and practical business intelligence\nContent creation, portfolio building, CV, and LinkedIn\nJob readiness, freelancing, and career action planning',
+    cta: 'Apply for Career Accelerator',
     paymentLink: '',
   },
   {
-    name: 'Business AI Transformation Program',
+    name: 'Business Transformation Accelerator',
     code: 'BATP',
     family: 'Business',
     audience: 'Business owners, SMEs, startups, corporate teams, and entrepreneurs.',
@@ -81,9 +81,23 @@ const fallbackPrograms: Program[] = [
     slug: 'business-ai-transformation',
     duration: '4 weeks',
     price: 25000,
-    description: 'A practical AI transformation program for business owners and teams who want better marketing, operations, customer follow-up, and productivity.',
-    curriculum: 'AI readiness and workflow diagnosis\nMarketing, sales, and customer communication systems\nOperations, reporting, automation, and team productivity\nBusiness transformation roadmap and implementation plan',
-    cta: 'Apply for BATP',
+    description: 'A practical 4-week track for SMEs, founders, entrepreneurs, and business owners who want AI-powered marketing, sales, operations, and customer systems.',
+    curriculum: 'AI for marketing, brand identity, and content automation\nAI customer support, sales automation, and CRM workflows\nWebsite creation, proposal generation, and business documents\nOperations, reporting, productivity, and implementation roadmap',
+    cta: 'Apply for Business Accelerator',
+    paymentLink: '',
+  },
+  {
+    name: 'Complete AI Accelerator',
+    code: 'COMPLETE',
+    family: 'Complete',
+    audience: 'Freelancers, consultants, agency owners, startup founders, and professionals building side businesses.',
+    audienceType: 'Mixed',
+    slug: 'complete-ai-accelerator',
+    duration: '8 weeks',
+    price: 50000,
+    description: 'The complete NEXORA track for people who want both career acceleration and business transformation capability.',
+    curriculum: 'Career Accelerator foundations and portfolio assets\nBusiness Transformation systems for marketing, CRM, content, and operations\nFreelance, consulting, and agency positioning\nIntegrated AI implementation plan and proof-of-work portfolio',
+    cta: 'Apply for Complete Accelerator',
     paymentLink: '',
   },
 ]
@@ -122,7 +136,7 @@ export async function getPrograms(): Promise<Program[]> {
   }
 }
 
-export async function getProgramByCode(code: 'NGTP' | 'BATP'): Promise<Program> {
+export async function getProgramByCode(code: 'NGTP' | 'BATP' | 'COMPLETE'): Promise<Program> {
   const programs = await getPrograms()
   return programs.find((program) => program.code === code) || fallbackPrograms.find((program) => program.code === code) || fallbackPrograms[0]
 }
@@ -142,6 +156,10 @@ export async function getCareerAccelerator(): Promise<Program> {
 
 export async function getBusinessTransformation(): Promise<Program> {
   return getProgramByCode('BATP')
+}
+
+export async function getCompleteAccelerator(): Promise<Program> {
+  return getProgramByCode('COMPLETE')
 }
 
 export async function getWebinars() {

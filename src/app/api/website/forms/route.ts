@@ -120,10 +120,12 @@ export async function POST(request: NextRequest) {
     const interestByKind: Record<string, string> = {
       accelerator: 'NGTP',
       batp: 'BATP',
+      complete: 'Complete AI Accelerator',
       community: 'Community Membership',
       contact: text(body.inquiryType, 120) || 'General Inquiry',
     }
-    const programCode = kind === 'batp' || text(body.programCode, 20).toUpperCase() === 'BATP' ? 'BATP' : kind === 'accelerator' || text(body.programCode, 20).toUpperCase() === 'NGTP' ? 'NGTP' : ''
+    const requestedCode = text(body.programCode, 20).toUpperCase()
+    const programCode = kind === 'complete' || requestedCode === 'COMPLETE' ? 'COMPLETE' : kind === 'batp' || requestedCode === 'BATP' ? 'BATP' : kind === 'accelerator' || requestedCode === 'NGTP' ? 'NGTP' : ''
     await captureLead({
       ...body,
       platform: 'Website',
@@ -133,10 +135,13 @@ export async function POST(request: NextRequest) {
         kind === 'accelerator' ? 'NGTP' : '',
         kind === 'batp' ? 'BATP' : '',
         kind === 'batp' ? 'Business AI Transformation' : '',
+        kind === 'complete' ? 'Complete AI Accelerator' : '',
+        kind === 'complete' ? 'NGTP' : '',
+        kind === 'complete' ? 'BATP' : '',
         kind === 'community' ? 'Community' : '',
         kind === 'contact' ? interestByKind[kind] : '',
       ].filter(Boolean),
-      primaryGoal: kind === 'accelerator' ? 'Join the NEXORA Graduate Training Program' : kind === 'batp' ? text(body.learningGoals || 'Join the Business AI Transformation Program') : text(body.message || body.communityInterest),
+      primaryGoal: kind === 'accelerator' ? 'Join the NEXORA Career Accelerator' : kind === 'batp' ? text(body.learningGoals || 'Join the Business Transformation Accelerator') : kind === 'complete' ? text(body.learningGoals || 'Join the Complete AI Accelerator') : text(body.message || body.communityInterest),
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),
       notes: [
         `Website form: ${kind}`,

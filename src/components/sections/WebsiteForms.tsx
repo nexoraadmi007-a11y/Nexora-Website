@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 
-type FormKind = 'webinar' | 'accelerator' | 'batp' | 'community' | 'contact' | 'corporate'
+type FormKind = 'webinar' | 'accelerator' | 'batp' | 'complete' | 'community' | 'contact' | 'corporate'
 
 type Field = {
   name: string
@@ -48,6 +48,16 @@ const fieldsByKind: Record<FormKind, Field[]> = {
     { name: 'linkedIn', label: 'LinkedIn' },
     { name: 'businessChallenges', label: 'Business challenges', type: 'textarea', required: true },
     { name: 'learningGoals', label: 'Learning goals', type: 'textarea', required: true },
+  ],
+  complete: [
+    ...commonFields,
+    { name: 'programCode', label: 'Program', type: 'select', required: true, options: ['COMPLETE'] },
+    { name: 'currentPath', label: 'Best describes you', type: 'select', options: ['Freelancer', 'Consultant', 'Agency owner', 'Startup founder', 'Professional building a side business', 'Business owner', 'Other'] },
+    { name: 'businessName', label: 'Business or project name' },
+    { name: 'industry', label: 'Industry' },
+    { name: 'primaryGoal', label: 'Career goal', type: 'textarea', required: true },
+    { name: 'businessChallenges', label: 'Business or monetization challenge', type: 'textarea', required: true },
+    { name: 'learningGoals', label: 'What do you want to build with AI?', type: 'textarea', required: true },
   ],
   community: [
     ...commonFields,

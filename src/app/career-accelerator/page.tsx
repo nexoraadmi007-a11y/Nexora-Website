@@ -6,10 +6,10 @@ import { getCareerAccelerator, getCohorts } from '@/lib/site-data'
 
 export const metadata: Metadata = {
   title: 'Nexora AI Career Accelerator | 4 weeks, NGN 25,000',
-  description: 'Enroll in the Nexora AI Career Accelerator: 4 weeks, 8 live classes, practical AI career outcomes, and a professional portfolio.',
+  description: 'Enroll in the Nexora Career Accelerator for NYSC members, 500-level students, graduates, and young professionals building practical AI career assets.',
 }
 
-const outcomes = ['AI prompt library', 'Professional CV', 'LinkedIn profile', 'Business report', 'Excel dashboard', 'PowerPoint presentation', 'AI-edited video', 'AI service offer', 'Career action plan', 'Certificate']
+const outcomes = ['AI productivity workflows', 'Excel dashboard', 'Power BI report', 'ChatGPT prompt library', 'Content creation assets', 'Professional CV', 'LinkedIn profile', 'Portfolio project', 'Freelance offer', 'Job readiness plan']
 
 export default async function CareerAcceleratorPage() {
   const [program, cohorts] = await Promise.all([getCareerAccelerator(), getCohorts()])
@@ -22,7 +22,7 @@ export default async function CareerAcceleratorPage() {
         <div className="grid-field absolute inset-0 opacity-55" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_.9fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">AI Career Accelerator</span>
+            <span className="eyebrow mb-7">Track 1 / Career Accelerator</span>
             <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">{program.name}</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{program.description}</p>
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
@@ -31,13 +31,13 @@ export default async function CareerAcceleratorPage() {
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Price</p><p className="mt-1 text-xl font-bold text-white">NGN {program.price.toLocaleString()}</p></div>
             </div>
           </div>
-          <WebsiteForm kind="accelerator" title="Apply for NGTP" cta={`Apply - NGN ${program.price.toLocaleString()}`} payAfterSubmit context={{ amount: program.price, programName: program.name, programCode: 'NGTP', cohort: cohort?.name || 'Next Cohort' }} />
+          <WebsiteForm kind="accelerator" title="Apply for Career Accelerator" cta={`Apply - NGN ${program.price.toLocaleString()}`} payAfterSubmit context={{ amount: program.price, programName: program.name, programCode: 'NGTP', cohort: cohort?.name || 'Next Cohort' }} />
         </div>
       </section>
 
       <section className="section border-t border-white/10">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-4xl font-semibold text-white md:text-5xl">Graduate with practical career assets.</h2>
+          <h2 className="text-4xl font-semibold text-white md:text-5xl">Built for NYSC members, 500-level students, graduates, and young professionals.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {outcomes.map((outcome) => (
               <PremiumCard key={outcome} className="p-5 md:p-5">

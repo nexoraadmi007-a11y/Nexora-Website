@@ -82,13 +82,13 @@ export default function AmbassadorApplicationForm() {
             Represent the network. <span className="text-[#8fb7f3]">Grow verified impact.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-8 text-steel md:text-lg">
-            Connect ambitious professionals to NEXORA programmes and help strengthen Africa&apos;s operator community.
+            Help students, graduates, professionals, and business owners access practical AI training while building verified campus and community influence.
           </p>
 
           <div className="mt-10 grid gap-5 border-y border-white/10 py-7">
-            <Benefit icon={Users} title="Referral benefit" copy="Receive 35% off your first training after three verified, payment-confirmed referrals." />
-            <Benefit icon={Network} title="Community contribution" copy="Introduce NEXORA to professional, university, NYSC, and industry networks." />
-            <Benefit icon={ShieldCheck} title="Verified programme" copy="Applications are reviewed before ambassador activation and referral-code assignment." />
+            <Benefit icon={Users} title="Performance reward" copy="Track referred applicants, payment-confirmed enrollments, commission, and monthly performance." />
+            <Benefit icon={Network} title="Campus and community reach" copy="Introduce NEXORA to students, NYSC members, young professionals, business owners, and founders." />
+            <Benefit icon={ShieldCheck} title="Reviewed programme" copy="Applications are screened before interview, activation, and referral-code assignment." />
           </div>
         </div>
 
@@ -117,25 +117,65 @@ export default function AmbassadorApplicationForm() {
                 <p className="mt-3 text-sm leading-7 text-steel">Required fields are marked with an asterisk.</p>
               </div>
 
-              <FormSection title="Personal profile">
+              <FormSection title="Personal information">
                 <Field label="Full name" name="fullName" autoComplete="name" required wide />
                 <Field label="Email address" name="email" type="email" autoComplete="email" />
                 <Field label="Phone number" name="phoneNumber" type="tel" autoComplete="tel" required />
-                <Field label="Location" name="location" autoComplete="address-level2" />
-                <SelectField label="Current status" name="currentStatus" options={['Student', 'NYSC', 'Graduate', 'Professional', 'Entrepreneur']} />
-                <Field label="Institution or organization" name="institutionOrOrganization" />
-                <Field label="NYSC state" name="nyscState" />
-                <Field label="Industry" name="industry" />
+                <Field label="WhatsApp number" name="whatsAppNumber" type="tel" />
+                <SelectField label="Gender" name="gender" options={['Female', 'Male', 'Prefer not to say']} />
+                <Field label="Date of birth" name="dateOfBirth" type="date" />
+                <Field label="State" name="state" />
+                <Field label="LGA" name="lga" />
+                <Field label="Current location" name="location" autoComplete="address-level2" />
               </FormSection>
 
-              <FormSection title="Ambassador potential">
-                <TextArea label="Why do you want to become a NEXORA ambassador?" name="whyAmbassador" required wide />
-                <TextArea label="Which communities or networks can you reach?" name="communitiesOrNetworks" required wide />
+              <FormSection title="Education">
+                <SelectField label="Institution type" name="institutionType" options={['University', 'Polytechnic', 'College', 'Other Institution']} />
+                <Field label="Institution name" name="institutionOrOrganization" />
+                <Field label="Course of study" name="courseOfStudy" />
+                <SelectField label="Level" name="level" options={['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', 'Graduate', 'Other']} />
+                <SelectField label="NYSC status" name="currentStatus" options={['Currently serving', 'Completed', 'Not started', 'Not applicable']} />
+                <Field label="NYSC batch" name="nyscBatch" />
+                <Field label="Passing out date" name="passingOutDate" type="date" />
+                <Field label="NYSC state" name="nyscState" />
+              </FormSection>
+
+              <FormSection title="Availability">
+                <SelectField label="Laptop" name="hasLaptop" options={['Yes', 'No']} />
+                <SelectField label="Internet access" name="hasInternetAccess" options={['Yes', 'No', 'Sometimes']} />
+                <Field label="Weekly hours available" name="weeklyHoursAvailable" type="number" min="0" />
+                <SelectField label="Can attend weekly meetings?" name="canAttendWeeklyMeetings" options={['Yes', 'No', 'Depends on schedule']} />
+              </FormSection>
+
+              <FormSection title="Social media reach">
+                <Field label="Facebook profile" name="facebookProfile" type="url" />
+                <Field label="TikTok profile" name="tiktokProfile" type="url" />
+                <Field label="Instagram profile" name="instagramProfile" />
+                <Field label="LinkedIn profile" name="linkedInProfile" type="url" />
+                <Field label="Facebook followers" name="facebookFollowers" type="number" min="0" />
+                <Field label="TikTok followers" name="tiktokFollowers" type="number" min="0" />
+                <Field label="Instagram followers" name="instagramFollowers" type="number" min="0" />
+                <Field label="LinkedIn connections" name="linkedInConnections" type="number" min="0" />
+              </FormSection>
+
+              <FormSection title="Leadership experience">
+                <TextArea label="Student union, department, church, association, community, business, or other leadership roles" name="leadershipExperience" wide />
+                <TextArea label="Promotion, sales, or community-building experience" name="promotionExperience" wide />
                 <Field label="Estimated people you can reach" name="estimatedReach" type="number" min="0" />
                 <SelectField label="Preferred communication channel" name="preferredCommunicationChannel" options={['WhatsApp', 'Telegram', 'Email', 'Phone']} />
-                <TextArea label="Promotion, leadership, or community experience" name="promotionExperience" wide />
-                <Field label="WhatsApp number" name="whatsAppNumber" type="tel" />
                 <Field label="Telegram username" name="telegramUsername" placeholder="@username" />
+              </FormSection>
+
+              <FormSection title="Short answers">
+                <TextArea label="Why do you want to become a NEXORA ambassador?" name="whyAmbassador" required wide />
+                <TextArea label="Why should we choose you?" name="whyChooseYou" required wide />
+                <TextArea label="Have you sold or promoted anything before?" name="salesExperience" wide />
+                <TextArea label="Describe your greatest achievement." name="greatestAchievement" wide />
+                <TextArea label="Which communities or networks can you reach?" name="communitiesOrNetworks" required wide />
+              </FormSection>
+
+              <FormSection title="Video assessment">
+                <Field label="60-second video link" name="videoAssessmentLink" type="url" wide placeholder="Upload your MP4/MOV to Google Drive, Dropbox, or another secure link and paste it here." />
               </FormSection>
 
               <fieldset className="border-0 border-t border-white/10 px-0 pb-0 pt-7">

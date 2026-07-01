@@ -5,8 +5,8 @@ import PremiumCard from '@/components/ui/PremiumCard'
 import { getBusinessTransformation } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'Business AI Transformation Program | Nexora Institute',
-  description: 'BATP helps business owners, SMEs, startups, entrepreneurs, and corporate teams use AI for marketing, operations, customer follow-up, and productivity.',
+  title: 'Business Transformation Accelerator | Nexora Institute',
+  description: 'The NEXORA Business Transformation Accelerator helps SMEs, founders, business owners, and entrepreneurs use AI for marketing, sales, operations, CRM, and productivity.',
 }
 
 const outcomes: Array<[string, string, LucideIcon]> = [
@@ -32,7 +32,7 @@ export default async function BusinessAITransformationPage() {
         <div className="grid-field absolute inset-0 opacity-55" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_.9fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">Business Path / BATP</span>
+            <span className="eyebrow mb-7">Track 2 / Business Transformation Accelerator</span>
             <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">{program.name}</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{program.description}</p>
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
@@ -41,7 +41,7 @@ export default async function BusinessAITransformationPage() {
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Investment</p><p className="mt-1 text-xl font-bold text-white">NGN {program.price.toLocaleString()}</p></div>
             </div>
           </div>
-          <WebsiteForm kind="batp" title="Apply for BATP" cta={`Apply - NGN ${program.price.toLocaleString()}`} payAfterSubmit context={{ amount: program.price, programName: program.name, programCode: 'BATP', cohort: 'Next BATP Cohort' }} />
+          <WebsiteForm kind="batp" title="Apply for Business Accelerator" cta={`Apply - NGN ${program.price.toLocaleString()}`} payAfterSubmit context={{ amount: program.price, programName: program.name, programCode: 'BATP', cohort: 'Next Business Cohort' }} />
         </div>
       </section>
 
@@ -62,7 +62,7 @@ export default async function BusinessAITransformationPage() {
 
       <section className="section border-t border-white/10 bg-white/[0.015]">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-4xl font-semibold text-white md:text-5xl">BATP curriculum.</h2>
+          <h2 className="text-4xl font-semibold text-white md:text-5xl">Business Transformation curriculum.</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-4">
             {weeks.map((week, index) => (
               <PremiumCard key={week} className="min-h-[220px]">

@@ -10,8 +10,7 @@ import { cn } from '@/lib/utils'
 
 const links = [
   ['About', '/about'],
-  ['NGTP', '/career-accelerator'],
-  ['BATP', '/business-ai-transformation'],
+  ['Tracks', '/#tracks'],
   ['Companies', '/corporate-training'],
   ['Ambassadors', '/ambassadors/apply'],
   ['Contact', '/contact'],

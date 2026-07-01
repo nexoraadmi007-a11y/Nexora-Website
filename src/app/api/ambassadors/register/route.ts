@@ -12,17 +12,43 @@ type RegistrationPayload = {
   email?: unknown
   phoneNumber?: unknown
   whatsAppNumber?: unknown
+  gender?: unknown
+  dateOfBirth?: unknown
+  state?: unknown
+  lga?: unknown
   location?: unknown
   currentStatus?: unknown
+  institutionType?: unknown
   institutionOrOrganization?: unknown
+  courseOfStudy?: unknown
+  level?: unknown
+  nyscBatch?: unknown
+  passingOutDate?: unknown
   nyscState?: unknown
   industry?: unknown
+  hasLaptop?: unknown
+  hasInternetAccess?: unknown
+  weeklyHoursAvailable?: unknown
+  canAttendWeeklyMeetings?: unknown
+  facebookProfile?: unknown
+  tiktokProfile?: unknown
+  instagramProfile?: unknown
+  linkedInProfile?: unknown
+  facebookFollowers?: unknown
+  tiktokFollowers?: unknown
+  instagramFollowers?: unknown
+  linkedInConnections?: unknown
+  leadershipExperience?: unknown
   whyAmbassador?: unknown
+  whyChooseYou?: unknown
+  salesExperience?: unknown
+  greatestAchievement?: unknown
   communitiesOrNetworks?: unknown
   estimatedReach?: unknown
   promotionExperience?: unknown
   preferredCommunicationChannel?: unknown
   telegramUsername?: unknown
+  videoAssessmentLink?: unknown
   communicationsConsent?: unknown
   ambassadorTermsAccepted?: unknown
   externalSubmissionId?: unknown
@@ -38,6 +64,11 @@ function text(value: unknown, max = 5000) {
 
 function phone(value: unknown) {
   return text(value, 40).replace(/[^0-9+]/g, '')
+}
+
+function integer(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0
 }
 
 function escapeFormula(value: string) {
@@ -126,6 +157,14 @@ async function createOrUpdateAmbassador(input: {
     'Telegram Username': input.telegramUsername,
     'Start Date': new Date().toISOString().slice(0, 10),
     'Ambassador Status': 'Active',
+    'Application Status': existing?.fields?.['Application Status'] || 'New',
+    'Interview Status': existing?.fields?.['Interview Status'] || 'Not Scheduled',
+    'Employment Status': existing?.fields?.['Employment Status'] || 'Candidate',
+    'Ambassador Tier': existing?.fields?.['Ambassador Tier'] || 'Candidate',
+    'Monthly Performance': existing?.fields?.['Monthly Performance'] || 0,
+    'Current Referrals': existing?.fields?.['Current Referrals'] || existing?.fields?.['Total Referral Leads'] || 0,
+    'Monthly Commission': existing?.fields?.['Monthly Commission'] || 0,
+    Bonus: existing?.fields?.Bonus || 0,
     'Members Reached': input.estimatedReach || 0,
     'Total Referral Leads': existing?.fields?.['Total Referral Leads'] || 0,
     'Paid Referral Count': existing?.fields?.['Paid Referral Count'] || 0,
@@ -137,6 +176,8 @@ async function createOrUpdateAmbassador(input: {
     'Discount Eligibility Status': existing?.fields?.['Discount Eligibility Status'] || 'Not Eligible',
     'Ambassador Score': existing?.fields?.['Ambassador Score'] || 0,
     'Ambassador Level': existing?.fields?.['Ambassador Level'] || 'Bronze Ambassador',
+    'Referral Score': existing?.fields?.['Referral Score'] || 0,
+    'Overall Score': existing?.fields?.['Overall Score'] || 0,
     Notes: `Created or refreshed from website ambassador registration ${input.externalSubmissionId}.`,
   }
 
@@ -205,20 +246,48 @@ export async function POST(request: NextRequest) {
       ['Email', email],
       ['Phone Number', phoneNumber],
       ['WhatsApp Number', phone(body.whatsAppNumber)],
+      ['Gender', text(body.gender, 80)],
+      ['Date of Birth', text(body.dateOfBirth, 40)],
+      ['State', text(body.state, 120)],
+      ['LGA', text(body.lga, 120)],
       ['Location', text(body.location, 160)],
       ['Current Status', text(body.currentStatus, 80)],
+      ['Institution Type', text(body.institutionType, 120)],
       ['Institution or Organization', text(body.institutionOrOrganization, 200)],
+      ['Course of Study', text(body.courseOfStudy, 180)],
+      ['Level', text(body.level, 80)],
+      ['NYSC Batch', text(body.nyscBatch, 80)],
+      ['Passing Out Date', text(body.passingOutDate, 40)],
       ['NYSC State', text(body.nyscState, 120)],
       ['Industry', text(body.industry, 120)],
+      ['Laptop', text(body.hasLaptop, 40)],
+      ['Internet Access', text(body.hasInternetAccess, 40)],
+      ['Can Attend Weekly Meetings?', text(body.canAttendWeeklyMeetings, 80)],
+      ['Facebook Profile', text(body.facebookProfile, 500)],
+      ['TikTok Profile', text(body.tiktokProfile, 500)],
+      ['Instagram Profile', text(body.instagramProfile, 500)],
+      ['LinkedIn Profile', text(body.linkedInProfile, 500)],
+      ['Leadership Experience', text(body.leadershipExperience)],
       ['Promotion Experience', text(body.promotionExperience)],
+      ['Why Should We Choose You?', text(body.whyChooseYou)],
+      ['Sales Experience', text(body.salesExperience)],
+      ['Greatest Achievement', text(body.greatestAchievement)],
+      ['Video Assessment Link', text(body.videoAssessmentLink, 500)],
       ['Preferred Communication Channel', text(body.preferredCommunicationChannel, 30)],
       ['Telegram Username', text(body.telegramUsername, 100)],
     ]
     for (const [field, value] of values) if (value) fields[field] = value
 
-    const reach = Number(body.estimatedReach)
-    const estimatedReach = Number.isFinite(reach) && reach >= 0 ? Math.round(reach) : 0
+    const estimatedReach = integer(body.estimatedReach)
     if (estimatedReach) fields['Estimated Reach'] = estimatedReach
+    const numericValues: Array<[string, number]> = [
+      ['Weekly Hours Available', integer(body.weeklyHoursAvailable)],
+      ['Facebook Followers', integer(body.facebookFollowers)],
+      ['TikTok Followers', integer(body.tiktokFollowers)],
+      ['Instagram Followers', integer(body.instagramFollowers)],
+      ['LinkedIn Connections', integer(body.linkedInConnections)],
+    ]
+    for (const [field, value] of numericValues) if (value) fields[field] = value
 
     const ambassador = await createOrUpdateAmbassador({
       fullName,

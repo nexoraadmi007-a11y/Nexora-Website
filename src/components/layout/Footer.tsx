@@ -2,7 +2,7 @@ import Link from 'next/link'
 import BrandMark from '@/components/ui/BrandMark'
 
 const groups = {
-  Institute: [['Webinars', '/webinars'], ['NGTP Career Path', '/career-accelerator'], ['BATP Business Path', '/business-ai-transformation'], ['Corporate Training', '/corporate-training'], ['Community', '/community'], ['Resources', '/resources']],
+  Institute: [['Career Accelerator', '/career-accelerator'], ['Business Accelerator', '/business-ai-transformation'], ['Complete AI Accelerator', '/complete-ai-accelerator'], ['Corporate Training', '/corporate-training'], ['Webinars', '/webinars'], ['Resources', '/resources']],
   Company: [['About', '/about'], ['Ambassadors', '/ambassadors/apply'], ['Contact', '/contact'], ['Privacy', '/privacy']],
   Contact: [
     ['0701002613 | 08103200200', 'tel:0701002613'],

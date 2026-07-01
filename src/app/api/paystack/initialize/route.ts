@@ -38,16 +38,17 @@ function compact(fields: Record<string, unknown>) {
 
 async function createApplication(body: Record<string, unknown>, contactId: string, programId: string | undefined, programCode: string, reference: string) {
   const isBusiness = programCode === 'BATP'
+  const isComplete = programCode === 'COMPLETE'
   return createRecord('NGTP Applications', compact({
     'Application ID': `APP-${Date.now()}`,
     Applicant: [contactId],
     ...(programId ? { 'Selected Programme': [programId] } : {}),
     'Application Program': programCode,
-    'Application Track': isBusiness ? 'Business' : 'Career',
+    'Application Track': isComplete ? 'Complete' : isBusiness ? 'Business' : 'Career',
     'Application Stage': 'Submitted',
     'Submitted At': new Date().toISOString().slice(0, 10),
     'Career Vision': isBusiness ? text(body.growthGoals || body.learningGoals) : text(body.primaryGoal),
-    'Professional Challenges': isBusiness ? text(body.businessChallenges) : text(body.biggestChallenge),
+    'Professional Challenges': isBusiness || isComplete ? text(body.businessChallenges) : text(body.biggestChallenge),
     'Why NEXORA?': text(body.learningGoals || body.primaryGoal || body.message),
     'Problem-Solving Example': text(body.problemSolvingExample || body.currentTechnologyUsage || body.currentAIUsage),
     'Relevant Experience': text(body.relevantExperience || body.currentMarketing),
@@ -71,8 +72,9 @@ export async function POST(request: NextRequest) {
     const fullName = text(body.fullName, 160)
     const email = text(body.email, 254).toLowerCase()
     const amount = Number(body.amount || 25000)
-    const programCode = text(body.programCode, 20).toUpperCase() === 'BATP' ? 'BATP' : 'NGTP'
-    const programName = text(body.programName, 160) || (programCode === 'BATP' ? 'Business AI Transformation Program' : 'NEXORA Graduate Training Program')
+    const requestedCode = text(body.programCode, 20).toUpperCase()
+    const programCode = requestedCode === 'BATP' ? 'BATP' : requestedCode === 'COMPLETE' ? 'COMPLETE' : 'NGTP'
+    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'Business Transformation Accelerator' : 'Career Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120)
     const ambassador = await findAmbassador(referralCode)
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
       platform: 'Website',
       programCode,
       programApplied: programCode,
-      interestAreas: programCode === 'BATP' ? ['BATP', 'Business AI Transformation'] : ['NGTP', 'Career Accelerator'],
+      interestAreas: programCode === 'COMPLETE' ? ['Complete AI Accelerator', 'NGTP', 'BATP'] : programCode === 'BATP' ? ['BATP', 'Business AI Transformation'] : ['NGTP', 'Career Accelerator'],
       currentStatus: text(body.customerCategory, 80),
       primaryGoal: text(body.primaryGoal || body.learningGoals || body.growthGoals),
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Online payment is not configured yet. Nexora has received your ${programCode} application interest.` }, { status: 503 })
     }
 
-    const slug = programCode === 'BATP' ? 'business-ai-transformation' : 'career-accelerator'
+    const slug = programCode === 'COMPLETE' ? 'complete-ai-accelerator' : programCode === 'BATP' ? 'business-ai-transformation' : 'career-accelerator'
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {

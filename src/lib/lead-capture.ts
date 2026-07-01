@@ -77,6 +77,10 @@ function mapInterests(values: string[]) {
   for (const value of values) {
     if (value === 'NGTP' || value === 'Career Accelerator') mapped.add('NGTP')
     if (value === 'BATP' || value === 'Business AI Transformation' || value === 'Business AI Transformation Program') mapped.add('Partnerships')
+    if (value === 'COMPLETE' || value === 'Complete AI Accelerator') {
+      mapped.add('NGTP')
+      mapped.add('Partnerships')
+    }
     if (value === 'Corporate Training') mapped.add('Partnerships')
     if (value === 'Community') mapped.add('Community Membership')
     if (value === 'Webinars' || value === 'AI') mapped.add('NEXORA Intelligence Sessions')
@@ -86,6 +90,7 @@ function mapInterests(values: string[]) {
 
 function programCode(input: LeadInput, interests: string[]) {
   const explicit = text(input.programCode || input.program || input.programApplied, 40).toUpperCase()
+  if (explicit.includes('COMPLETE')) return 'COMPLETE'
   if (explicit.includes('BATP')) return 'BATP'
   if (explicit.includes('NGTP')) return 'NGTP'
   const haystack = [
@@ -98,6 +103,7 @@ function programCode(input: LeadInput, interests: string[]) {
     text(input.currentStatus),
     text(input.customerCategory),
   ].join(' ').toLowerCase()
+  if (haystack.includes('complete ai') || haystack.includes('complete accelerator')) return 'COMPLETE'
   if (haystack.includes('batp') || haystack.includes('business') || haystack.includes('sme') || haystack.includes('startup') || haystack.includes('entrepreneur') || haystack.includes('corporate')) return 'BATP'
   return 'NGTP'
 }
@@ -106,6 +112,7 @@ function qualificationScore(input: LeadInput, interests: string[]) {
   let score = 0
   if (text(input.fullName) && (text(input.email) || phone(input.phone) || phone(input.whatsAppNumber))) score += 10
   if (interests.includes('NGTP') || interests.includes('Career Accelerator')) score += 25
+  if (interests.includes('COMPLETE') || interests.includes('Complete AI Accelerator')) score += 30
   if (interests.includes('Community') || interests.includes('Webinars')) score += 10
   if (interests.includes('Corporate Training') || text(input.currentStatus) === 'Corporate Representative') score += 30
   if (text(input.referralCode)) score += 15
@@ -130,6 +137,7 @@ function businessScore(input: LeadInput, interests: string[]) {
   const category = text(input.currentStatus || input.customerCategory, 120)
   if (['Business owner', 'Business Owner', 'Entrepreneur', 'Corporate representative', 'Corporate Representative'].includes(category)) score += 25
   if (interests.some((interest) => ['BATP', 'Business AI Transformation', 'Business AI Transformation Program', 'Corporate Training'].includes(interest))) score += 25
+  if (interests.some((interest) => ['COMPLETE', 'Complete AI Accelerator'].includes(interest))) score += 30
   if (text(input.businessName || input.companyName || input.organization)) score += 15
   if (text(input.businessChallenges) || text(input.biggestChallenge)) score += 15
   if (text(input.learningGoals) || text(input.primaryGoal)) score += 10

@@ -59,7 +59,7 @@ async function findContact(email: string) {
 }
 
 async function findProgramme(programCode: string, programName: string) {
-  const code = programCode === 'BATP' ? 'BATP' : 'NGTP'
+  const code = programCode === 'COMPLETE' ? 'COMPLETE' : programCode === 'BATP' ? 'BATP' : 'NGTP'
   const byCode = await listRecords<Fields>('Programmes', {
     formula: `{Programme Code}='${escapeFormula(code)}'`,
     maxRecords: 1,
@@ -189,7 +189,8 @@ export async function POST(request: NextRequest) {
     const email = text(transaction.customer?.email || event.data?.customer?.email, 254).toLowerCase()
     const paidAt = text(transaction.paid_at || transaction.paidAt || new Date().toISOString(), 40).slice(0, 10)
     const metadata = transaction.metadata || {}
-    const programCode = text(metadata.program_code, 20).toUpperCase() === 'BATP' ? 'BATP' : 'NGTP'
+    const requestedCode = text(metadata.program_code, 20).toUpperCase()
+    const programCode = requestedCode === 'COMPLETE' ? 'COMPLETE' : requestedCode === 'BATP' ? 'BATP' : 'NGTP'
     const programName = text(metadata.program, 160)
     const receiptUrl = text(transaction.receipt_url || transaction.log?.receipt_url, 500)
 

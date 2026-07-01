@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BriefcaseBusiness, Building2, CalendarDays, GraduationCap, Users, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, Building2, CalendarDays, GraduationCap, Layers3, Users, type LucideIcon } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
 import { getPrograms, getResources, getTestimonials, getWebinars } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'Nexora Institute | AI programs for careers and businesses',
-  description: 'NEXORA Institute runs NGTP for career builders and BATP for business owners, SMEs, startups, and teams.',
+  title: 'Nexora Institute | AI Skills for Careers, Businesses, and Teams',
+  description: 'NEXORA Institute is one flagship AI institute with practical tracks for careers, businesses, and complete AI acceleration.',
 }
 
 function CTA({ href, children, variant = 'primary' }: { href: string; children: React.ReactNode; variant?: 'primary' | 'secondary' }) {
@@ -27,11 +27,13 @@ export default async function HomePage() {
   ])
   const careerProgram = programs.find((program) => program.code === 'NGTP') || programs[0]
   const businessProgram = programs.find((program) => program.code === 'BATP') || programs[1] || programs[0]
+  const completeProgram = programs.find((program) => program.code === 'COMPLETE') || programs[2] || programs[0]
+  const tracks = [careerProgram, businessProgram, completeProgram]
   const webinar = webinars[0]
   const audiences: Array<[string, string, LucideIcon]> = [
-    ['Career builders', 'NYSC members, graduates, final-year students, and young professionals can build career-ready AI workflows.', GraduationCap],
-    ['Business operators', 'Business owners, SMEs, startups, entrepreneurs, and teams can improve marketing, operations, and customer follow-up.', Building2],
-    ['Communities and partners', 'Education, community, and corporate partners can bring practical AI readiness to their audiences.', Users],
+    ['Career builders', 'NYSC members, 500-level students, graduates, and young professionals can build career-ready AI workflows.', GraduationCap],
+    ['Business operators', 'SMEs, founders, entrepreneurs, and business owners can improve marketing, sales, operations, and customer follow-up.', Building2],
+    ['Complete builders', 'Freelancers, consultants, agency owners, startup founders, and side-business professionals can combine both tracks.', Layers3],
   ]
 
   return (
@@ -41,17 +43,17 @@ export default async function HomePage() {
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
           <div>
             <span className="eyebrow mb-7">Nexora Institute</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[0.98] text-white md:text-7xl">One AI institute. <span className="gradient-text">Two practical pathways.</span></h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">NEXORA now supports career builders through NGTP and business operators through BATP, all powered by one shared operating system.</p>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[0.98] text-white md:text-7xl">AI skills that create careers, transform businesses, and build high-performing teams.</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">NEXORA Institute is one flagship AI institute with three practical learning tracks. Start by choosing who you are and what you want to build.</p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <CTA href="/career-accelerator">Explore Career Path</CTA>
-              <CTA href="/business-ai-transformation" variant="secondary">Explore Business Path</CTA>
+              <CTA href="#tracks">Explore Tracks</CTA>
+              <CTA href="/ambassadors/apply" variant="secondary">Become an Ambassador</CTA>
             </div>
           </div>
           <div className="grid gap-4">
-            {[careerProgram, businessProgram].map((program) => (
+            {tracks.map((program) => (
               <div key={program.code} className="glass rounded-[28px] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">{program.family} Path</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">{program.family} Track</p>
                 <h2 className="mt-4 text-2xl font-semibold text-white">{program.name}</h2>
                 <p className="mt-4 text-sm leading-7 text-steel">{program.description}</p>
                 <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold text-frost">
@@ -67,8 +69,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section border-y border-white/10 bg-white/[0.015]">
+      <section id="tracks" className="section border-y border-white/10 bg-white/[0.015]">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
+          <div className="mb-10 max-w-3xl">
+            <span className="eyebrow mb-5">Three Learning Tracks</span>
+            <h2 className="text-4xl font-semibold text-white md:text-5xl">Select the track that matches your current ambition.</h2>
+          </div>
           <div className="grid gap-5 md:grid-cols-3">
             {audiences.map(([title, copy, Icon]) => (
               <PremiumCard key={String(title)} className="min-h-[260px]">
@@ -95,7 +101,7 @@ export default async function HomePage() {
             <p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-steel">Business AI Transformation</p>
             <h2 className="mt-4 text-3xl font-semibold text-white">Turn AI into a business operating advantage.</h2>
             <p className="mt-4 text-sm leading-7 text-steel">For business owners and teams that want better marketing, customer follow-up, reporting, and execution.</p>
-            <div className="mt-8"><CTA href="/business-ai-transformation" variant="secondary">Apply for BATP</CTA></div>
+            <div className="mt-8"><CTA href="/business-ai-transformation" variant="secondary">Apply for Business Track</CTA></div>
           </PremiumCard>
         </div>
       </section>
