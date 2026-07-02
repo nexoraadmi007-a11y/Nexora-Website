@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, GraduationCap, Layers3, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, CheckCircle2, GraduationCap, type LucideIcon } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
 import { getPrograms } from '@/lib/site-data'
 
 export const metadata: Metadata = {
   title: 'Programs | NEXORA Institute',
-  description: 'Choose a NEXORA Institute AI training program for career growth, business transformation, or complete AI acceleration.',
+  description: 'Choose a NEXORA Institute AI training program for career growth or business transformation.',
 }
 
 const fallbackCards: Array<{
@@ -39,16 +39,6 @@ const fallbackCards: Array<{
     focus: ['AI marketing', 'AI customer support', 'Website and brand assets', 'Sales automation, CRM, and operations'],
     icon: BriefcaseBusiness,
   },
-  {
-    code: 'COMPLETE',
-    name: 'Complete AI Accelerator',
-    slug: 'complete-ai-accelerator',
-    price: 50000,
-    duration: '8 weeks',
-    target: ['Freelancers', 'Consultants', 'Agency Owners', 'Professionals building side businesses'],
-    focus: ['Career Accelerator', 'Business Transformation Accelerator', 'Integrated portfolio', 'AI implementation plan'],
-    icon: Layers3,
-  },
 ]
 
 export default async function ProgramsPage() {
@@ -74,7 +64,7 @@ export default async function ProgramsPage() {
       </section>
 
       <section className="border-t border-white/10 px-5 py-16 md:px-8 md:py-20">
-        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
           {cards.map((program) => {
             const Icon = program.icon
             return (

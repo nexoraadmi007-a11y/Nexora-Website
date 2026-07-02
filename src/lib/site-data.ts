@@ -86,20 +86,6 @@ const fallbackPrograms: Program[] = [
     cta: 'Apply for Business Accelerator',
     paymentLink: '',
   },
-  {
-    name: 'Complete AI Accelerator',
-    code: 'COMPLETE',
-    family: 'Complete',
-    audience: 'Freelancers, consultants, agency owners, startup founders, and professionals building side businesses.',
-    audienceType: 'Mixed',
-    slug: 'complete-ai-accelerator',
-    duration: '8 weeks',
-    price: 50000,
-    description: 'The complete NEXORA track for people who want both career acceleration and business transformation capability.',
-    curriculum: 'Career Accelerator foundations and portfolio assets\nBusiness Transformation systems for marketing, CRM, content, and operations\nFreelance, consulting, and agency positioning\nIntegrated AI implementation plan and proof-of-work portfolio',
-    cta: 'Apply for Complete Accelerator',
-    paymentLink: '',
-  },
 ]
 
 function programFromFields(fields: Record<string, any>): Program {
@@ -114,6 +100,11 @@ function programFromFields(fields: Record<string, any>): Program {
       : code === 'COMPLETE'
         ? 'Complete AI Accelerator'
         : fields['Website Program Name'] || fields['Programme Name'] || fallback.name
+  const publicDescription = code === 'NGTP'
+    ? fallbackPrograms[0].description
+    : code === 'BATP'
+      ? fallbackPrograms[1].description
+      : fields['Website Description'] || fields.Description || fallback.description
   return {
     name: publicName,
     code: code || fallback.code,
@@ -123,7 +114,7 @@ function programFromFields(fields: Record<string, any>): Program {
     slug: fields['Landing Page Slug'] || fallback.slug,
     duration: fields['Website Duration'] || fallback.duration,
     price,
-    description: fields['Website Description'] || fields.Description || fallback.description,
+    description: publicDescription,
     curriculum: fields['Website Curriculum'] || fallback.curriculum,
     cta: fields['CTA Text'] || fields['Default CTA'] || fallback.cta,
     paymentLink: fields['Payment Link'] || fallback.paymentLink,
@@ -138,7 +129,7 @@ export async function getPrograms(): Promise<Program[]> {
       direction: 'asc',
       maxRecords: 10,
     })
-    const programs = records.map(({ fields }) => programFromFields(fields))
+    const programs = records.map(({ fields }) => programFromFields(fields)).filter((program) => program.code !== 'COMPLETE')
     return programs.length ? programs : fallbackPrograms
   } catch {
     return fallbackPrograms

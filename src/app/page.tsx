@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BarChart3, Bot, BriefcaseBusiness, CheckCircle2, GraduationCap, Layers3, Sparkles, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BarChart3, Bot, BriefcaseBusiness, CheckCircle2, GraduationCap, Sparkles, type LucideIcon } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
 import { getPrograms, getTestimonials } from '@/lib/site-data'
 
@@ -32,7 +32,7 @@ const why = [
 ]
 
 const steps = [
-  ['Choose a program', 'Select Career, Business, or Complete AI Accelerator.'],
+  ['Choose a program', 'Select the Career Accelerator or Business Transformation Accelerator.'],
   ['Apply and confirm payment', 'Submit your details and complete enrollment securely.'],
   ['Learn by building', 'Attend sessions, complete practical tasks, and create usable assets.'],
   ['Use the skills', 'Apply AI to your career, business, workplace, or client work.'],
@@ -40,7 +40,7 @@ const steps = [
 
 const faqs = [
   ['Do I need a tech background?', 'No. The programs are built for practical users who want to apply AI at work or in business.'],
-  ['How long are the programs?', 'The Career and Business Accelerators run for 4 weeks. The Complete AI Accelerator combines both paths.'],
+  ['How long are the programs?', 'The Career and Business Accelerators both run for 4 weeks.'],
   ['Can companies train their teams?', 'Yes. Companies can request corporate AI training, leadership workshops, and employee productivity sessions.'],
 ]
 
@@ -49,7 +49,6 @@ export default async function HomePage() {
   const cards = [
     { code: 'NGTP', icon: GraduationCap, href: '/career-accelerator' },
     { code: 'BATP', icon: BriefcaseBusiness, href: '/business-ai-transformation' },
-    { code: 'COMPLETE', icon: Layers3, href: '/complete-ai-accelerator' },
   ].map((card) => ({ ...card, program: programs.find((program) => program.code === card.code) }))
 
   return (
@@ -98,7 +97,7 @@ export default async function HomePage() {
             </div>
             <CTA href="/programs" variant="secondary">Compare Programs</CTA>
           </div>
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
             {cards.map(({ code, href, program, icon: Icon }) => (
               <PremiumCard key={code} className="min-h-[330px] rounded-2xl">
                 <Icon className="h-8 w-8 text-signal" />
