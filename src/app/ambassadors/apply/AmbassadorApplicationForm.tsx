@@ -77,18 +77,18 @@ export default function AmbassadorApplicationForm() {
       <div className="grid-field absolute inset-0 opacity-45" />
       <div className="relative mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.78fr_1.22fr] lg:gap-20">
         <div className="lg:sticky lg:top-32 lg:self-start">
-          <span className="eyebrow">NEXORA Ambassador Network</span>
+          <span className="eyebrow">Growth Associate Recruitment</span>
           <h1 className="mt-7 max-w-xl text-4xl font-semibold leading-[1.08] text-white md:text-6xl">
-            Represent the network. <span className="text-[#8fb7f3]">Grow verified impact.</span>
+            Represent NEXORA. <span className="text-[#8fb7f3]">Grow verified enrollments.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-8 text-steel md:text-lg">
-            Help students, graduates, professionals, and business owners access practical AI training while building verified campus and community influence.
+            Help students, graduates, professionals, and business owners access practical AI training while building measurable growth performance.
           </p>
 
           <div className="mt-10 grid gap-5 border-y border-white/10 py-7">
             <Benefit icon={Users} title="Performance reward" copy="Track referred applicants, payment-confirmed enrollments, commission, and monthly performance." />
             <Benefit icon={Network} title="Campus and community reach" copy="Introduce NEXORA to students, NYSC members, young professionals, business owners, and founders." />
-            <Benefit icon={ShieldCheck} title="Reviewed programme" copy="Applications are screened before interview, activation, and referral-code assignment." />
+            <Benefit icon={ShieldCheck} title="Reviewed recruitment" copy="Applications are screened before interview, activation, and referral-code assignment." />
           </div>
         </div>
 
@@ -96,15 +96,15 @@ export default function AmbassadorApplicationForm() {
           {state === 'success' ? (
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="glass flex min-h-[560px] flex-col justify-center rounded-lg p-7 md:p-12">
               <CheckCircle2 className="h-12 w-12 text-[#7fd3a6]" />
-              <p className="mt-8 text-xs font-bold uppercase text-[#8fb7f3]">Ambassador profile created</p>
+              <p className="mt-8 text-xs font-bold uppercase text-[#8fb7f3]">Growth associate profile created</p>
               <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Your referral tools are ready.</h2>
-              <p className="mt-5 max-w-xl leading-8 text-steel">Share these links with people you refer. Their applications and payments will be tracked under your ambassador profile.</p>
+              <p className="mt-5 max-w-xl leading-8 text-steel">Share these links with people you refer. Their applications and payments will be tracked under your growth associate profile.</p>
               <div className="mt-6 grid gap-3">
                 <ReferralValue label="Registration reference" value={reference} onCopy={copy} />
-                {ambassadorId ? <ReferralValue label="Ambassador ID" value={ambassadorId} onCopy={copy} /> : null}
+                {ambassadorId ? <ReferralValue label="Growth Associate ID" value={ambassadorId} onCopy={copy} /> : null}
                 {referralCode ? <ReferralValue label="Referral code" value={referralCode} onCopy={copy} /> : null}
-                {referralLinks.ngtp ? <ReferralValue label="NGTP referral link" value={referralLinks.ngtp} onCopy={copy} /> : null}
-                {referralLinks.batp ? <ReferralValue label="BATP referral link" value={referralLinks.batp} onCopy={copy} /> : null}
+                {referralLinks.ngtp ? <ReferralValue label="Career Accelerator referral link" value={referralLinks.ngtp} onCopy={copy} /> : null}
+                {referralLinks.batp ? <ReferralValue label="Business Accelerator referral link" value={referralLinks.batp} onCopy={copy} /> : null}
               </div>
               {message ? <p className="mt-4 text-sm text-[#7fd3a6]">{message}</p> : null}
               <button type="button" onClick={reset} className="button-secondary mt-9 min-h-12 w-fit rounded-lg px-6 text-sm font-semibold">Submit another application</button>
@@ -112,7 +112,7 @@ export default function AmbassadorApplicationForm() {
           ) : (
             <form onSubmit={submit} className="glass rounded-lg p-5 md:p-9">
               <div className="border-b border-white/10 pb-7">
-                <p className="text-xs font-bold uppercase text-[#8fb7f3]">Ambassador application</p>
+                <p className="text-xs font-bold uppercase text-[#8fb7f3]">Growth associate application</p>
                 <h2 className="mt-3 text-2xl font-semibold text-white md:text-3xl">Tell us about your reach and motivation.</h2>
                 <p className="mt-3 text-sm leading-7 text-steel">Required fields are marked with an asterisk.</p>
               </div>
@@ -167,7 +167,7 @@ export default function AmbassadorApplicationForm() {
               </FormSection>
 
               <FormSection title="Short answers">
-                <TextArea label="Why do you want to become a NEXORA ambassador?" name="whyAmbassador" required wide />
+                <TextArea label="Why do you want to become a NEXORA Growth Associate?" name="whyAmbassador" required wide />
                 <TextArea label="Why should we choose you?" name="whyChooseYou" required wide />
                 <TextArea label="Have you sold or promoted anything before?" name="salesExperience" wide />
                 <TextArea label="Describe your greatest achievement." name="greatestAchievement" wide />
@@ -184,14 +184,14 @@ export default function AmbassadorApplicationForm() {
                   I consent to NEXORA storing my information and contacting me about this application. See the <Link href="/privacy" className="text-[#9ec2f7] underline underline-offset-4">privacy notice</Link>.
                 </CheckField>
                 <CheckField name="ambassadorTermsAccepted" required>
-                  I accept the <Link href="/ambassadors/terms" className="text-[#9ec2f7] underline underline-offset-4">ambassador programme terms</Link>, including verified referral and one-time discount rules.
+                  I accept the <Link href="/ambassadors/terms" className="text-[#9ec2f7] underline underline-offset-4">growth associate terms</Link>, including verified referral and performance rules.
                 </CheckField>
                 <label className="sr-only" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
               </fieldset>
 
               <div aria-live="polite" className="min-h-6 pt-5 text-sm font-medium text-[#ffb4aa]">{message}</div>
               <button disabled={state === 'submitting'} className="button-primary mt-3 min-h-12 w-full rounded-lg px-6 text-sm font-bold disabled:cursor-wait disabled:opacity-60">
-                {state === 'submitting' ? 'Submitting application...' : 'Submit ambassador application'}
+                {state === 'submitting' ? 'Submitting application...' : 'Submit growth associate application'}
               </button>
             </form>
           )}

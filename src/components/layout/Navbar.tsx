@@ -9,10 +9,10 @@ import BrandMark from '@/components/ui/BrandMark'
 import { cn } from '@/lib/utils'
 
 const links = [
-  ['About', '/about'],
-  ['Tracks', '/#tracks'],
+  ['Home', '/'],
+  ['Programs', '/programs'],
   ['Companies', '/corporate-training'],
-  ['Ambassadors', '/ambassadors/apply'],
+  ['About', '/about'],
   ['Contact', '/contact'],
 ]
 

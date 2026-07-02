@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRecord } from '@/lib/airtable'
 import { captureLead } from '@/lib/lead-capture'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 
@@ -21,6 +22,14 @@ function utm(body: Payload) {
     'UTM Medium': text(body.utmMedium, 120),
     'UTM Campaign': text(body.utmCampaign, 120),
   }
+}
+
+async function notifyAdmin(message: string) {
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
+  if (!chatId) return
+  await sendTelegramMessage(chatId, message).catch((error) => {
+    console.error('Website form Telegram notification failed', error instanceof Error ? error.message : error)
+  })
 }
 
 function currentStatusFromCategory(category: string) {
@@ -57,7 +66,7 @@ export async function POST(request: NextRequest) {
         Phone: phone(body.phone),
         Industry: text(body.industry, 120),
         Location: text(body.location, 160),
-        'Training Interest': text(body.trainingInterest, 80) || 'AI Productivity Assessment',
+        'Training Interest': text(body.trainingInterest, 80) || 'Corporate AI Training',
         'Preferred Training Format': text(body.preferredTrainingFormat, 40) || 'Not Sure',
         'Training Need': text(body.message),
         Message: text(body.message),
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
         'Date Submitted': now,
         ...utm(body),
       })
-      await captureLead({
+      const lead = await captureLead({
         ...body,
         platform: 'Website',
         programCode: 'BATP',
@@ -78,6 +87,16 @@ export async function POST(request: NextRequest) {
         primaryGoal: 'Corporate AI training inquiry',
         biggestChallenge: text(body.message),
       })
+      await notifyAdmin([
+        'New NEXORA company inquiry',
+        `Company: ${companyName}`,
+        `Contact: ${contactPerson}`,
+        `Email: ${email}`,
+        `Interest: ${text(body.trainingInterest, 80) || 'Corporate AI Training'}`,
+        `Lead score: ${lead.score}`,
+        'Follow-up stage: New Corporate Inquiry',
+        `AI summary: ${contactPerson} requested company AI training for ${companyName}. Need: ${text(body.message, 240)}.`,
+      ].join('\n'))
       return NextResponse.json({ ok: true, message: 'Corporate inquiry submitted. Nexora will follow up.' }, { status: 201 })
     }
 
@@ -106,7 +125,7 @@ export async function POST(request: NextRequest) {
         'Engagement Points': 5,
         ...utm(body),
       })
-      await captureLead({
+      const lead = await captureLead({
         ...body,
         platform: 'Website',
         programCode,
@@ -114,6 +133,14 @@ export async function POST(request: NextRequest) {
         currentStatus: text(body.customerCategory, 60),
         primaryGoal: 'Attend Nexora webinar',
       })
+      await notifyAdmin([
+        'New NEXORA webinar interest',
+        `Name: ${fullName}`,
+        `Email: ${email}`,
+        `Lead score: ${lead.score}`,
+        'Follow-up stage: Webinar Interest',
+        `AI summary: ${fullName} registered interest in a NEXORA AI session.`,
+      ].join('\n'))
       return NextResponse.json({ ok: true, message: 'You are registered for the webinar.' }, { status: 201 })
     }
 
@@ -126,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
     const requestedCode = text(body.programCode, 20).toUpperCase()
     const programCode = kind === 'complete' || requestedCode === 'COMPLETE' ? 'COMPLETE' : kind === 'batp' || requestedCode === 'BATP' ? 'BATP' : kind === 'accelerator' || requestedCode === 'NGTP' ? 'NGTP' : ''
-    await captureLead({
+    const lead = await captureLead({
       ...body,
       platform: 'Website',
       programCode,
@@ -150,6 +177,15 @@ export async function POST(request: NextRequest) {
         text(body.cohort) ? `Cohort: ${text(body.cohort)}` : '',
       ].filter(Boolean).join('\n'),
     })
+    await notifyAdmin([
+      'New NEXORA website inquiry',
+      `Name: ${fullName}`,
+      `Email: ${email}`,
+      `Type: ${interestByKind[kind] || kind || 'General'}`,
+      `Lead score: ${lead.score}`,
+      `Follow-up stage: ${lead.status}`,
+      `AI summary: ${fullName} submitted a ${kind || 'website'} inquiry. Goal/message: ${text(body.primaryGoal || body.learningGoals || body.message || body.communityInterest, 240)}.`,
+    ].join('\n'))
 
     return NextResponse.json({ ok: true, message: 'Submitted successfully. Nexora will follow up.' }, { status: 201 })
   } catch (error) {

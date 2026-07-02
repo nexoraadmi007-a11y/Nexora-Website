@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRecord, escapeFormula, listRecords } from '@/lib/airtable'
 import { captureLead } from '@/lib/lead-capture'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +35,14 @@ function compact(fields: Record<string, unknown>) {
     if (Array.isArray(value)) return value.length > 0
     return value !== '' && value !== undefined && value !== null
   }))
+}
+
+async function notifyAdmin(message: string) {
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
+  if (!chatId) return
+  await sendTelegramMessage(chatId, message).catch((error) => {
+    console.error('Application Telegram notification failed', error instanceof Error ? error.message : error)
+  })
 }
 
 async function createApplication(body: Record<string, unknown>, contactId: string, programId: string | undefined, programCode: string, reference: string) {
@@ -102,6 +111,17 @@ export async function POST(request: NextRequest) {
     })
 
     await createApplication(body, lead.contact.id, program?.id, programCode, reference)
+    await notifyAdmin([
+      'New NEXORA application initialized',
+      `Name: ${fullName}`,
+      `Email: ${email}`,
+      `Program: ${programName} (${programCode})`,
+      `Amount: NGN ${amount.toLocaleString()}`,
+      `Lead score: ${lead.contact.fields?.['Priority Score'] || 'Captured'}`,
+      `Follow-up stage: Payment Initialized`,
+      `AI summary: ${fullName} applied for ${programName}. Main goal: ${text(body.primaryGoal || body.learningGoals || body.growthGoals || 'Not provided', 240)}.`,
+      `Reference: ${reference}`,
+    ].join('\n'))
 
     const secret = process.env.PAYSTACK_SECRET_KEY
     if (!secret) {

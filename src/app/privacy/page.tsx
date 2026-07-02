@@ -10,13 +10,13 @@ export default function PrivacyPage() {
       <h1 className="mt-4 text-4xl font-semibold text-white md:text-5xl">How NEXORA handles application data.</h1>
       <p className="mt-5 text-sm leading-7 text-steel">Effective 21 June 2026</p>
       <div className="mt-12 grid gap-9 border-t border-white/10 pt-10 text-sm leading-7 text-steel">
-        <Policy title="Information collected">We collect identity, contact, professional, programme-interest, ambassador, referral, payment, and engagement information submitted through NEXORA channels.</Policy>
+        <Policy title="Information collected">We collect identity, contact, professional, programme-interest, growth associate, referral, payment, and engagement information submitted through NEXORA channels.</Policy>
         <Policy title="How it is used">Information is used to review applications, manage programmes and communities, attribute referrals, communicate operational updates, and maintain accurate CRM records.</Policy>
         <Policy title="Storage and access">Information is stored in NEXORA&apos;s controlled CRM and is available only to authorized operators who need it for programme delivery, admissions, payments, or community management.</Policy>
         <Policy title="Sharing">NEXORA does not sell personal data. Information may be processed by service providers used for hosting, communications, forms, payments, and CRM operations.</Policy>
         <Policy title="Your choices">You may request access, correction, or deletion by emailing nexoraadmi007@gmail.com. Legal, payment, fraud-prevention, and programme records may be retained where required.</Policy>
       </div>
-      <Link href="/ambassadors/apply" className="button-secondary mt-12 inline-flex min-h-12 items-center rounded-lg px-6 text-sm font-semibold">Return to ambassador application</Link>
+      <Link href="/contact" className="button-secondary mt-12 inline-flex min-h-12 items-center rounded-lg px-6 text-sm font-semibold">Contact NEXORA</Link>
     </section>
   )
 }

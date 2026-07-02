@@ -17,7 +17,7 @@ const outcomes: Array<[string, string, LucideIcon]> = [
 ]
 
 const faqs = [
-  ['Is BATP only for tech businesses?', 'No. BATP is for practical business operators across services, retail, education, health, consulting, logistics, and other sectors.'],
+  ['Is this only for tech businesses?', 'No. The Business Accelerator is for practical business operators across services, retail, education, health, consulting, logistics, and other sectors.'],
   ['Do I need an existing team?', 'No. Solo founders and small teams can join, but the program also works for corporate teams that need shared AI adoption habits.'],
   ['Will this replace my staff?', 'No. The goal is to help people work smarter with AI, improve execution, and reduce repetitive manual work.'],
 ]

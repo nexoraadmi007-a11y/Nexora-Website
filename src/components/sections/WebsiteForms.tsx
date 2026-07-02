@@ -29,7 +29,6 @@ const fieldsByKind: Record<FormKind, Field[]> = {
   ],
   accelerator: [
     ...commonFields,
-    { name: 'programCode', label: 'Program', type: 'select', required: true, options: ['NGTP'] },
     { name: 'state', label: 'State' },
     { name: 'cohort', label: 'Preferred cohort' },
     { name: 'primaryGoal', label: 'Career goal', type: 'textarea' },
@@ -37,7 +36,6 @@ const fieldsByKind: Record<FormKind, Field[]> = {
   ],
   batp: [
     ...commonFields,
-    { name: 'programCode', label: 'Program', type: 'select', required: true, options: ['BATP'] },
     { name: 'businessName', label: 'Business name', required: true },
     { name: 'industry', label: 'Industry' },
     { name: 'businessSize', label: 'Business size', type: 'select', options: ['Solo', '1-5', '6-10', '11-50', '51-200', '201+'] },
@@ -51,7 +49,6 @@ const fieldsByKind: Record<FormKind, Field[]> = {
   ],
   complete: [
     ...commonFields,
-    { name: 'programCode', label: 'Program', type: 'select', required: true, options: ['COMPLETE'] },
     { name: 'currentPath', label: 'Best describes you', type: 'select', options: ['Freelancer', 'Consultant', 'Agency owner', 'Startup founder', 'Professional building a side business', 'Business owner', 'Other'] },
     { name: 'businessName', label: 'Business or project name' },
     { name: 'industry', label: 'Industry' },
@@ -67,7 +64,7 @@ const fieldsByKind: Record<FormKind, Field[]> = {
     { name: 'fullName', label: 'Full name', required: true },
     { name: 'email', label: 'Email', type: 'email', required: true },
     { name: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
-    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['Career Accelerator', 'Weekly Webinar', 'Corporate Training', 'Partnership', 'Community', 'General Inquiry'] },
+    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['AI Career Accelerator', 'AI Business Transformation Accelerator', 'Complete AI Accelerator', 'Corporate AI Training', 'General Inquiry'] },
     { name: 'message', label: 'Message', type: 'textarea', required: true },
   ],
   corporate: [
@@ -78,7 +75,7 @@ const fieldsByKind: Record<FormKind, Field[]> = {
     { name: 'phone', label: 'Phone', type: 'tel', required: true },
     { name: 'industry', label: 'Industry' },
     { name: 'location', label: 'Location' },
-    { name: 'trainingInterest', label: 'Training interest', type: 'select', options: ['AI Productivity Assessment', 'Corporate Workshop', 'Team Training', 'Executive Briefing', 'Custom Program'] },
+    { name: 'trainingInterest', label: 'Training interest', type: 'select', options: ['Corporate AI Training', 'Corporate AI Upskilling', 'Employee AI Productivity', 'Leadership Workshop', 'Operational AI Awareness Session'] },
     { name: 'preferredTrainingFormat', label: 'Preferred format', type: 'select', options: ['On-site', 'Virtual', 'Hybrid', 'Not Sure'] },
     { name: 'message', label: 'Training need', type: 'textarea', required: true },
   ],

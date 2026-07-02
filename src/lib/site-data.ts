@@ -59,7 +59,7 @@ export type Cohort = {
 
 const fallbackPrograms: Program[] = [
   {
-    name: 'Career Accelerator',
+    name: 'AI Career Accelerator',
     code: 'NGTP',
     family: 'Career',
     audience: 'NYSC members, 500-level students, graduates, and young professionals.',
@@ -67,21 +67,21 @@ const fallbackPrograms: Program[] = [
     slug: 'career-accelerator',
     duration: '4 weeks',
     price: 25000,
-    description: 'A practical 4-week track for people who want AI skills, stronger career assets, job readiness, and freelance-ready proof of work.',
+    description: 'A practical 4-week program for NYSC members, final-year students, graduates, and young professionals who want stronger AI skills, career assets, and job readiness.',
     curriculum: 'AI productivity, ChatGPT, and workplace execution\nExcel, Power BI, and practical business intelligence\nContent creation, portfolio building, CV, and LinkedIn\nJob readiness, freelancing, and career action planning',
     cta: 'Apply for Career Accelerator',
     paymentLink: '',
   },
   {
-    name: 'Business Transformation Accelerator',
+    name: 'AI Business Transformation Accelerator',
     code: 'BATP',
     family: 'Business',
     audience: 'Business owners, SMEs, startups, corporate teams, and entrepreneurs.',
     audienceType: 'Business',
     slug: 'business-ai-transformation',
     duration: '4 weeks',
-    price: 25000,
-    description: 'A practical 4-week track for SMEs, founders, entrepreneurs, and business owners who want AI-powered marketing, sales, operations, and customer systems.',
+    price: 35000,
+    description: 'A practical 4-week program for business owners, entrepreneurs, and SMEs who want AI-powered marketing, sales, customer support, CRM, and operations.',
     curriculum: 'AI for marketing, brand identity, and content automation\nAI customer support, sales automation, and CRM workflows\nWebsite creation, proposal generation, and business documents\nOperations, reporting, productivity, and implementation roadmap',
     cta: 'Apply for Business Accelerator',
     paymentLink: '',
@@ -105,15 +105,24 @@ const fallbackPrograms: Program[] = [
 function programFromFields(fields: Record<string, any>): Program {
   const code = fields['Programme Code'] || fields['Program Code'] || ''
   const fallback = fallbackPrograms.find((program) => program.code === code) || fallbackPrograms[0]
+  const rawPrice = Number(fields['Website Price'] || fallback.price)
+  const price = code === 'BATP' ? Math.max(rawPrice || 0, 35000) : rawPrice
+  const publicName = code === 'NGTP'
+    ? 'AI Career Accelerator'
+    : code === 'BATP'
+      ? 'AI Business Transformation Accelerator'
+      : code === 'COMPLETE'
+        ? 'Complete AI Accelerator'
+        : fields['Website Program Name'] || fields['Programme Name'] || fallback.name
   return {
-    name: fields['Website Program Name'] || fields['Programme Name'] || fallback.name,
+    name: publicName,
     code: code || fallback.code,
     family: fields['Program Family'] || fallback.family,
     audience: fields['Target Audience'] || fallback.audience,
     audienceType: fields['Audience Type'] || fallback.audienceType,
     slug: fields['Landing Page Slug'] || fallback.slug,
     duration: fields['Website Duration'] || fallback.duration,
-    price: Number(fields['Website Price'] || fallback.price),
+    price,
     description: fields['Website Description'] || fields.Description || fallback.description,
     curriculum: fields['Website Curriculum'] || fallback.curriculum,
     cta: fields['CTA Text'] || fields['Default CTA'] || fallback.cta,

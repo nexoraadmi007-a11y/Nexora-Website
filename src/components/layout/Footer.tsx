@@ -2,8 +2,8 @@ import Link from 'next/link'
 import BrandMark from '@/components/ui/BrandMark'
 
 const groups = {
-  Institute: [['Career Accelerator', '/career-accelerator'], ['Business Accelerator', '/business-ai-transformation'], ['Complete AI Accelerator', '/complete-ai-accelerator'], ['Corporate Training', '/corporate-training'], ['Webinars', '/webinars'], ['Resources', '/resources']],
-  Company: [['About', '/about'], ['Ambassadors', '/ambassadors/apply'], ['Contact', '/contact'], ['Privacy', '/privacy']],
+  Programs: [['AI Career Accelerator', '/career-accelerator'], ['AI Business Transformation Accelerator', '/business-ai-transformation'], ['Complete AI Accelerator', '/complete-ai-accelerator'], ['Corporate AI Training', '/corporate-training']],
+  Company: [['Home', '/'], ['Programs', '/programs'], ['About', '/about'], ['Contact', '/contact'], ['Privacy', '/privacy']],
   Contact: [
     ['0701002613 | 08103200200', 'tel:0701002613'],
     ['nexoraadmi007@gmail.com', 'mailto:nexoraadmi007@gmail.com'],
@@ -19,8 +19,8 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
             <BrandMark />
-            <p className="mt-5 max-w-sm text-sm leading-7 text-steel">Nexora Institute helps career builders and business operators become AI-ready through practical training, community, and operating systems.</p>
-            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-steel/60">Build careers. Transform businesses. Work smarter with AI.</p>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-steel">NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.</p>
+            <p className="mt-6 text-xs uppercase tracking-[0.18em] text-steel/60">Practical AI training for work and business growth.</p>
           </div>
           {Object.entries(groups).map(([name, items]) => (
             <div key={name}>
@@ -35,7 +35,7 @@ export default function Footer() {
         </div>
         <div className="mt-14 flex flex-col justify-between gap-4 border-t border-white/10 pt-8 text-xs text-steel/60 md:flex-row">
           <span>Copyright {new Date().getFullYear()} NEXORA. All rights reserved.</span>
-          <span>Airtable-powered growth system.</span>
+          <span>Practical AI education for Africa's next operators.</span>
         </div>
       </div>
     </footer>

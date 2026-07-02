@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 
@@ -108,6 +109,14 @@ async function airtable(path: string, init?: RequestInit) {
     throw new Error(`Airtable ${response.status}: ${detail.slice(0, 240)}`)
   }
   return response.json() as Promise<{ id?: string; fields?: Record<string, any>; records?: Array<{ id: string; fields?: Record<string, any> }> }>
+}
+
+async function notifyAdmin(message: string) {
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
+  if (!chatId) return
+  await sendTelegramMessage(chatId, message).catch((error) => {
+    console.error('Growth associate Telegram notification failed', error instanceof Error ? error.message : error)
+  })
 }
 
 function codeFromName(name: string, fallback: string) {
@@ -315,6 +324,17 @@ export async function POST(request: NextRequest) {
 
     const referralCode = String(ambassador.fields?.['Referral Code'] || '')
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'
+    await notifyAdmin([
+      'New NEXORA Growth Associate application',
+      `Name: ${fullName}`,
+      `Email: ${email || 'Not provided'}`,
+      `Phone: ${phoneNumber || 'Not provided'}`,
+      `Location: ${text(body.location || body.state, 160) || 'Not provided'}`,
+      `Estimated reach: ${estimatedReach || 0}`,
+      `Follow-up stage: ${fields['Processing Status']}`,
+      `AI summary: ${fullName} applied for Growth Associate recruitment. Motivation: ${whyAmbassador.slice(0, 240) || 'Not provided'}.`,
+      `Referral code: ${referralCode}`,
+    ].join('\n'))
     return NextResponse.json({
       ok: true,
       registrationReference: externalSubmissionId,

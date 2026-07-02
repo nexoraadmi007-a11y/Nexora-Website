@@ -32,7 +32,7 @@ export default async function CompleteAIAcceleratorPage() {
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{program.description}</p>
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Duration</p><p className="mt-1 text-xl font-bold text-white">{program.duration}</p></div>
-              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Includes</p><p className="mt-1 text-xl font-bold text-white">2 tracks</p></div>
+              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Includes</p><p className="mt-1 text-xl font-bold text-white">2 programs</p></div>
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Investment</p><p className="mt-1 text-xl font-bold text-white">NGN {program.price.toLocaleString()}</p></div>
             </div>
           </div>

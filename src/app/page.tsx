@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BriefcaseBusiness, Building2, CalendarDays, GraduationCap, Layers3, Users, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BarChart3, Bot, BriefcaseBusiness, CheckCircle2, GraduationCap, Layers3, Sparkles, type LucideIcon } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
-import { getPrograms, getResources, getTestimonials, getWebinars } from '@/lib/site-data'
+import { getPrograms, getTestimonials } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'Nexora Institute | AI Skills for Careers, Businesses, and Teams',
-  description: 'NEXORA Institute is one flagship AI institute with practical tracks for careers, businesses, and complete AI acceleration.',
+  title: 'NEXORA Institute | Practical AI Training for Careers and Businesses',
+  description: 'NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.',
 }
 
 function CTA({ href, children, variant = 'primary' }: { href: string; children: React.ReactNode; variant?: 'primary' | 'secondary' }) {
@@ -18,68 +18,112 @@ function CTA({ href, children, variant = 'primary' }: { href: string; children: 
   )
 }
 
+const outcomes: Array<[string, string, LucideIcon]> = [
+  ['Work faster with AI', 'Use ChatGPT and AI tools for research, writing, analysis, planning, and daily execution.', Bot],
+  ['Build stronger career assets', 'Create practical proof of work, portfolios, dashboards, CVs, and LinkedIn assets.', GraduationCap],
+  ['Grow business productivity', 'Improve marketing, customer support, content, CRM, proposals, and operations.', BriefcaseBusiness],
+]
+
+const why = [
+  'Practical classes built around real work, not theory.',
+  'Clear program structure, deliverables, and application flow.',
+  'Airtable-powered CRM keeps applications, payments, referrals, and follow-up organized.',
+  'Designed for Nigerian students, young professionals, and business owners.',
+]
+
+const steps = [
+  ['Choose a program', 'Select Career, Business, or Complete AI Accelerator.'],
+  ['Apply and confirm payment', 'Submit your details and complete enrollment securely.'],
+  ['Learn by building', 'Attend sessions, complete practical tasks, and create usable assets.'],
+  ['Use the skills', 'Apply AI to your career, business, workplace, or client work.'],
+]
+
+const faqs = [
+  ['Do I need a tech background?', 'No. The programs are built for practical users who want to apply AI at work or in business.'],
+  ['How long are the programs?', 'The Career and Business Accelerators run for 4 weeks. The Complete AI Accelerator combines both paths.'],
+  ['Can companies train their teams?', 'Yes. Companies can request corporate AI training, leadership workshops, and employee productivity sessions.'],
+]
+
 export default async function HomePage() {
-  const [programs, webinars, resources, testimonials] = await Promise.all([
-    getPrograms(),
-    getWebinars(),
-    getResources(),
-    getTestimonials(),
-  ])
-  const careerProgram = programs.find((program) => program.code === 'NGTP') || programs[0]
-  const businessProgram = programs.find((program) => program.code === 'BATP') || programs[1] || programs[0]
-  const completeProgram = programs.find((program) => program.code === 'COMPLETE') || programs[2] || programs[0]
-  const tracks = [careerProgram, businessProgram, completeProgram]
-  const webinar = webinars[0]
-  const audiences: Array<[string, string, LucideIcon]> = [
-    ['Career builders', 'NYSC members, 500-level students, graduates, and young professionals can build career-ready AI workflows.', GraduationCap],
-    ['Business operators', 'SMEs, founders, entrepreneurs, and business owners can improve marketing, sales, operations, and customer follow-up.', Building2],
-    ['Complete builders', 'Freelancers, consultants, agency owners, startup founders, and side-business professionals can combine both tracks.', Layers3],
-  ]
+  const [programs, testimonials] = await Promise.all([getPrograms(), getTestimonials()])
+  const cards = [
+    { code: 'NGTP', icon: GraduationCap, href: '/career-accelerator' },
+    { code: 'BATP', icon: BriefcaseBusiness, href: '/business-ai-transformation' },
+    { code: 'COMPLETE', icon: Layers3, href: '/complete-ai-accelerator' },
+  ].map((card) => ({ ...card, program: programs.find((program) => program.code === card.code) }))
 
   return (
     <>
-      <section className="relative overflow-hidden px-5 pb-20 pt-40 md:px-8 md:pb-28 md:pt-52">
-        <div className="grid-field absolute inset-0 opacity-60" />
-        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
+      <section className="relative overflow-hidden px-5 pb-16 pt-32 md:px-8 md:pb-20 md:pt-44">
+        <div className="grid-field absolute inset-0 opacity-45" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.08fr_.92fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">Nexora Institute</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[0.98] text-white md:text-7xl">AI skills that create careers, transform businesses, and build high-performing teams.</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">NEXORA Institute is one flagship AI institute with three practical learning tracks. Start by choosing who you are and what you want to build.</p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <CTA href="#tracks">Explore Tracks</CTA>
-              <CTA href="/ambassadors/apply" variant="secondary">Become an Ambassador</CTA>
+            <span className="eyebrow mb-6">NEXORA Institute</span>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[0.98] text-white md:text-7xl">
+              Learn practical AI skills that advance your career or grow your business.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-steel md:text-lg">
+              NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <CTA href="/programs">View Programs</CTA>
+              <CTA href="/corporate-training" variant="secondary">For Companies</CTA>
             </div>
           </div>
-          <div className="grid gap-4">
-            {tracks.map((program) => (
-              <div key={program.code} className="glass rounded-[28px] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">{program.family} Track</p>
-                <h2 className="mt-4 text-2xl font-semibold text-white">{program.name}</h2>
-                <p className="mt-4 text-sm leading-7 text-steel">{program.description}</p>
-                <div className="mt-5 flex flex-wrap gap-3 text-xs font-semibold text-frost">
-                  <span>{program.duration}</span>
-                  <span>NGN {program.price.toLocaleString()}</span>
+          <div className="glass rounded-2xl p-5 md:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">Program Snapshot</p>
+            <div className="mt-5 grid gap-3">
+              {cards.map(({ code, href, program, icon: Icon }) => (
+                <Link key={code} href={href} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-white/20 hover:bg-white/[0.06]">
+                  <div className="flex items-start gap-4">
+                    <Icon className="mt-1 h-5 w-5 shrink-0 text-signal" />
+                    <div>
+                      <h2 className="text-base font-semibold text-white">{program?.name || code}</h2>
+                      <p className="mt-1 text-sm text-steel">{program?.duration || '4 weeks'} · NGN {(program?.price || 25000).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div>
+              <span className="eyebrow mb-5">Programs</span>
+              <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">One institute. Practical AI programs for work and business.</h2>
+            </div>
+            <CTA href="/programs" variant="secondary">Compare Programs</CTA>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-3">
+            {cards.map(({ code, href, program, icon: Icon }) => (
+              <PremiumCard key={code} className="min-h-[330px] rounded-2xl">
+                <Icon className="h-8 w-8 text-signal" />
+                <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
+                <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
+                <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
+                  <span>{program?.duration}</span>
+                  <span>NGN {(program?.price || 0).toLocaleString()}</span>
                 </div>
-                <div className="mt-6">
-                  <CTA href={`/${program.slug}`} variant={program.code === 'NGTP' ? 'primary' : 'secondary'}>{program.cta}</CTA>
-                </div>
-              </div>
+                <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>Apply Now</CTA>
+              </PremiumCard>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="tracks" className="section border-y border-white/10 bg-white/[0.015]">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <div className="mb-10 max-w-3xl">
-            <span className="eyebrow mb-5">Three Learning Tracks</span>
-            <h2 className="text-4xl font-semibold text-white md:text-5xl">Select the track that matches your current ambition.</h2>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {audiences.map(([title, copy, Icon]) => (
-              <PremiumCard key={String(title)} className="min-h-[260px]">
+      <section className="px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <span className="eyebrow mb-5">Outcomes</span>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Learn skills you can use immediately.</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {outcomes.map(([title, copy, Icon]) => (
+              <PremiumCard key={title} className="min-h-[260px] rounded-2xl">
                 <Icon className="h-8 w-8 text-signal" />
-                <h3 className="mt-8 text-2xl font-semibold text-white">{title}</h3>
+                <h3 className="mt-7 text-2xl font-semibold text-white">{title}</h3>
                 <p className="mt-4 text-sm leading-7 text-steel">{copy}</p>
               </PremiumCard>
             ))}
@@ -87,57 +131,84 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-2">
-          <PremiumCard>
-            <CalendarDays className="h-8 w-8 text-signal" />
-            <p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-steel">This week's webinar</p>
-            <h2 className="mt-4 text-3xl font-semibold text-white">{webinar?.title || 'Weekly AI Workplace Webinar'}</h2>
-            <p className="mt-4 text-sm leading-7 text-steel">{webinar?.description || 'Join Nexora for practical AI workplace learning.'}</p>
-            <div className="mt-8"><CTA href="/webinars">Register Free</CTA></div>
-          </PremiumCard>
-          <PremiumCard>
-            <BriefcaseBusiness className="h-8 w-8 text-signal" />
-            <p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-steel">Business AI Transformation</p>
-            <h2 className="mt-4 text-3xl font-semibold text-white">Turn AI into a business operating advantage.</h2>
-            <p className="mt-4 text-sm leading-7 text-steel">For business owners and teams that want better marketing, customer follow-up, reporting, and execution.</p>
-            <div className="mt-8"><CTA href="/business-ai-transformation" variant="secondary">Apply for Business Track</CTA></div>
-          </PremiumCard>
+      <section className="border-t border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
+          <div>
+            <span className="eyebrow mb-5">Why NEXORA</span>
+            <h2 className="text-4xl font-semibold text-white md:text-5xl">Built for practical adoption, not AI hype.</h2>
+          </div>
+          <div className="grid gap-3">
+            {why.map((item) => (
+              <div key={item} className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm leading-7 text-frost">
+                <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-signal" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="section border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <div className="mb-8 flex items-end justify-between gap-6">
-            <div>
-              <span className="eyebrow mb-5">Resources</span>
-              <h2 className="text-4xl font-semibold text-white md:text-5xl">Latest AI career and business resources.</h2>
-            </div>
-            <CTA href="/resources" variant="secondary">View all</CTA>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {resources.slice(0, 3).map((item) => (
-              <PremiumCard key={item.title}>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">{item.category}</p>
-                <h3 className="mt-5 text-2xl font-semibold text-white">{item.title}</h3>
-                <p className="mt-4 text-sm leading-7 text-steel">{item.description}</p>
+      <section className="px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <span className="eyebrow mb-5">How It Works</span>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">A simple path from interest to practical capability.</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-4">
+            {steps.map(([title, copy], index) => (
+              <PremiumCard key={title} className="min-h-[230px] rounded-2xl">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">Step {index + 1}</p>
+                <h3 className="mt-5 text-xl font-semibold text-white">{title}</h3>
+                <p className="mt-4 text-sm leading-7 text-steel">{copy}</p>
               </PremiumCard>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="section border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Trusted learning for students, business owners, communities, and teams.</h2>
+      <section className="border-t border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <span className="eyebrow mb-5">Student Success</span>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Outcome stories will live here as cohorts progress.</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {testimonials.slice(0, 2).map((item) => (
-              <PremiumCard key={item.name}>
-                <p className="text-lg leading-8 text-frost">&quot;{item.testimonial}&quot;</p>
+            {(testimonials.length ? testimonials.slice(0, 2) : [
+              { name: 'NEXORA Learner', role: 'Career Accelerator', organization: '', testimonial: 'NEXORA made AI feel practical and usable for real work, not just theory.' },
+              { name: 'Business Participant', role: 'Business Accelerator', organization: '', testimonial: 'The program helped us see immediate productivity use cases for AI in daily operations.' },
+            ]).map((item) => (
+              <PremiumCard key={item.name} className="rounded-2xl">
+                <Sparkles className="h-6 w-6 text-signal" />
+                <p className="mt-5 text-lg leading-8 text-frost">&quot;{item.testimonial}&quot;</p>
                 <p className="mt-6 text-sm font-semibold text-white">{item.name}</p>
                 <p className="text-sm text-steel">{item.role} {item.organization ? `- ${item.organization}` : ''}</p>
               </PremiumCard>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.85fr_1.15fr]">
+          <div>
+            <span className="eyebrow mb-5">FAQs</span>
+            <h2 className="text-4xl font-semibold text-white md:text-5xl">Quick answers before you apply.</h2>
+          </div>
+          <div className="grid gap-4">
+            {faqs.map(([question, answer]) => (
+              <PremiumCard key={question} className="rounded-2xl p-5 md:p-6">
+                <h3 className="text-lg font-semibold text-white">{question}</h3>
+                <p className="mt-3 text-sm leading-7 text-steel">{answer}</p>
+              </PremiumCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <BarChart3 className="mx-auto h-9 w-9 text-signal" />
+          <h2 className="mt-6 text-4xl font-semibold text-white md:text-5xl">Start with the program that fits your next move.</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-steel">Whether you are preparing for work, growing a business, or training a team, NEXORA gives you a practical path into AI.</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <CTA href="/programs">View Programs</CTA>
+            <CTA href="/contact" variant="secondary">Talk to NEXORA</CTA>
           </div>
         </div>
       </section>
