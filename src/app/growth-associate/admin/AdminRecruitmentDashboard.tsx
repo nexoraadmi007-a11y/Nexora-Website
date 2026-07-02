@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock3, ExternalLink, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock3, ExternalLink, RefreshCw, Search, ShieldCheck, X, XCircle } from 'lucide-react'
 
 type Applicant = {
   id: string
@@ -49,6 +49,59 @@ function short(text: string, max = 160) {
   return text.length > max ? `${text.slice(0, max)}...` : text
 }
 
+const questionLabels: Array<[string, string]> = [
+  ['fullName', 'Full name'],
+  ['email', 'Email address'],
+  ['phoneNumber', 'Phone number'],
+  ['whatsAppNumber', 'WhatsApp number'],
+  ['gender', 'Gender'],
+  ['dateOfBirth', 'Date of birth'],
+  ['state', 'State'],
+  ['lga', 'LGA'],
+  ['location', 'Current location'],
+  ['institutionType', 'Institution type'],
+  ['institutionOrOrganization', 'Institution or organization'],
+  ['courseOfStudy', 'Course of study'],
+  ['level', 'Level'],
+  ['currentStatus', 'Current status'],
+  ['nyscBatch', 'NYSC batch'],
+  ['passingOutDate', 'Passing out date'],
+  ['nyscState', 'NYSC state'],
+  ['hasLaptop', 'Laptop'],
+  ['hasInternetAccess', 'Internet access'],
+  ['weeklyHoursAvailable', 'Weekly hours available'],
+  ['canAttendWeeklyMeetings', 'Can attend weekly meetings'],
+  ['facebookProfile', 'Facebook profile'],
+  ['tiktokProfile', 'TikTok profile'],
+  ['instagramProfile', 'Instagram profile'],
+  ['linkedInProfile', 'LinkedIn profile'],
+  ['facebookFollowers', 'Facebook followers'],
+  ['tiktokFollowers', 'TikTok followers'],
+  ['instagramFollowers', 'Instagram followers'],
+  ['linkedInConnections', 'LinkedIn connections'],
+  ['leadershipExperience', 'Leadership experience'],
+  ['promotionExperience', 'Promotion experience'],
+  ['estimatedReach', 'Estimated reach'],
+  ['preferredCommunicationChannel', 'Preferred communication channel'],
+  ['telegramUsername', 'Telegram username'],
+  ['whyAmbassador', 'Why do you want to become a Growth Associate?'],
+  ['whyChooseYou', 'Why should we choose you?'],
+  ['salesExperience', 'Sales experience'],
+  ['greatestAchievement', 'Greatest achievement'],
+  ['communitiesOrNetworks', 'Communities or networks'],
+  ['videoAssessmentLink', 'Video assessment link'],
+]
+
+function rawAnswers(fields: Record<string, unknown>) {
+  try {
+    const raw = value(fields, 'Raw Channel Response')
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
 export default function AdminRecruitmentDashboard() {
   const [secret, setSecret] = useState('')
   const [query, setQuery] = useState('')
@@ -59,6 +112,7 @@ export default function AdminRecruitmentDashboard() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -102,9 +156,9 @@ export default function AdminRecruitmentDashboard() {
         },
         body: JSON.stringify({ id: applicant.id, action, note }),
       })
-      const result = (await response.json()) as { error?: string; stage?: string }
+      const result = (await response.json()) as { error?: string; stage?: string; applicantNotification?: string }
       if (!response.ok) throw new Error(result.error || 'Action failed.')
-      setMessage(`Updated ${value(applicant.fields, 'Full Name') || applicant.id} to ${result.stage}.`)
+      setMessage(`Updated ${value(applicant.fields, 'Full Name') || applicant.id} to ${result.stage}. ${result.applicantNotification || ''}`)
       await load()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Action failed.')
@@ -195,7 +249,7 @@ export default function AdminRecruitmentDashboard() {
                   </div>
                   <div className="flex items-start gap-2 text-sm font-semibold">
                     {value(fields, 'AI Recommendation') === 'Strong Candidate' ? <CheckCircle2 className="h-5 w-5 text-[#7fd3a6]" /> : value(fields, 'AI Recommendation') === 'Not Recommended' ? <XCircle className="h-5 w-5 text-[#ff9b91]" /> : <Clock3 className="h-5 w-5 text-[#f2c979]" />}
-                    {value(fields, 'AI Recommendation') || 'Pending screening'}
+                    <span>Screening: {value(fields, 'AI Recommendation') || 'Not scored'}</span>
                   </div>
                 </div>
 
@@ -213,6 +267,13 @@ export default function AdminRecruitmentDashboard() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedApplicant(applicant)}
+                    className="min-h-10 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-sm font-bold text-white transition hover:border-[#9ec2f7]/50"
+                  >
+                    View full application
+                  </button>
                   {actions.map((item) => (
                     <button
                       key={item.key}
@@ -234,6 +295,7 @@ export default function AdminRecruitmentDashboard() {
           ) : null}
         </div>
       </section>
+      {selectedApplicant ? <ApplicationModal applicant={selectedApplicant} onClose={() => setSelectedApplicant(null)} /> : null}
     </main>
   )
 }
@@ -243,6 +305,47 @@ function Info({ title, body }: { title: string; body: string }) {
     <div className="rounded-lg border border-white/10 bg-black/20 p-4">
       <p className="text-xs font-bold uppercase text-[#8fb7f3]">{title}</p>
       <p className="mt-2 whitespace-pre-line text-sm leading-6 text-steel">{body || 'Not available.'}</p>
+    </div>
+  )
+}
+
+function ApplicationModal({ applicant, onClose }: { applicant: Applicant; onClose: () => void }) {
+  const fields = applicant.fields
+  const answers = rawAnswers(fields)
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-8 backdrop-blur-sm">
+      <div className="mx-auto max-w-5xl rounded-lg border border-white/10 bg-[#07111f] p-5 text-white shadow-2xl md:p-8">
+        <div className="flex flex-col gap-4 border-b border-white/10 pb-5 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase text-[#8fb7f3]">Full application</p>
+            <h2 className="mt-2 text-2xl font-semibold">{value(fields, 'Full Name') || 'Unnamed applicant'}</h2>
+            <p className="mt-2 text-sm text-steel">{value(fields, 'Email') || 'No email'} | {value(fields, 'Phone Number') || value(fields, 'WhatsApp Number') || 'No phone'}</p>
+          </div>
+          <button onClick={onClose} className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] text-white">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {questionLabels.map(([key, label]) => {
+            const answer = answers[key]
+            const body = typeof answer === 'string' || typeof answer === 'number' || typeof answer === 'boolean'
+              ? String(answer)
+              : ''
+            return (
+              <div key={key} className="rounded-lg border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-bold uppercase text-[#8fb7f3]">{label}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-steel">{body || 'Not provided'}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
+          <p className="text-xs font-bold uppercase text-[#8fb7f3]">AI screening summary</p>
+          <p className="mt-2 whitespace-pre-line text-sm leading-6 text-steel">{value(fields, 'AI Screening Summary') || 'No screening summary available.'}</p>
+        </div>
+      </div>
     </div>
   )
 }

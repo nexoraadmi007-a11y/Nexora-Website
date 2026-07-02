@@ -25,5 +25,9 @@ services:
         sync: false
       - key: CALENDLY_WEBHOOK_SECRET
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NEXORA_EMAIL_FROM
+        sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.nexoragroup.ink
