@@ -6,7 +6,6 @@ import { CheckCircle2, Network, ShieldCheck, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error'
-type ReferralLinks = { ngtp?: string; batp?: string }
 
 function submissionId() {
   return globalThis.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -19,9 +18,6 @@ export default function AmbassadorApplicationForm() {
   const [state, setState] = useState<FormState>('idle')
   const [message, setMessage] = useState('')
   const [reference, setReference] = useState('')
-  const [ambassadorId, setAmbassadorId] = useState('')
-  const [referralCode, setReferralCode] = useState('')
-  const [referralLinks, setReferralLinks] = useState<ReferralLinks>({})
   const [requestId, setRequestId] = useState(submissionId)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -42,13 +38,10 @@ export default function AmbassadorApplicationForm() {
           externalSubmissionId: requestId,
         }),
       })
-      const result = (await response.json()) as { error?: string; registrationReference?: string; ambassadorId?: string; referralCode?: string; referralLinks?: ReferralLinks }
+      const result = (await response.json()) as { error?: string; registrationReference?: string }
       if (!response.ok) throw new Error(result.error || 'Submission failed.')
 
       setReference(result.registrationReference || requestId)
-      setAmbassadorId(result.ambassadorId || '')
-      setReferralCode(result.referralCode || '')
-      setReferralLinks(result.referralLinks || {})
       setState('success')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
@@ -60,16 +53,8 @@ export default function AmbassadorApplicationForm() {
   function reset() {
     setRequestId(submissionId())
     setReference('')
-    setAmbassadorId('')
-    setReferralCode('')
-    setReferralLinks({})
     setMessage('')
     setState('idle')
-  }
-
-  async function copy(value: string) {
-    await navigator.clipboard?.writeText(value)
-    setMessage('Copied.')
   }
 
   return (
@@ -79,16 +64,16 @@ export default function AmbassadorApplicationForm() {
         <div className="lg:sticky lg:top-32 lg:self-start">
           <span className="eyebrow">Growth Associate Recruitment</span>
           <h1 className="mt-7 max-w-xl text-4xl font-semibold leading-[1.08] text-white md:text-6xl">
-            Represent NEXORA. <span className="text-[#8fb7f3]">Grow verified enrollments.</span>
+            Apply to join NEXORA. <span className="text-[#8fb7f3]">Enter a structured recruitment journey.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-8 text-steel md:text-lg">
-            Help students, graduates, professionals, and business owners access practical AI training while building measurable growth performance.
+            Growth Associates are selected through application review, interview, bootcamp, and probation before official activation.
           </p>
 
           <div className="mt-10 grid gap-5 border-y border-white/10 py-7">
-            <Benefit icon={Users} title="Performance reward" copy="Track referred applicants, payment-confirmed enrollments, commission, and monthly performance." />
-            <Benefit icon={Network} title="Campus and community reach" copy="Introduce NEXORA to students, NYSC members, young professionals, business owners, and founders." />
-            <Benefit icon={ShieldCheck} title="Reviewed recruitment" copy="Applications are screened before interview, activation, and referral-code assignment." />
+            <Benefit icon={Users} title="Structured selection" copy="Applications are reviewed alongside other candidates before any official associate status is granted." />
+            <Benefit icon={Network} title="Interview and bootcamp" copy="Shortlisted applicants proceed through interview, bootcamp, and probation before activation." />
+            <Benefit icon={ShieldCheck} title="Official activation only" copy="Referral tools and performance tracking are enabled only after administrator approval." />
           </div>
         </div>
 
@@ -96,17 +81,16 @@ export default function AmbassadorApplicationForm() {
           {state === 'success' ? (
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="glass flex min-h-[560px] flex-col justify-center rounded-lg p-7 md:p-12">
               <CheckCircle2 className="h-12 w-12 text-[#7fd3a6]" />
-              <p className="mt-8 text-xs font-bold uppercase text-[#8fb7f3]">Growth associate profile created</p>
-              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Your referral tools are ready.</h2>
-              <p className="mt-5 max-w-xl leading-8 text-steel">Share these links with people you refer. Their applications and payments will be tracked under your growth associate profile.</p>
-              <div className="mt-6 grid gap-3">
-                <ReferralValue label="Registration reference" value={reference} onCopy={copy} />
-                {ambassadorId ? <ReferralValue label="Growth Associate ID" value={ambassadorId} onCopy={copy} /> : null}
-                {referralCode ? <ReferralValue label="Referral code" value={referralCode} onCopy={copy} /> : null}
-                {referralLinks.ngtp ? <ReferralValue label="Career Accelerator referral link" value={referralLinks.ngtp} onCopy={copy} /> : null}
-                {referralLinks.batp ? <ReferralValue label="Business Accelerator referral link" value={referralLinks.batp} onCopy={copy} /> : null}
+              <p className="mt-8 text-xs font-bold uppercase text-[#8fb7f3]">Application Submitted</p>
+              <h2 className="mt-3 text-3xl font-semibold text-white md:text-4xl">Thank you for applying to become a NEXORA Growth Associate.</h2>
+              <div className="mt-5 grid max-w-2xl gap-4 text-sm leading-7 text-steel md:text-base">
+                <p>Your application has been received successfully.</p>
+                <p>Our recruitment team will carefully review your application alongside other candidates.</p>
+                <p>Only shortlisted applicants will proceed to the interview stage.</p>
+                <p>If selected, you will receive an invitation through both WhatsApp and Email.</p>
+                <p>Thank you for your interest in joining NEXORA.</p>
               </div>
-              {message ? <p className="mt-4 text-sm text-[#7fd3a6]">{message}</p> : null}
+              <p className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4 text-xs font-semibold uppercase tracking-[0.14em] text-steel">Reference: {reference}</p>
               <button type="button" onClick={reset} className="button-secondary mt-9 min-h-12 w-fit rounded-lg px-6 text-sm font-semibold">Submit another application</button>
             </motion.div>
           ) : (
@@ -203,18 +187,6 @@ export default function AmbassadorApplicationForm() {
 
 function Benefit({ icon: Icon, title, copy }: { icon: typeof Users; title: string; copy: string }) {
   return <div className="flex gap-4"><Icon className="mt-1 h-5 w-5 shrink-0 text-[#7fd3a6]" /><div><h2 className="text-sm font-semibold text-white">{title}</h2><p className="mt-1 text-sm leading-6 text-steel">{copy}</p></div></div>
-}
-
-function ReferralValue({ label, value, onCopy }: { label: string; value: string; onCopy: (value: string) => void }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-steel">{label}</p>
-      <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <code className="break-all text-sm text-frost">{value}</code>
-        <button type="button" onClick={() => onCopy(value)} className="button-secondary min-h-10 shrink-0 rounded-lg px-4 text-xs font-semibold">Copy</button>
-      </div>
-    </div>
-  )
 }
 
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
