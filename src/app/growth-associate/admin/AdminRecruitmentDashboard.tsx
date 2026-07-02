@@ -58,6 +58,7 @@ export default function AdminRecruitmentDashboard() {
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [hasLoaded, setHasLoaded] = useState(false)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -79,6 +80,8 @@ export default function AdminRecruitmentDashboard() {
       if (!response.ok) throw new Error(result.error || 'Could not load applicants.')
       setStages(result.stages || [])
       setApplicants(result.applicants || [])
+      setHasLoaded(true)
+      setMessage(`${result.applicants?.length || 0} application${result.applicants?.length === 1 ? '' : 's'} loaded.`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load applicants.')
     } finally {
@@ -224,7 +227,11 @@ export default function AdminRecruitmentDashboard() {
               </article>
             )
           })}
-          {!loading && !visibleApplicants.length ? <p className="rounded-lg border border-white/10 p-8 text-center text-steel">No applicants loaded yet.</p> : null}
+          {!loading && !visibleApplicants.length ? (
+            <p className="rounded-lg border border-white/10 p-8 text-center text-steel">
+              {hasLoaded ? 'No applications match the current search or stage filter.' : 'Enter the admin secret, leave Stage as All stages, then click Load to show applications.'}
+            </p>
+          ) : null}
         </div>
       </section>
     </main>
