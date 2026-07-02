@@ -87,7 +87,7 @@ export default function AmbassadorApplicationForm() {
                 <p>Your application has been received successfully.</p>
                 <p>Our recruitment team will carefully review your application alongside other candidates.</p>
                 <p>Only shortlisted applicants will proceed to the interview stage.</p>
-                <p>If selected, you will receive an invitation through both WhatsApp and Email.</p>
+                <p>If selected, you will receive an invitation by email.</p>
                 <p>Thank you for your interest in joining NEXORA.</p>
               </div>
               <p className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4 text-xs font-semibold uppercase tracking-[0.14em] text-steel">Reference: {reference}</p>

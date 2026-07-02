@@ -116,13 +116,13 @@ export default function AdminRecruitmentDashboard() {
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
-  async function load() {
+  async function load(options?: { quiet?: boolean }) {
     if (!secret) {
       setMessage('Enter the admin secret to load recruitment records.')
       return
     }
     setLoading(true)
-    setMessage('')
+    if (!options?.quiet) setMessage('')
     try {
       const params = new URLSearchParams()
       if (stage) params.set('stage', stage)
@@ -135,7 +135,7 @@ export default function AdminRecruitmentDashboard() {
       setStages(result.stages || [])
       setApplicants(result.applicants || [])
       setHasLoaded(true)
-      setMessage(`${result.applicants?.length || 0} application${result.applicants?.length === 1 ? '' : 's'} loaded.`)
+      if (!options?.quiet) setMessage(`${result.applicants?.length || 0} application${result.applicants?.length === 1 ? '' : 's'} loaded.`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not load applicants.')
     } finally {
@@ -158,8 +158,8 @@ export default function AdminRecruitmentDashboard() {
       })
       const result = (await response.json()) as { error?: string; stage?: string; applicantNotification?: string }
       if (!response.ok) throw new Error(result.error || 'Action failed.')
+      await load({ quiet: true })
       setMessage(`Updated ${value(applicant.fields, 'Full Name') || applicant.id} to ${result.stage}. ${result.applicantNotification || ''}`)
-      await load()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Action failed.')
     } finally {
@@ -212,7 +212,7 @@ export default function AdminRecruitmentDashboard() {
               <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-white outline-none" />
             </span>
           </label>
-          <button onClick={load} disabled={loading} className="button-primary mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold disabled:opacity-60">
+          <button onClick={() => load()} disabled={loading} className="button-primary mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Load
           </button>

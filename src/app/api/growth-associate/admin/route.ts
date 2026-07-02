@@ -125,7 +125,7 @@ function applicantMessage(fields: Fields, stage: string, action: string, note: s
   if (stage === 'Shortlisted') {
     return {
       subject: 'NEXORA Growth Associate Application Shortlisted',
-      text: `Hello ${fullName},\n\nYour NEXORA Growth Associate application has been shortlisted for the next stage.\n\nOur recruitment team will review your profile for interview scheduling. Please watch your email and WhatsApp for the next instruction.${extraNote}${signoff}`,
+      text: `Hello ${fullName},\n\nYour NEXORA Growth Associate application has been shortlisted for the next stage.\n\nOur recruitment team will review your profile for interview scheduling. Please watch your email for the next instruction.${extraNote}${signoff}`,
     }
   }
 
