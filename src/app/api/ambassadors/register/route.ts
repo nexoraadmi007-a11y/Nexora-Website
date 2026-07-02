@@ -58,6 +58,86 @@ type RegistrationPayload = {
 
 type RateEntry = { count: number; resetAt: number }
 const rateStore = new Map<string, RateEntry>()
+const registrationFields = new Set([
+  'Registration ID',
+  'Full Name',
+  'Email',
+  'Phone Number',
+  'Location',
+  'Current Status',
+  'Institution or Organization',
+  'NYSC State',
+  'Industry',
+  'Why Become an Ambassador?',
+  'Communities or Networks',
+  'Estimated Reach',
+  'Promotion Experience',
+  'Preferred Communication Channel',
+  'Source Channel',
+  'Telegram Username',
+  'Telegram Chat ID',
+  'WhatsApp Number',
+  'Platform User ID',
+  'Conversation ID',
+  'External Submission ID',
+  'Submitted At',
+  'Communications Consent',
+  'Ambassador Terms Accepted',
+  'Registration Status',
+  'Processing Status',
+  'Duplicate Review Needed',
+  'Reviewer',
+  'Reviewed At',
+  'Review Notes',
+  'Raw Channel Response',
+  'Notes',
+  'Master Contact',
+  'Created Ambassador',
+])
+const ambassadorFields = new Set([
+  'Ambassador Name',
+  'Ambassador ID',
+  'Contact',
+  'Institution',
+  'NYSC State',
+  'Location',
+  'Email',
+  'Phone Number',
+  'Telegram Username',
+  'Start Date',
+  'Ambassador Status',
+  'Communities Introduced',
+  'Members Reached',
+  'Webinar Registrations Generated',
+  'Applications Generated',
+  'Accepted Candidates',
+  'Enrolled Candidates',
+  'Engagement Activities',
+  'Ambassador Score',
+  'Ambassador Level',
+  'Notes',
+  'Master Contacts',
+  'Enrollments',
+  'Master Contact',
+  'Referral Code',
+  'Verified Referrals',
+  'Last Verified Referral Date',
+  'Discount Eligibility Status',
+  'First-Training Discount Redeemed',
+  'Discount Redeemed Date',
+  'Ambassador Referrals',
+  'Ambassador Activities',
+  'Ambassador Registrations',
+  'Website Payment Events',
+  'Total Referral Leads',
+  'Paid Referral Count',
+  'Commission Rate Percent',
+  'Total Commission Earned',
+  'Commission Paid',
+  'Commission Balance',
+  'Ambassador Referral Link',
+  'Lead Source Attributions',
+])
 
 function text(value: unknown, max = 5000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -70,6 +150,45 @@ function phone(value: unknown) {
 function integer(value: unknown) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0
+}
+
+function pickFields(fields: Record<string, unknown>, allowed: Set<string>) {
+  return Object.fromEntries(Object.entries(fields).filter(([key, value]) => {
+    if (!allowed.has(key)) return false
+    if (Array.isArray(value)) return value.length > 0
+    return value !== '' && value !== undefined && value !== null
+  }))
+}
+
+function registrationSummary(body: RegistrationPayload) {
+  return [
+    text(body.gender, 80) ? `Gender: ${text(body.gender, 80)}` : '',
+    text(body.dateOfBirth, 40) ? `Date of birth: ${text(body.dateOfBirth, 40)}` : '',
+    text(body.state, 120) ? `State: ${text(body.state, 120)}` : '',
+    text(body.lga, 120) ? `LGA: ${text(body.lga, 120)}` : '',
+    text(body.institutionType, 120) ? `Institution type: ${text(body.institutionType, 120)}` : '',
+    text(body.courseOfStudy, 180) ? `Course of study: ${text(body.courseOfStudy, 180)}` : '',
+    text(body.level, 80) ? `Level: ${text(body.level, 80)}` : '',
+    text(body.nyscBatch, 80) ? `NYSC batch: ${text(body.nyscBatch, 80)}` : '',
+    text(body.passingOutDate, 40) ? `Passing out date: ${text(body.passingOutDate, 40)}` : '',
+    text(body.hasLaptop, 40) ? `Laptop: ${text(body.hasLaptop, 40)}` : '',
+    text(body.hasInternetAccess, 40) ? `Internet access: ${text(body.hasInternetAccess, 40)}` : '',
+    integer(body.weeklyHoursAvailable) ? `Weekly hours: ${integer(body.weeklyHoursAvailable)}` : '',
+    text(body.canAttendWeeklyMeetings, 80) ? `Weekly meetings: ${text(body.canAttendWeeklyMeetings, 80)}` : '',
+    text(body.facebookProfile, 500) ? `Facebook: ${text(body.facebookProfile, 500)}` : '',
+    text(body.tiktokProfile, 500) ? `TikTok: ${text(body.tiktokProfile, 500)}` : '',
+    text(body.instagramProfile, 500) ? `Instagram: ${text(body.instagramProfile, 500)}` : '',
+    text(body.linkedInProfile, 500) ? `LinkedIn: ${text(body.linkedInProfile, 500)}` : '',
+    integer(body.facebookFollowers) ? `Facebook followers: ${integer(body.facebookFollowers)}` : '',
+    integer(body.tiktokFollowers) ? `TikTok followers: ${integer(body.tiktokFollowers)}` : '',
+    integer(body.instagramFollowers) ? `Instagram followers: ${integer(body.instagramFollowers)}` : '',
+    integer(body.linkedInConnections) ? `LinkedIn connections: ${integer(body.linkedInConnections)}` : '',
+    text(body.leadershipExperience) ? `Leadership: ${text(body.leadershipExperience)}` : '',
+    text(body.whyChooseYou) ? `Why choose you: ${text(body.whyChooseYou)}` : '',
+    text(body.salesExperience) ? `Sales/promotions: ${text(body.salesExperience)}` : '',
+    text(body.greatestAchievement) ? `Greatest achievement: ${text(body.greatestAchievement)}` : '',
+    text(body.videoAssessmentLink, 500) ? `Video assessment: ${text(body.videoAssessmentLink, 500)}` : '',
+  ].filter(Boolean).join('\n')
 }
 
 function escapeFormula(value: string) {
@@ -166,14 +285,6 @@ async function createOrUpdateAmbassador(input: {
     'Telegram Username': input.telegramUsername,
     'Start Date': new Date().toISOString().slice(0, 10),
     'Ambassador Status': 'Active',
-    'Application Status': existing?.fields?.['Application Status'] || 'New',
-    'Interview Status': existing?.fields?.['Interview Status'] || 'Not Scheduled',
-    'Employment Status': existing?.fields?.['Employment Status'] || 'Candidate',
-    'Ambassador Tier': existing?.fields?.['Ambassador Tier'] || 'Candidate',
-    'Monthly Performance': existing?.fields?.['Monthly Performance'] || 0,
-    'Current Referrals': existing?.fields?.['Current Referrals'] || existing?.fields?.['Total Referral Leads'] || 0,
-    'Monthly Commission': existing?.fields?.['Monthly Commission'] || 0,
-    Bonus: existing?.fields?.Bonus || 0,
     'Members Reached': input.estimatedReach || 0,
     'Total Referral Leads': existing?.fields?.['Total Referral Leads'] || 0,
     'Paid Referral Count': existing?.fields?.['Paid Referral Count'] || 0,
@@ -185,22 +296,20 @@ async function createOrUpdateAmbassador(input: {
     'Discount Eligibility Status': existing?.fields?.['Discount Eligibility Status'] || 'Not Eligible',
     'Ambassador Score': existing?.fields?.['Ambassador Score'] || 0,
     'Ambassador Level': existing?.fields?.['Ambassador Level'] || 'Bronze Ambassador',
-    'Referral Score': existing?.fields?.['Referral Score'] || 0,
-    'Overall Score': existing?.fields?.['Overall Score'] || 0,
     Notes: `Created or refreshed from website ambassador registration ${input.externalSubmissionId}.`,
   }
 
   if (existing) {
     const updated = await airtable(`${encodeURIComponent('Ambassadors')}/${existing.id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ fields }),
+      body: JSON.stringify({ fields: pickFields(fields, ambassadorFields), typecast: true }),
     })
     return { id: existing.id, fields: updated.fields || fields }
   }
 
   const created = await airtable(encodeURIComponent('Ambassadors'), {
     method: 'POST',
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields: pickFields(fields, ambassadorFields), typecast: true }),
   })
   return { id: created.id || '', fields: created.fields || fields }
 }
@@ -249,39 +358,20 @@ export async function POST(request: NextRequest) {
       'Processing Status': 'New Submission',
       'Why Become an Ambassador?': whyAmbassador,
       'Communities or Networks': communities,
+      Notes: registrationSummary(body),
+      'Raw Channel Response': JSON.stringify(body).slice(0, 9000),
     }
 
     const values: Array<[string, string]> = [
       ['Email', email],
       ['Phone Number', phoneNumber],
       ['WhatsApp Number', phone(body.whatsAppNumber)],
-      ['Gender', text(body.gender, 80)],
-      ['Date of Birth', text(body.dateOfBirth, 40)],
-      ['State', text(body.state, 120)],
-      ['LGA', text(body.lga, 120)],
       ['Location', text(body.location, 160)],
       ['Current Status', text(body.currentStatus, 80)],
-      ['Institution Type', text(body.institutionType, 120)],
       ['Institution or Organization', text(body.institutionOrOrganization, 200)],
-      ['Course of Study', text(body.courseOfStudy, 180)],
-      ['Level', text(body.level, 80)],
-      ['NYSC Batch', text(body.nyscBatch, 80)],
-      ['Passing Out Date', text(body.passingOutDate, 40)],
       ['NYSC State', text(body.nyscState, 120)],
       ['Industry', text(body.industry, 120)],
-      ['Laptop', text(body.hasLaptop, 40)],
-      ['Internet Access', text(body.hasInternetAccess, 40)],
-      ['Can Attend Weekly Meetings?', text(body.canAttendWeeklyMeetings, 80)],
-      ['Facebook Profile', text(body.facebookProfile, 500)],
-      ['TikTok Profile', text(body.tiktokProfile, 500)],
-      ['Instagram Profile', text(body.instagramProfile, 500)],
-      ['LinkedIn Profile', text(body.linkedInProfile, 500)],
-      ['Leadership Experience', text(body.leadershipExperience)],
       ['Promotion Experience', text(body.promotionExperience)],
-      ['Why Should We Choose You?', text(body.whyChooseYou)],
-      ['Sales Experience', text(body.salesExperience)],
-      ['Greatest Achievement', text(body.greatestAchievement)],
-      ['Video Assessment Link', text(body.videoAssessmentLink, 500)],
       ['Preferred Communication Channel', text(body.preferredCommunicationChannel, 30)],
       ['Telegram Username', text(body.telegramUsername, 100)],
     ]
@@ -289,15 +379,6 @@ export async function POST(request: NextRequest) {
 
     const estimatedReach = integer(body.estimatedReach)
     if (estimatedReach) fields['Estimated Reach'] = estimatedReach
-    const numericValues: Array<[string, number]> = [
-      ['Weekly Hours Available', integer(body.weeklyHoursAvailable)],
-      ['Facebook Followers', integer(body.facebookFollowers)],
-      ['TikTok Followers', integer(body.tiktokFollowers)],
-      ['Instagram Followers', integer(body.instagramFollowers)],
-      ['LinkedIn Connections', integer(body.linkedInConnections)],
-    ]
-    for (const [field, value] of numericValues) if (value) fields[field] = value
-
     const ambassador = await createOrUpdateAmbassador({
       fullName,
       email,
@@ -319,7 +400,7 @@ export async function POST(request: NextRequest) {
 
     await airtable(encodeURIComponent(AIRTABLE_TABLE), {
       method: 'POST',
-      body: JSON.stringify({ fields }),
+      body: JSON.stringify({ fields: pickFields(fields, registrationFields), typecast: true }),
     })
 
     const referralCode = String(ambassador.fields?.['Referral Code'] || '')
