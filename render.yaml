@@ -19,5 +19,11 @@ services:
         sync: false
       - key: TELEGRAM_ADMIN_CHAT_ID
         sync: false
+      - key: GROWTH_ADMIN_SECRET
+        sync: false
+      - key: CALENDLY_EVENT_TYPE_URL
+        sync: false
+      - key: CALENDLY_WEBHOOK_SECRET
+        sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.nexoragroup.ink
