@@ -40,9 +40,13 @@ const steps = [
 
 const faqs = [
   ['Do I need a tech background?', 'No. The programs are built for practical users who want to apply AI at work or in business.'],
-  ['How long are the programs?', 'The Career and Business Accelerators both run for 4 weeks.'],
+  ['How long are the programs?', 'Each track contains 6 modules plus a final capstone project. Learners can take one track or combine multiple tracks.'],
   ['Can companies train their teams?', 'Yes. Companies can request corporate AI training, leadership workshops, and employee productivity sessions.'],
 ]
+
+function trackLabel(code: string) {
+  return code === 'BATP' ? '3 business tracks - NGN 5,000 each' : '5 career tracks - NGN 10,000 each'
+}
 
 export default async function HomePage() {
   const [programs, testimonials] = await Promise.all([getPrograms(), getTestimonials()])
@@ -78,7 +82,7 @@ export default async function HomePage() {
                     <Icon className="mt-1 h-5 w-5 shrink-0 text-signal" />
                     <div>
                       <h2 className="text-base font-semibold text-white">{program?.name || code}</h2>
-                      <p className="mt-1 text-sm text-steel">{program?.duration || '4 weeks'} · NGN {(program?.price || 25000).toLocaleString()}</p>
+                      <p className="mt-1 text-sm text-steel">{trackLabel(code)}</p>
                     </div>
                   </div>
                 </Link>
@@ -104,8 +108,8 @@ export default async function HomePage() {
                 <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
                 <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
                 <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
-                  <span>{program?.duration}</span>
-                  <span>NGN {(program?.price || 0).toLocaleString()}</span>
+                  <span>{code === 'BATP' ? '3 business tracks' : '5 career tracks'}</span>
+                  <span>{code === 'BATP' ? 'NGN 5,000 per track' : 'NGN 10,000 per track'}</span>
                 </div>
                 <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>Apply Now</CTA>
               </PremiumCard>

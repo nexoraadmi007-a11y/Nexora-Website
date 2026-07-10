@@ -1,30 +1,22 @@
 import type { Metadata } from 'next'
-import { BarChart3, Bot, CheckCircle2, Megaphone, Users, type LucideIcon } from 'lucide-react'
 import WebsiteForm from '@/components/sections/WebsiteForms'
-import PremiumCard from '@/components/ui/PremiumCard'
+import TrackShowcase from '@/components/sections/TrackShowcase'
+import { businessTransformationTracks } from '@/lib/course-tracks'
 import { getBusinessTransformation } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'Business Transformation Accelerator | Nexora Institute',
-  description: 'The NEXORA Business Transformation Accelerator helps SMEs, founders, business owners, and entrepreneurs use AI for marketing, sales, operations, CRM, and productivity.',
+  title: 'Business Transformation Tracks | Nexora Institute',
+  description: 'Choose a Nexora Business Transformation track in MVP building, business operating systems, or business auditing and bottleneck analysis.',
 }
 
-const outcomes: Array<[string, string, LucideIcon]> = [
-  ['Marketing engine', 'Use AI to plan campaigns, offers, captions, content, and follow-up assets.', Megaphone],
-  ['Customer follow-up', 'Build repeatable response, lead nurturing, and client communication workflows.', Users],
-  ['Operations dashboard', 'Improve reporting, task tracking, decision support, and business visibility.', BarChart3],
-  ['Automation roadmap', 'Identify the workflows that should be automated first and how to implement them responsibly.', Bot],
-]
-
 const faqs = [
-  ['Is this only for tech businesses?', 'No. The Business Accelerator is for practical business operators across services, retail, education, health, consulting, logistics, and other sectors.'],
-  ['Do I need an existing team?', 'No. Solo founders and small teams can join, but the program also works for corporate teams that need shared AI adoption habits.'],
-  ['Will this replace my staff?', 'No. The goal is to help people work smarter with AI, improve execution, and reduce repetitive manual work.'],
+  ['Is this only for tech businesses?', 'No. These tracks are for practical business operators across services, retail, education, health, consulting, logistics, and other sectors.'],
+  ['Can I take one track only?', 'Yes. Each Business Transformation track is independent, and learners can combine multiple tracks into a full pathway.'],
+  ['Will this replace my staff?', 'No. The goal is to improve execution, operations, reporting, and decision-making with AI-supported systems.'],
 ]
 
 export default async function BusinessAITransformationPage() {
   const program = await getBusinessTransformation()
-  const weeks = program.curriculum.split('\n').filter(Boolean)
 
   return (
     <>
@@ -32,58 +24,41 @@ export default async function BusinessAITransformationPage() {
         <div className="grid-field absolute inset-0 opacity-55" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_.9fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">Track 2 / Business Transformation Accelerator</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">{program.name}</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{program.description}</p>
+            <span className="eyebrow mb-7">Business Transformation / Modular Tracks</span>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Build AI-powered business operating capability.</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">
+              {program.description} Learners can complete one track or combine multiple tracks into a full Business Transformation learning pathway.
+            </p>
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
-              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Duration</p><p className="mt-1 text-xl font-bold text-white">{program.duration}</p></div>
-              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Audience</p><p className="mt-1 text-xl font-bold text-white">Business</p></div>
-              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Investment</p><p className="mt-1 text-xl font-bold text-white">NGN {program.price.toLocaleString()}</p></div>
+              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Tracks</p><p className="mt-1 text-xl font-bold text-white">{businessTransformationTracks.length}</p></div>
+              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Modules</p><p className="mt-1 text-xl font-bold text-white">6 + capstone</p></div>
+              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Price</p><p className="mt-1 text-xl font-bold text-white">NGN 5,000</p></div>
             </div>
           </div>
-          <WebsiteForm kind="batp" title="Apply for Business Accelerator" cta={`Apply - NGN ${program.price.toLocaleString()}`} payAfterSubmit context={{ amount: program.price, programName: program.name, programCode: 'BATP', cohort: 'Next Business Cohort' }} />
-        </div>
-      </section>
-
-      <section className="section border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-4xl font-semibold text-white md:text-5xl">Built for practical business transformation.</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {outcomes.map(([title, copy, Icon]) => (
-              <PremiumCard key={title} className="min-h-[260px]">
-                <Icon className="h-8 w-8 text-signal" />
-                <h3 className="mt-8 text-2xl font-semibold text-white">{title}</h3>
-                <p className="mt-4 text-sm leading-7 text-steel">{copy}</p>
-              </PremiumCard>
-            ))}
+          <div id="apply">
+            <WebsiteForm kind="batp" title="Apply for a Business Transformation Track" cta="Enroll in a Track" payAfterSubmit context={{ amount: 5000, programName: 'Business Transformation Track', programCode: 'BATP', cohort: 'Next Business Cohort' }} />
           </div>
         </div>
       </section>
 
-      <section className="section border-t border-white/10 bg-white/[0.015]">
-        <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <h2 className="text-4xl font-semibold text-white md:text-5xl">Business Transformation curriculum.</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-4">
-            {weeks.map((week, index) => (
-              <PremiumCard key={week} className="min-h-[220px]">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">Module {index + 1}</p>
-                <h3 className="mt-5 text-2xl font-semibold text-white">{week.replace(/^Week \d+:\s*/, '')}</h3>
-              </PremiumCard>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TrackShowcase
+        tracks={businessTransformationTracks}
+        programName="Business Transformation Program"
+        priceLabel="NGN 5,000 per Track"
+        pathwayCopy="Complete one practical track for a focused business capability, or combine multiple tracks into a broader transformation pathway."
+        applyHref="#apply"
+        otherTracksHref="/career-accelerator"
+      />
 
       <section className="section border-t border-white/10">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">FAQs</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {faqs.map(([question, answer]) => (
-              <PremiumCard key={question}>
-                <CheckCircle2 className="h-6 w-6 text-signal" />
-                <h3 className="mt-5 text-xl font-semibold text-white">{question}</h3>
+              <div key={question} className="glass rounded-2xl p-6 md:p-8">
+                <h3 className="text-xl font-semibold text-white">{question}</h3>
                 <p className="mt-4 text-sm leading-7 text-steel">{answer}</p>
-              </PremiumCard>
+              </div>
             ))}
           </div>
         </div>

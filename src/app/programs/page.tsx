@@ -13,7 +13,7 @@ const fallbackCards: Array<{
   code: string
   name: string
   slug: string
-  price: number
+  priceLabel: string
   duration: string
   target: string[]
   focus: string[]
@@ -23,8 +23,8 @@ const fallbackCards: Array<{
     code: 'NGTP',
     name: 'AI Career Accelerator',
     slug: 'career-accelerator',
-    price: 25000,
-    duration: '4 weeks',
+    priceLabel: 'NGN 10,000 per track',
+    duration: '5 career tracks',
     target: ['NYSC Members', 'Final-Year Students', 'Graduates', 'Young Professionals'],
     focus: ['AI productivity', 'Excel and Power BI', 'ChatGPT', 'Portfolio, CV, LinkedIn, and job readiness'],
     icon: GraduationCap,
@@ -33,8 +33,8 @@ const fallbackCards: Array<{
     code: 'BATP',
     name: 'AI Business Transformation Accelerator',
     slug: 'business-ai-transformation',
-    price: 35000,
-    duration: '4 weeks',
+    priceLabel: 'NGN 5,000 per track',
+    duration: '3 business tracks',
     target: ['Business Owners', 'Entrepreneurs', 'SMEs'],
     focus: ['AI marketing', 'AI customer support', 'Website and brand assets', 'Sales automation, CRM, and operations'],
     icon: BriefcaseBusiness,
@@ -45,7 +45,7 @@ export default async function ProgramsPage() {
   const programs = await getPrograms()
   const cards = fallbackCards.map((card) => {
     const match = programs.find((program) => program.code === card.code)
-    return match ? { ...card, name: match.name, slug: match.slug, price: match.price, duration: match.duration } : card
+    return match ? { ...card, name: match.name, slug: match.slug } : card
   })
 
   return (
@@ -72,7 +72,7 @@ export default async function ProgramsPage() {
                 <Icon className="h-8 w-8 text-signal" />
                 <p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-steel">{program.duration}</p>
                 <h2 className="mt-4 text-2xl font-semibold text-white">{program.name}</h2>
-                <p className="mt-4 text-3xl font-semibold text-white">NGN {program.price.toLocaleString()}</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{program.priceLabel}</p>
                 <div className="mt-7">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-steel">Best for</p>
                   <div className="mt-3 grid gap-2">

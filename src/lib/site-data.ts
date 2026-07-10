@@ -65,10 +65,10 @@ const fallbackPrograms: Program[] = [
     audience: 'NYSC members, 500-level students, graduates, and young professionals.',
     audienceType: 'Career',
     slug: 'career-accelerator',
-    duration: '4 weeks',
-    price: 25000,
-    description: 'A practical 4-week program for NYSC members, final-year students, graduates, and young professionals who want stronger AI skills, career assets, and job readiness.',
-    curriculum: 'AI productivity, ChatGPT, and workplace execution\nExcel, Power BI, and practical business intelligence\nContent creation, portfolio building, CV, and LinkedIn\nJob readiness, freelancing, and career action planning',
+    duration: '5 career tracks',
+    price: 10000,
+    description: 'A modular AI Accelerator pathway for learners who want career-focused tracks in content creation, UI/UX design, frontend development, backend development, and financial analysis.',
+    curriculum: 'AI Content Creation\nCertified UI/UX Designer (AI-Powered)\nAI Frontend Developer\nAI Backend Development\nAI Financial Analyst',
     cta: 'Apply for Career Accelerator',
     paymentLink: '',
   },
@@ -79,10 +79,10 @@ const fallbackPrograms: Program[] = [
     audience: 'Business owners, SMEs, startups, corporate teams, and entrepreneurs.',
     audienceType: 'Business',
     slug: 'business-ai-transformation',
-    duration: '4 weeks',
-    price: 35000,
-    description: 'A practical 4-week program for business owners, entrepreneurs, and SMEs who want AI-powered marketing, sales, customer support, CRM, and operations.',
-    curriculum: 'AI for marketing, brand identity, and content automation\nAI customer support, sales automation, and CRM workflows\nWebsite creation, proposal generation, and business documents\nOperations, reporting, productivity, and implementation roadmap',
+    duration: '3 business tracks',
+    price: 5000,
+    description: 'A modular Business Transformation pathway for entrepreneurs, SMEs, and operators who want practical tracks in MVP building, business operating systems, and business auditing.',
+    curriculum: 'Idea to MVP Certification Program\nBusiness Operations Systems\nBusiness Auditing & Bottleneck Analysis',
     cta: 'Apply for Business Accelerator',
     paymentLink: '',
   },
@@ -92,7 +92,7 @@ function programFromFields(fields: Record<string, any>): Program {
   const code = fields['Programme Code'] || fields['Program Code'] || ''
   const fallback = fallbackPrograms.find((program) => program.code === code) || fallbackPrograms[0]
   const rawPrice = Number(fields['Website Price'] || fallback.price)
-  const price = code === 'BATP' ? Math.max(rawPrice || 0, 35000) : rawPrice
+  const price = rawPrice || fallback.price
   const publicName = code === 'NGTP'
     ? 'AI Career Accelerator'
     : code === 'BATP'
