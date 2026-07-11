@@ -43,7 +43,7 @@ export async function createRecord<T = { id: string; fields: Record<string, unkn
       Authorization: `Bearer ${token()}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields, typecast: true }),
     cache: 'no-store',
   })
   if (!response.ok) {
@@ -60,7 +60,7 @@ export async function updateRecord<T = { id: string; fields: Record<string, unkn
       Authorization: `Bearer ${token()}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields, typecast: true }),
     cache: 'no-store',
   })
   if (!response.ok) throw new Error(`Airtable update ${table} failed: ${response.status}`)

@@ -13,13 +13,39 @@ type Field = {
   options?: string[]
 }
 
-const commonFields: Field[] = [
+const contactFields: Field[] = [
   { name: 'fullName', label: 'Full name', required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
   { name: 'phone', label: 'Phone / WhatsApp', type: 'tel', required: true },
   { name: 'occupation', label: 'Occupation' },
+]
+
+const commonFields: Field[] = [
+  ...contactFields,
   { name: 'customerCategory', label: 'Customer category', type: 'select', options: ['NYSC currently serving', 'NYSC completed', 'Final-year student', 'Graduate', 'Young professional', 'Working professional', 'Business owner', 'Entrepreneur', 'Corporate representative', 'Other'] },
-  { name: 'referralCode', label: 'Referral code' },
+]
+
+const businessIndustries = [
+  'Restaurant / Food Business',
+  'Fashion / Beauty',
+  'School / Education',
+  'Solar / Energy',
+  'Retail Shop',
+  'Pharmacy',
+  'Healthcare Practice',
+  'Consulting Firm',
+  'Professional Service',
+  'Agency',
+  'Real Estate',
+  'Logistics',
+  'Agriculture',
+  'Church / Faith Organization',
+  'Event Planning',
+  'Hospitality',
+  'Technology',
+  'Manufacturing',
+  'Import / Export',
+  'Other',
 ]
 
 const fieldsByKind: Record<FormKind, Field[]> = {
@@ -30,15 +56,16 @@ const fieldsByKind: Record<FormKind, Field[]> = {
   accelerator: [
     ...commonFields,
     { name: 'state', label: 'State' },
-    { name: 'cohort', label: 'Preferred cohort' },
     { name: 'primaryGoal', label: 'Career goal', type: 'textarea' },
     { name: 'biggestChallenge', label: 'Career challenge', type: 'textarea' },
   ],
   batp: [
-    ...commonFields,
+    ...contactFields,
     { name: 'businessName', label: 'Business name', required: true },
-    { name: 'industry', label: 'Industry' },
-    { name: 'businessSize', label: 'Business size', type: 'select', options: ['Solo', '1-5', '6-10', '11-50', '51-200', '201+'] },
+    { name: 'industry', label: 'Industry', type: 'select', required: true, options: businessIndustries },
+    { name: 'businessStage', label: 'Business stage', type: 'select', options: ['Idea stage', 'Startup', 'Already selling', 'Growing business', 'Established SME', 'Agency / service provider'] },
+    { name: 'staffSize', label: 'Staff size', type: 'select', options: ['Just me', '1-5', '6-10', '11-50', '51-200', '201+'] },
+    { name: 'state', label: 'State' },
     { name: 'yearsInBusiness', label: 'Years in business' },
     { name: 'monthlyCustomers', label: 'Monthly customers' },
     { name: 'currentAIUsage', label: 'Current AI usage', type: 'select', options: ['None', 'Basic', 'Intermediate', 'Advanced', 'Team Adoption', 'Not Sure'] },
@@ -64,7 +91,7 @@ const fieldsByKind: Record<FormKind, Field[]> = {
     { name: 'fullName', label: 'Full name', required: true },
     { name: 'email', label: 'Email', type: 'email', required: true },
     { name: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
-    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['AI Career Accelerator', 'AI Business Transformation Accelerator', 'Complete AI Accelerator', 'Corporate AI Training', 'General Inquiry'] },
+    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['AI Career Accelerator', 'AI Business Transformation Program', 'Complete AI Accelerator', 'Corporate AI Training', 'General Inquiry'] },
     { name: 'message', label: 'Message', type: 'textarea', required: true },
   ],
   corporate: [
@@ -108,6 +135,7 @@ export default function WebsiteForm({
 }) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [selectedIndustry, setSelectedIndustry] = useState('')
   const fields = useMemo(() => fieldsByKind[kind], [kind])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -116,12 +144,16 @@ export default function WebsiteForm({
     setMessage('')
     const form = event.currentTarget
     const formData = new FormData(form)
-    const payload: Record<string, unknown> = { kind, ...context, ...sourceParams() }
+    const sources = sourceParams()
+    const payload: Record<string, unknown> = { kind, ...context, ...sources, referralCode: sources.referralCode }
     fields.forEach((field) => {
       const value = String(formData.get(field.name) || '').trim()
-      if (field.name === 'referralCode' && !value) return
       payload[field.name] = value
     })
+    if (kind === 'batp' && payload.industry === 'Other') {
+      payload.industryOption = 'Other'
+      payload.industry = String(formData.get('otherIndustry') || '').trim()
+    }
 
     try {
       const response = await fetch(payAfterSubmit ? '/api/paystack/initialize' : '/api/website/forms', {
@@ -138,6 +170,7 @@ export default function WebsiteForm({
       setStatus('success')
       setMessage(data.message || 'Submitted successfully. Nexora will follow up.')
       form.reset()
+      setSelectedIndustry('')
     } catch (error) {
       setStatus('error')
       setMessage(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
@@ -157,15 +190,26 @@ export default function WebsiteForm({
             {field.type === 'textarea' ? (
               <textarea name={field.name} required={field.required} rows={5} className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
             ) : field.type === 'select' ? (
-              <select name={field.name} required={field.required} className="nexora-select w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal">
+              <select
+                name={field.name}
+                required={field.required}
+                onChange={field.name === 'industry' ? (event) => setSelectedIndustry(event.target.value) : undefined}
+                className="nexora-select w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal"
+              >
                 <option value="">Select option</option>
                 {field.options?.map((option) => <option key={option}>{option}</option>)}
               </select>
             ) : (
-              <input name={field.name} required={field.required} defaultValue={field.name === 'referralCode' ? sourceParams().referralCode : undefined} type={field.type || 'text'} className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
+              <input name={field.name} required={field.required} type={field.type || 'text'} className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
             )}
           </label>
         ))}
+        {kind === 'batp' && selectedIndustry === 'Other' ? (
+          <label className="md:col-span-2">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">Type your industry</span>
+            <input name="otherIndustry" required type="text" className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
+          </label>
+        ) : null}
       </div>
       <button disabled={status === 'sending'} className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold disabled:opacity-60">
         {status === 'sending' ? 'Submitting...' : cta}

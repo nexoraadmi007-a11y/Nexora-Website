@@ -32,7 +32,7 @@ const why = [
 ]
 
 const steps = [
-  ['Choose a program', 'Select the Career Accelerator or Business Transformation Accelerator.'],
+  ['Choose a program', 'Select the Career Accelerator or Business Transformation Program.'],
   ['Apply and confirm payment', 'Submit your details and complete enrollment securely.'],
   ['Learn by building', 'Attend sessions, complete practical tasks, and create usable assets.'],
   ['Use the skills', 'Apply AI to your career, business, workplace, or client work.'],
@@ -45,14 +45,14 @@ const faqs = [
 ]
 
 function trackLabel(code: string) {
-  return code === 'BATP' ? '3 business tracks - NGN 5,000 each' : '5 career tracks - NGN 10,000 each'
+  return code === 'BATP' ? '4 weeks - NGN 35,000' : '5 career tracks - NGN 25,000 each'
 }
 
 export default async function HomePage() {
   const [programs, testimonials] = await Promise.all([getPrograms(), getTestimonials()])
   const cards = [
     { code: 'NGTP', icon: GraduationCap, href: '/career-accelerator' },
-    { code: 'BATP', icon: BriefcaseBusiness, href: '/business-ai-transformation' },
+    { code: 'BATP', icon: BriefcaseBusiness, href: '/business-transformation' },
   ].map((card) => ({ ...card, program: programs.find((program) => program.code === card.code) }))
 
   return (
@@ -108,8 +108,8 @@ export default async function HomePage() {
                 <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
                 <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
                 <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
-                  <span>{code === 'BATP' ? '3 business tracks' : '5 career tracks'}</span>
-                  <span>{code === 'BATP' ? 'NGN 5,000 per track' : 'NGN 10,000 per track'}</span>
+                  <span>{code === 'BATP' ? '4 weeks' : '5 career tracks'}</span>
+                  <span>{code === 'BATP' ? 'NGN 35,000' : 'NGN 25,000 per track'}</span>
                 </div>
                 <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>Apply Now</CTA>
               </PremiumCard>

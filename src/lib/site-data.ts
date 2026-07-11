@@ -66,24 +66,24 @@ const fallbackPrograms: Program[] = [
     audienceType: 'Career',
     slug: 'career-accelerator',
     duration: '5 career tracks',
-    price: 10000,
-    description: 'A modular AI Accelerator pathway for learners who want career-focused tracks in content creation, UI/UX design, frontend development, backend development, and financial analysis.',
-    curriculum: 'AI Content Creation\nCertified UI/UX Designer (AI-Powered)\nAI Frontend Developer\nAI Backend Development\nAI Financial Analyst',
+    price: 25000,
+    description: 'A modular AI Career Accelerator with five independent tracks in data analysis, digital marketing, software building, business operations, and UI/UX design.',
+    curriculum: 'AI-Powered Data Analyst\nAI-Powered Digital Marketing Specialist\nAI-Powered Software Builder\nAI-Powered Business Operations Specialist\nAI-Powered UI/UX Designer',
     cta: 'Apply for Career Accelerator',
     paymentLink: '',
   },
   {
-    name: 'AI Business Transformation Accelerator',
+    name: 'AI Business Transformation Program',
     code: 'BATP',
     family: 'Business',
-    audience: 'Business owners, SMEs, startups, corporate teams, and entrepreneurs.',
+    audience: 'Small business owners, entrepreneurs, SMEs, startups, freelancers, agencies, service providers, retail businesses, and professional firms.',
     audienceType: 'Business',
-    slug: 'business-ai-transformation',
-    duration: '3 business tracks',
-    price: 5000,
-    description: 'A modular Business Transformation pathway for entrepreneurs, SMEs, and operators who want practical tracks in MVP building, business operating systems, and business auditing.',
-    curriculum: 'Idea to MVP Certification Program\nBusiness Operations Systems\nBusiness Auditing & Bottleneck Analysis',
-    cta: 'Apply for Business Accelerator',
+    slug: 'business-transformation',
+    duration: '4 weeks',
+    price: 35000,
+    description: 'A practical 30-day business transformation program that helps business owners build branding, a website, customer database, marketing engine, sales process, automation, dashboards, and a 90-day growth plan.',
+    curriculum: 'Brand identity kit\nLive business website\nMarketing engine\nSales system\nAI business operating system',
+    cta: 'Apply for Business Transformation',
     paymentLink: '',
   },
 ]
@@ -96,7 +96,7 @@ function programFromFields(fields: Record<string, any>): Program {
   const publicName = code === 'NGTP'
     ? 'AI Career Accelerator'
     : code === 'BATP'
-      ? 'AI Business Transformation Accelerator'
+      ? 'AI Business Transformation Program'
       : code === 'COMPLETE'
         ? 'Complete AI Accelerator'
         : fields['Website Program Name'] || fields['Programme Name'] || fallback.name

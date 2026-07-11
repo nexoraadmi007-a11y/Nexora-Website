@@ -15,6 +15,13 @@ function number(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function stringArray(value: unknown) {
+  if (Array.isArray(value)) return value.map((item) => text(item, 180)).filter(Boolean)
+  const raw = text(value)
+  if (!raw) return []
+  return raw.split(',').map((item) => text(item, 180)).filter(Boolean)
+}
+
 function compact(fields: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(fields).filter(([, value]) => {
     if (Array.isArray(value)) return value.length > 0
@@ -74,6 +81,18 @@ async function findProgramme(programCode: string, programName: string) {
   return byName[0] || null
 }
 
+async function findProgrammesByNames(names: string[]) {
+  const found: Array<AirtableRecord<Fields>> = []
+  for (const name of names) {
+    const records = await listRecords<Fields>('Programmes', {
+      formula: `{Programme Name}='${escapeFormula(name)}'`,
+      maxRecords: 1,
+    }).catch(() => [])
+    if (records[0]) found.push(records[0])
+  }
+  return found
+}
+
 async function findPaymentPlan(amount: number) {
   const records = await listRecords<Fields>('Payment Plans', {
     formula: `{Total Amount}=${amount}`,
@@ -97,17 +116,18 @@ async function upsertEnrollment(input: {
   reference: string
   contactId?: string
   applicationId?: string
-  programmeId?: string
+  programmeIds?: string[]
   paymentPlanId?: string
   amount: number
   paymentDate: string
   ambassadorId?: string
+  selectedTracks?: string[]
 }) {
   const existing = await findByReference<Fields>('Enrollments', 'Website Checkout ID', input.reference)
   const fields = compact({
     ...(input.contactId ? { Contact: [input.contactId] } : {}),
     ...(input.applicationId ? { Application: [input.applicationId] } : {}),
-    ...(input.programmeId ? { Programme: [input.programmeId] } : {}),
+    ...(input.programmeIds?.length ? { Programme: input.programmeIds } : {}),
     ...(input.paymentPlanId ? { 'Payment Plan': [input.paymentPlanId] } : {}),
     ...(input.ambassadorId ? { 'Referred By Ambassador': [input.ambassadorId] } : {}),
     'Enrollment Status': 'Payment Confirmed',
@@ -118,7 +138,7 @@ async function upsertEnrollment(input: {
     'Installment Count': 1,
     'Payment Confirmation Date': input.paymentDate,
     'Website Checkout ID': input.reference,
-    Notes: `Auto-confirmed by Paystack webhook for ${input.reference}.`,
+    Notes: `Auto-confirmed by Paystack webhook for ${input.reference}.${input.selectedTracks?.length ? ` Selected tracks: ${input.selectedTracks.join(', ')}` : ''}`,
   })
 
   if (existing) {
@@ -163,6 +183,67 @@ async function createPaymentIfMissing(input: {
   })
 }
 
+async function upsertBusinessParticipant(input: {
+  reference: string
+  fullName: string
+  email: string
+  phone: string
+  businessName: string
+  industry: string
+  businessStage: string
+  staffSize: string
+  state: string
+  website: string
+}) {
+  if (!input.businessName && !input.email) return null
+  const existing = input.email
+    ? await findByReference<Fields>('Business Participants', 'Email', input.email).catch(() => null)
+    : null
+  const fields = compact({
+    'Business Name': input.businessName || `${input.fullName} Business`,
+    'Owner Name': input.fullName,
+    Industry: input.industry,
+    'Business Stage': input.businessStage,
+    'Staff Size': input.staffSize,
+    State: input.state,
+    Phone: input.phone,
+    Email: input.email,
+    Website: input.website,
+    'Enrollment Status': 'Payment Confirmed',
+    'Programme Status': 'Enrolled',
+    'Payment Reference': input.reference,
+  })
+
+  if (existing) return updateRecord<AirtableRecord<Fields>>('Business Participants', existing.id, fields)
+  return createRecord<AirtableRecord<Fields>>('Business Participants', fields)
+}
+
+async function createBusinessDeliverables(input: {
+  reference: string
+  businessName: string
+  ownerName: string
+  email: string
+}) {
+  const existing = await findByReference<Fields>('Business Deliverables', 'Payment Reference', input.reference).catch(() => null)
+  const fields = compact({
+    'Business Name': input.businessName || `${input.ownerName} Business`,
+    'Owner Name': input.ownerName,
+    Email: input.email,
+    Branding: 'Not Started',
+    Website: 'Not Started',
+    'Marketing Engine': 'Not Started',
+    'Sales Engine': 'Not Started',
+    'Operating System': 'Not Started',
+    Dashboard: 'Not Started',
+    Automation: 'Not Started',
+    'Growth Plan': 'Not Started',
+    'Payment Reference': input.reference,
+  })
+
+  if (existing) return updateRecord('Business Deliverables', existing.id, fields)
+  return createRecord('Business Deliverables', fields)
+}
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   if (!verifySignature(rawBody, request.headers.get('x-paystack-signature'))) {
@@ -192,11 +273,19 @@ export async function POST(request: NextRequest) {
     const requestedCode = text(metadata.program_code, 20).toUpperCase()
     const programCode = requestedCode === 'COMPLETE' ? 'COMPLETE' : requestedCode === 'BATP' ? 'BATP' : 'NGTP'
     const programName = text(metadata.program, 160)
+    const fullName = text(metadata.full_name, 160)
+    const phone = text(metadata.phone, 80)
+    const selectedTracks = stringArray(metadata.selected_tracks)
     const receiptUrl = text(transaction.receipt_url || transaction.log?.receipt_url, 500)
 
     const websiteEvent = await findByReference<Fields>('Website Payment Events', 'Payment Reference', reference)
     const contact = await findContact(email)
     const programme = await findProgramme(programCode, programName)
+    const trackProgrammes = selectedTracks.length ? await findProgrammesByNames(selectedTracks) : []
+    const programmeIds = Array.from(new Set([
+      programme?.id || '',
+      ...trackProgrammes.map((record) => record.id),
+    ].filter(Boolean)))
     const paymentPlan = await findPaymentPlan(amount)
     const application = await findApplication(reference, contact?.id)
     const ambassadorId = websiteEvent?.fields?.Ambassador?.[0] || text(metadata.ambassador_record_id, 120)
@@ -231,11 +320,12 @@ export async function POST(request: NextRequest) {
       reference,
       contactId: contact?.id,
       applicationId: application?.id,
-      programmeId: programme?.id,
+      programmeIds,
       paymentPlanId: paymentPlan?.id,
       amount,
       paymentDate: paidAt,
       ambassadorId,
+      selectedTracks,
     })
 
     await createPaymentIfMissing({
@@ -245,6 +335,28 @@ export async function POST(request: NextRequest) {
       paymentDate: paidAt,
       receiptUrl,
     })
+
+    if (programCode === 'BATP') {
+      const businessName = text(metadata.business_name, 180)
+      await upsertBusinessParticipant({
+        reference,
+        fullName,
+        email,
+        phone,
+        businessName,
+        industry: text(metadata.business_industry, 120),
+        businessStage: text(metadata.business_stage, 120),
+        staffSize: text(metadata.staff_size, 80),
+        state: text(metadata.state, 120),
+        website: text(metadata.website, 300),
+      })
+      await createBusinessDeliverables({
+        reference,
+        businessName,
+        ownerName: fullName,
+        email,
+      })
+    }
 
     const referral = await findByReference<Fields>('Ambassador Referrals', 'Payment Reference', reference)
     if (referral) {
