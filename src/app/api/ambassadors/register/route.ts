@@ -23,15 +23,7 @@ type RegistrationPayload = {
   institutionType?: unknown
   institutionOrOrganization?: unknown
   courseOfStudy?: unknown
-  level?: unknown
-  nyscBatch?: unknown
-  passingOutDate?: unknown
-  nyscState?: unknown
   industry?: unknown
-  hasLaptop?: unknown
-  hasInternetAccess?: unknown
-  weeklyHoursAvailable?: unknown
-  canAttendWeeklyMeetings?: unknown
   facebookProfile?: unknown
   tiktokProfile?: unknown
   instagramProfile?: unknown
@@ -48,7 +40,6 @@ type RegistrationPayload = {
   communitiesOrNetworks?: unknown
   estimatedReach?: unknown
   promotionExperience?: unknown
-  preferredCommunicationChannel?: unknown
   telegramUsername?: unknown
   videoAssessmentLink?: unknown
   communicationsConsent?: unknown
@@ -67,13 +58,11 @@ const registrationFields = new Set([
   'Location',
   'Current Status',
   'Institution or Organization',
-  'NYSC State',
   'Industry',
   'Why Become an Ambassador?',
   'Communities or Networks',
   'Estimated Reach',
   'Promotion Experience',
-  'Preferred Communication Channel',
   'Source Channel',
   'Telegram Username',
   'Telegram Chat ID',
@@ -145,13 +134,6 @@ function registrationSummary(body: RegistrationPayload) {
     text(body.lga, 120) ? `LGA: ${text(body.lga, 120)}` : '',
     text(body.institutionType, 120) ? `Institution type: ${text(body.institutionType, 120)}` : '',
     text(body.courseOfStudy, 180) ? `Course of study: ${text(body.courseOfStudy, 180)}` : '',
-    text(body.level, 80) ? `Level: ${text(body.level, 80)}` : '',
-    text(body.nyscBatch, 80) ? `NYSC batch: ${text(body.nyscBatch, 80)}` : '',
-    text(body.passingOutDate, 40) ? `Passing out date: ${text(body.passingOutDate, 40)}` : '',
-    text(body.hasLaptop, 40) ? `Laptop: ${text(body.hasLaptop, 40)}` : '',
-    text(body.hasInternetAccess, 40) ? `Internet access: ${text(body.hasInternetAccess, 40)}` : '',
-    integer(body.weeklyHoursAvailable) ? `Weekly hours: ${integer(body.weeklyHoursAvailable)}` : '',
-    text(body.canAttendWeeklyMeetings, 80) ? `Weekly meetings: ${text(body.canAttendWeeklyMeetings, 80)}` : '',
     text(body.facebookProfile, 500) ? `Facebook: ${text(body.facebookProfile, 500)}` : '',
     text(body.tiktokProfile, 500) ? `TikTok: ${text(body.tiktokProfile, 500)}` : '',
     text(body.instagramProfile, 500) ? `Instagram: ${text(body.instagramProfile, 500)}` : '',
@@ -275,10 +257,8 @@ export async function POST(request: NextRequest) {
       ['Location', text(body.location, 160)],
       ['Current Status', text(body.currentStatus, 80)],
       ['Institution or Organization', text(body.institutionOrOrganization, 200)],
-      ['NYSC State', text(body.nyscState, 120)],
       ['Industry', text(body.industry, 120)],
       ['Promotion Experience', text(body.promotionExperience)],
-      ['Preferred Communication Channel', text(body.preferredCommunicationChannel, 30)],
       ['Telegram Username', text(body.telegramUsername, 100)],
     ]
     for (const [field, value] of values) if (value) fields[field] = value

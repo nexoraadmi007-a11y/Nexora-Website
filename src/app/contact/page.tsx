@@ -18,8 +18,9 @@ export default function ContactPage() {
             <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Talk to NEXORA Institute.</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">Ask about a program, company training, enrollment, payment, or the best AI learning path for your goals.</p>
             <div className="mt-8 grid gap-4">
-              <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Email</p><p className="mt-1 text-sm text-steel">nexoraadmi007@gmail.com</p></PremiumCard>
+              <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Email</p><p className="mt-1 text-sm text-steel">admin@nexoragroup.ink</p></PremiumCard>
               <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Phone / WhatsApp</p><p className="mt-1 text-sm text-steel">0701002613 | 08103200200</p></PremiumCard>
+              <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Office Address</p><p className="mt-1 text-sm leading-6 text-steel">Thebunker Office Building, Beside Access Bank, Oke Ilewo, Along Jide Jones, Abeokuta, Ogun State.</p></PremiumCard>
             </div>
           </div>
           <WebsiteForm kind="contact" title="Send an inquiry" cta="Submit Inquiry" />

@@ -1,13 +1,7 @@
 export const recruitmentStages = [
   'Application Received',
-  'Under Review',
-  'Shortlisted',
   'Interview Scheduled',
-  'Interview Completed',
-  'Selected for Bootcamp',
-  'Bootcamp In Progress',
-  'Probation',
-  'Official Growth Associate',
+  'Interview Passed',
   'Rejected',
   'Withdrawn',
 ] as const
@@ -15,15 +9,10 @@ export const recruitmentStages = [
 export type RecruitmentStage = (typeof recruitmentStages)[number]
 
 export const recruitmentActions: Record<string, RecruitmentStage> = {
-  review: 'Under Review',
-  shortlist: 'Shortlisted',
   reject: 'Rejected',
   schedule_interview: 'Interview Scheduled',
-  pass_interview: 'Selected for Bootcamp',
+  pass_interview: 'Interview Passed',
   fail_interview: 'Rejected',
-  move_bootcamp: 'Bootcamp In Progress',
-  move_probation: 'Probation',
-  approve_official: 'Official Growth Associate',
   withdraw: 'Withdrawn',
 }
 
@@ -54,11 +43,8 @@ export function screenGrowthAssociate(input: Record<string, unknown>) {
   const sales = text(input.salesExperience || input.promotionExperience)
   const achievement = text(input.greatestAchievement)
   const video = text(input.videoAssessmentLink)
-  const laptop = text(input.hasLaptop).toLowerCase()
-  const internet = text(input.hasInternetAccess).toLowerCase()
   const status = text(input.currentStatus).toLowerCase()
   const reach = integer(input.estimatedReach)
-  const weeklyHours = integer(input.weeklyHoursAvailable)
   const socialTotal = integer(input.facebookFollowers) + integer(input.tiktokFollowers) + integer(input.instagramFollowers) + integer(input.linkedInConnections)
 
   let score = 20
@@ -68,14 +54,12 @@ export function screenGrowthAssociate(input: Record<string, unknown>) {
   if (sales.length >= 40) score += 10
   if (achievement.length >= 40) score += 6
   if (video) score += 10
-  if (laptop === 'yes') score += 6
-  if (internet === 'yes') score += 6
-  if (weeklyHours >= 5) score += 5
   if (reach >= 100) score += 6
   else if (reach >= 30) score += 3
   if (socialTotal >= 1000) score += 5
   else if (socialTotal >= 300) score += 3
-  if (status.includes('serving') || status.includes('student') || status.includes('completed')) score += 4
+  if (status.includes('undergraduate') || status.includes('nysc') || status.includes('young professional')) score += 8
+  if (status.includes('unemployed')) score += 4
   score = Math.min(score, 100)
 
   const recommendation = score >= 75 ? 'Strong Candidate' : score >= 50 ? 'Potential Candidate' : 'Not Recommended'
@@ -84,23 +68,21 @@ export function screenGrowthAssociate(input: Record<string, unknown>) {
     leadership.length >= 40 ? 'Shows leadership or community experience.' : '',
     sales.length >= 40 ? 'Has promotion, sales, or community-building exposure.' : '',
     video ? 'Submitted a video assessment link.' : '',
-    laptop === 'yes' && internet === 'yes' ? 'Has basic digital readiness: laptop and internet access.' : '',
+    status ? `Fits recruitment category: ${text(input.currentStatus, 80)}.` : '',
     reach >= 30 ? `Claims reachable audience of about ${reach} people.` : '',
   ].filter(Boolean)
 
   const weaknesses = [
     motivation.length < 80 ? 'Motivation answer needs more depth.' : '',
     !video ? 'No video assessment link provided.' : '',
-    laptop !== 'yes' ? 'Laptop readiness is not confirmed.' : '',
-    internet !== 'yes' ? 'Internet readiness is not fully confirmed.' : '',
-    weeklyHours < 5 ? 'Weekly availability may be limited.' : '',
+    !status ? 'Current status was not provided.' : '',
     socialTotal < 300 ? 'Social reach appears limited or was not provided.' : '',
   ].filter(Boolean)
 
   const questions = [
     'Tell us about a time you convinced people to join a program, event, product, or community.',
     'How would you explain NEXORA Institute to a final-year student or business owner in 60 seconds?',
-    'What weekly activities can you commit to during the Growth Associate bootcamp?',
+    'How would you consistently generate qualified applications as a paid Growth Associate?',
     'How would you handle a prospect who is interested but unsure about paying for AI training?',
   ]
 

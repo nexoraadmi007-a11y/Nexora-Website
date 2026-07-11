@@ -54,7 +54,7 @@ The current screening engine scores applicants using structured application sign
 - Leadership and community experience.
 - Sales or promotion experience.
 - Video submission.
-- Laptop and internet readiness.
+- Paid Growth Associate fit, including recruitment motivation, promotion experience, audience reach, and social proof.
 - Weekly availability.
 - Estimated reach.
 - Social reach.

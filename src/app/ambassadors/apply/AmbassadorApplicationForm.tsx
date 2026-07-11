@@ -67,13 +67,13 @@ export default function AmbassadorApplicationForm() {
             Apply to join NEXORA. <span className="text-[#8fb7f3]">Enter a structured recruitment journey.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-8 text-steel md:text-lg">
-            Growth Associates are selected through application review, interview, bootcamp, and probation before official activation.
+            Growth Associates are selected through application review and interview before official onboarding.
           </p>
 
           <div className="mt-10 grid gap-5 border-y border-white/10 py-7">
             <Benefit icon={Users} title="Structured selection" copy="Applications are reviewed alongside other candidates before any official associate status is granted." />
-            <Benefit icon={Network} title="Interview and bootcamp" copy="Shortlisted applicants proceed through interview, bootcamp, and probation before activation." />
-            <Benefit icon={ShieldCheck} title="Official activation only" copy="Referral tools and performance tracking are enabled only after administrator approval." />
+            <Benefit icon={Network} title="Interview scheduling" copy="Selected applicants receive an interview invitation and choose a suitable time through Calendly." />
+            <Benefit icon={ShieldCheck} title="Official onboarding" copy="Applicants who pass the interview receive the official group invite and next instructions." />
           </div>
         </div>
 
@@ -117,18 +117,7 @@ export default function AmbassadorApplicationForm() {
                 <SelectField label="Institution type" name="institutionType" options={['University', 'Polytechnic', 'College', 'Other Institution']} />
                 <Field label="Institution name" name="institutionOrOrganization" />
                 <Field label="Course of study" name="courseOfStudy" />
-                <SelectField label="Level" name="level" options={['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', 'Graduate', 'Other']} />
-                <SelectField label="NYSC status" name="currentStatus" options={['Currently serving', 'Completed', 'Not started', 'Not applicable']} />
-                <Field label="NYSC batch" name="nyscBatch" />
-                <Field label="Passing out date" name="passingOutDate" type="date" />
-                <Field label="NYSC state" name="nyscState" />
-              </FormSection>
-
-              <FormSection title="Availability">
-                <SelectField label="Laptop" name="hasLaptop" options={['Yes', 'No']} />
-                <SelectField label="Internet access" name="hasInternetAccess" options={['Yes', 'No', 'Sometimes']} />
-                <Field label="Weekly hours available" name="weeklyHoursAvailable" type="number" min="0" />
-                <SelectField label="Can attend weekly meetings?" name="canAttendWeeklyMeetings" options={['Yes', 'No', 'Depends on schedule']} />
+                <SelectField label="Current status" name="currentStatus" options={['Undergraduate', 'NYSC Corp Member', 'Young Professional', 'Unemployed']} />
               </FormSection>
 
               <FormSection title="Social media reach">
@@ -146,7 +135,6 @@ export default function AmbassadorApplicationForm() {
                 <TextArea label="Student union, department, church, association, community, business, or other leadership roles" name="leadershipExperience" wide />
                 <TextArea label="Promotion, sales, or community-building experience" name="promotionExperience" wide />
                 <Field label="Estimated people you can reach" name="estimatedReach" type="number" min="0" />
-                <SelectField label="Preferred communication channel" name="preferredCommunicationChannel" options={['WhatsApp', 'Telegram', 'Email', 'Phone']} />
                 <Field label="Telegram username" name="telegramUsername" placeholder="@username" />
               </FormSection>
 

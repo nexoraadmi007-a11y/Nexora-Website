@@ -11,7 +11,7 @@ export async function sendEmail(input: EmailInput) {
     return { ok: false, skipped: true, reason: 'RESEND_API_KEY is not configured.' }
   }
 
-  const from = process.env.NEXORA_EMAIL_FROM || 'NEXORA Institute <onboarding@resend.dev>'
+  const from = process.env.NEXORA_EMAIL_FROM || 'NEXORA Institute <admin@nexoragroup.ink>'
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {

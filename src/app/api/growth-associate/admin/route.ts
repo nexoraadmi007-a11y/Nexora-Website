@@ -48,7 +48,6 @@ async function createOfficialAssociate(recordId: string, fields: Fields, note: s
     'Ambassador ID': `GA-${Date.now()}`,
     Contact: phone || email,
     Institution: text(fields['Institution or Organization'], 200),
-    'NYSC State': text(fields['NYSC State'], 120),
     Location: text(fields.Location, 160),
     Email: email,
     'Phone Number': phone,
@@ -87,28 +86,20 @@ function actionFields(action: string, stage: string, note: string) {
     'Admin Last Action At': now,
   }
 
-  if (stage === 'Under Review') fields['Registration Status'] = 'Under Review'
-  if (stage === 'Shortlisted') {
-    fields['Registration Status'] = 'Under Review'
+  if (stage === 'Interview Scheduled') {
+    fields['Registration Status'] = 'Interview Scheduled'
     fields['Interview Status'] = 'Invited'
     fields['Calendly Invite Link'] = process.env.CALENDLY_EVENT_TYPE_URL || ''
   }
-  if (stage === 'Interview Scheduled') fields['Interview Status'] = 'Scheduled'
-  if (stage === 'Interview Completed') fields['Interview Status'] = 'Completed'
-  if (stage === 'Selected for Bootcamp') {
-    fields['Interview Status'] = 'Passed'
-    fields['Bootcamp Status'] = 'Invited'
-  }
-  if (stage === 'Bootcamp In Progress') fields['Bootcamp Status'] = 'In Progress'
-  if (stage === 'Probation') fields['Probation Status'] = 'In Progress'
-  if (stage === 'Official Growth Associate') {
+  if (stage === 'Interview Passed') {
     fields['Registration Status'] = 'Approved'
     fields['Processing Status'] = 'Processed'
-    fields['Probation Status'] = 'Passed'
+    fields['Interview Status'] = 'Passed'
   }
   if (stage === 'Rejected') {
     fields['Registration Status'] = 'Rejected'
-    fields['Interview Status'] = action === 'fail_interview' ? 'Failed' : undefined
+    fields['Processing Status'] = 'Processed'
+    fields['Interview Status'] = 'Failed'
   }
   if (stage === 'Withdrawn') fields['Registration Status'] = 'Rejected'
   if (note) fields['Review Notes'] = note
@@ -118,63 +109,28 @@ function actionFields(action: string, stage: string, note: string) {
 function applicantMessage(fields: Fields, stage: string, action: string, note: string) {
   const fullName = text(fields['Full Name'], 120) || 'there'
   const calendlyLink = process.env.CALENDLY_EVENT_TYPE_URL || text(fields['Calendly Invite Link'], 500)
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'
+  const groupInviteLink = process.env.GROWTH_ASSOCIATE_GROUP_INVITE_URL || process.env.WHATSAPP_GROUP_INVITE_URL || ''
   const signoff = '\n\nNEXORA Institute Recruitment Team'
   const extraNote = note ? `\n\nAdditional note from the recruitment team:\n${note}` : ''
-
-  if (stage === 'Shortlisted') {
-    return {
-      subject: 'NEXORA Growth Associate Application Shortlisted',
-      text: `Hello ${fullName},\n\nYour NEXORA Growth Associate application has been shortlisted for the next stage.\n\nOur recruitment team will review your profile for interview scheduling. Please watch your email for the next instruction.${extraNote}${signoff}`,
-    }
-  }
 
   if (stage === 'Interview Scheduled') {
     return {
       subject: 'NEXORA Growth Associate Interview Invitation',
-      text: `Hello ${fullName},\n\nYou have been selected for the interview stage of the NEXORA Growth Associate recruitment process.\n\n${calendlyLink ? `Please book or confirm your interview here:\n${calendlyLink}` : 'Our team will contact you with the interview time and joining details.'}${extraNote}${signoff}`,
+      text: `Hello ${fullName},\n\nYou have been selected for the interview stage of the NEXORA Growth Associate recruitment process.\n\n${calendlyLink ? `Please choose the interview date and time that works best for you using this Calendly link:\n${calendlyLink}` : 'Our team will contact you with the interview time and joining details.'}\n\nPlease attend the interview prepared to discuss your motivation, audience reach, promotion experience, and why you want to represent NEXORA.${extraNote}${signoff}`,
     }
   }
 
-  if (stage === 'Selected for Bootcamp') {
+  if (stage === 'Interview Passed') {
     return {
-      subject: 'NEXORA Growth Associate Bootcamp Selection',
-      text: `Hello ${fullName},\n\nCongratulations. You have passed the interview stage and have been selected for the Growth Associate bootcamp.\n\nBootcamp instructions will be shared with you by the recruitment team.${extraNote}${signoff}`,
-    }
-  }
-
-  if (stage === 'Bootcamp In Progress') {
-    return {
-      subject: 'NEXORA Growth Associate Bootcamp Started',
-      text: `Hello ${fullName},\n\nYour Growth Associate bootcamp stage is now active. Please follow the instructions from the NEXORA team and complete all required activities.${extraNote}${signoff}`,
-    }
-  }
-
-  if (stage === 'Probation') {
-    return {
-      subject: 'NEXORA Growth Associate Probation Stage',
-      text: `Hello ${fullName},\n\nYou have moved into the probation stage of the NEXORA Growth Associate process. Your activity, communication, and results will be reviewed before official activation.${extraNote}${signoff}`,
-    }
-  }
-
-  if (stage === 'Official Growth Associate') {
-    return {
-      subject: 'You Are Now an Official NEXORA Growth Associate',
-      text: `Hello ${fullName},\n\nCongratulations. You have been approved as an official NEXORA Growth Associate.\n\nYour referral tools and performance tracking will now be activated in the NEXORA system.${extraNote}\n\nYou can visit NEXORA here:\n${baseUrl}${signoff}`,
+      subject: 'NEXORA Growth Associate Interview Result',
+      text: `Hello ${fullName},\n\nCongratulations. You passed the NEXORA Growth Associate interview.\n\n${groupInviteLink ? `Please join the official Growth Associate group using this invite link:\n${groupInviteLink}` : 'Our team will send your official group invite link shortly.'}\n\nFurther onboarding instructions will be shared in the group.${extraNote}${signoff}`,
     }
   }
 
   if (stage === 'Rejected') {
     return {
       subject: 'NEXORA Growth Associate Application Update',
-      text: `Hello ${fullName},\n\nThank you for applying to become a NEXORA Growth Associate.\n\nAfter review, we will not be moving your application forward at this time. We appreciate your interest in NEXORA and encourage you to stay connected for future opportunities.${extraNote}${signoff}`,
-    }
-  }
-
-  if (action === 'review') {
-    return {
-      subject: 'NEXORA Growth Associate Application Under Review',
-      text: `Hello ${fullName},\n\nYour NEXORA Growth Associate application is now under review. Our recruitment team will contact you if you are shortlisted for the next stage.${extraNote}${signoff}`,
+      text: `Hello ${fullName},\n\nThank you for applying to become a NEXORA Growth Associate.\n\nWe are sorry to inform you that you did not pass this stage of the recruitment process. We appreciate your interest in NEXORA and encourage you to stay connected for future opportunities.${extraNote}${signoff}`,
     }
   }
 
@@ -238,7 +194,7 @@ export async function PATCH(request: NextRequest) {
 
   const fields = actionFields(action || nextStage, nextStage, note)
   await updateRecord('Ambassador Registrations', id, fields)
-  if (nextStage === 'Official Growth Associate') await createOfficialAssociate(id, registration.fields, note)
+  if (nextStage === 'Interview Passed') await createOfficialAssociate(id, { ...registration.fields, ...fields }, note)
 
   let applicantNotification = ''
   try {

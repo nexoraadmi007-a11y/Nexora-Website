@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <Policy title="How it is used">Information is used to review applications, manage programmes and communities, attribute referrals, communicate operational updates, and maintain accurate CRM records.</Policy>
         <Policy title="Storage and access">Information is stored in NEXORA&apos;s controlled CRM and is available only to authorized operators who need it for programme delivery, admissions, payments, or community management.</Policy>
         <Policy title="Sharing">NEXORA does not sell personal data. Information may be processed by service providers used for hosting, communications, forms, payments, and CRM operations.</Policy>
-        <Policy title="Your choices">You may request access, correction, or deletion by emailing nexoraadmi007@gmail.com. Legal, payment, fraud-prevention, and programme records may be retained where required.</Policy>
+        <Policy title="Your choices">You may request access, correction, or deletion by emailing admin@nexoragroup.ink. Legal, payment, fraud-prevention, and programme records may be retained where required.</Policy>
       </div>
       <Link href="/contact" className="button-secondary mt-12 inline-flex min-h-12 items-center rounded-lg px-6 text-sm font-semibold">Contact NEXORA</Link>
     </section>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock3, ExternalLink, RefreshCw, Search, ShieldCheck, X, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock3, Eye, EyeOff, ExternalLink, RefreshCw, Search, ShieldCheck, X, XCircle } from 'lucide-react'
 
 type Applicant = {
   id: string
@@ -15,13 +15,8 @@ type ApiResult = {
 }
 
 const actions = [
-  { key: 'review', label: 'Review', tone: 'neutral' },
-  { key: 'shortlist', label: 'Shortlist', tone: 'blue' },
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
-  { key: 'move_bootcamp', label: 'Bootcamp', tone: 'blue' },
-  { key: 'move_probation', label: 'Probation', tone: 'neutral' },
-  { key: 'approve_official', label: 'Approve Official', tone: 'green' },
   { key: 'reject', label: 'Reject', tone: 'red' },
 ]
 
@@ -62,15 +57,7 @@ const questionLabels: Array<[string, string]> = [
   ['institutionType', 'Institution type'],
   ['institutionOrOrganization', 'Institution or organization'],
   ['courseOfStudy', 'Course of study'],
-  ['level', 'Level'],
   ['currentStatus', 'Current status'],
-  ['nyscBatch', 'NYSC batch'],
-  ['passingOutDate', 'Passing out date'],
-  ['nyscState', 'NYSC state'],
-  ['hasLaptop', 'Laptop'],
-  ['hasInternetAccess', 'Internet access'],
-  ['weeklyHoursAvailable', 'Weekly hours available'],
-  ['canAttendWeeklyMeetings', 'Can attend weekly meetings'],
   ['facebookProfile', 'Facebook profile'],
   ['tiktokProfile', 'TikTok profile'],
   ['instagramProfile', 'Instagram profile'],
@@ -82,7 +69,6 @@ const questionLabels: Array<[string, string]> = [
   ['leadershipExperience', 'Leadership experience'],
   ['promotionExperience', 'Promotion experience'],
   ['estimatedReach', 'Estimated reach'],
-  ['preferredCommunicationChannel', 'Preferred communication channel'],
   ['telegramUsername', 'Telegram username'],
   ['whyAmbassador', 'Why do you want to become a Growth Associate?'],
   ['whyChooseYou', 'Why should we choose you?'],
@@ -112,6 +98,7 @@ export default function AdminRecruitmentDashboard() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [showSecret, setShowSecret] = useState(false)
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
@@ -196,7 +183,23 @@ export default function AdminRecruitmentDashboard() {
         <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_0.8fr_0.8fr_auto]">
           <label className="grid gap-2 text-sm text-steel">
             Admin secret
-            <input value={secret} onChange={(event) => setSecret(event.target.value)} type="password" className="min-h-12 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-white outline-none focus:border-signal" />
+            <span className="flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-4 focus-within:border-signal">
+              <input
+                value={secret}
+                onChange={(event) => setSecret(event.target.value)}
+                type={showSecret ? 'text' : 'password'}
+                className="min-w-0 flex-1 bg-transparent text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSecret((current) => !current)}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-steel transition hover:bg-white/10 hover:text-white"
+                aria-label={showSecret ? 'Hide admin secret' : 'Show admin secret'}
+                title={showSecret ? 'Hide admin secret' : 'Show admin secret'}
+              >
+                {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </span>
           </label>
           <label className="grid gap-2 text-sm text-steel">
             Stage
