@@ -151,7 +151,7 @@ async function notifyApplicant(fields: Fields, stage: string, action: string, no
   })
 
   if (result.skipped) return result.reason || 'Email provider is not configured.'
-  return `Email sent to ${email}.`
+  return `Email sent to ${email}${result.id ? ` (Resend ID: ${result.id})` : ''}.`
 }
 
 export async function GET(request: NextRequest) {
