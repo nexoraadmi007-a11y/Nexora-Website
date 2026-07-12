@@ -37,46 +37,35 @@ export function codeFromName(name: string, fallback: string) {
 }
 
 export function screenGrowthAssociate(input: Record<string, unknown>) {
-  const leadership = text(input.leadershipExperience)
-  const motivation = text(input.whyAmbassador)
-  const choose = text(input.whyChooseYou)
-  const sales = text(input.salesExperience || input.promotionExperience)
-  const achievement = text(input.greatestAchievement)
-  const video = text(input.videoAssessmentLink)
-  const status = text(input.currentStatus).toLowerCase()
-  const reach = integer(input.estimatedReach)
-  const socialTotal = integer(input.facebookFollowers) + integer(input.tiktokFollowers) + integer(input.instagramFollowers) + integer(input.linkedInConnections)
+  const fullName = text(input.fullName, 160)
+  const email = text(input.email, 254)
+  const phone = text(input.phoneNumber || input.whatsAppNumber, 80)
+  const whatsApp = text(input.whatsAppNumber, 80)
+  const gender = text(input.gender, 80)
+  const state = text(input.state, 120)
 
-  let score = 20
-  if (motivation.length >= 80) score += 12
-  if (choose.length >= 80) score += 10
-  if (leadership.length >= 40) score += 10
-  if (sales.length >= 40) score += 10
-  if (achievement.length >= 40) score += 6
-  if (video) score += 10
-  if (reach >= 100) score += 6
-  else if (reach >= 30) score += 3
-  if (socialTotal >= 1000) score += 5
-  else if (socialTotal >= 300) score += 3
-  if (status.includes('undergraduate') || status.includes('nysc') || status.includes('young professional')) score += 8
-  if (status.includes('unemployed')) score += 4
+  let score = 35
+  if (fullName) score += 10
+  if (email) score += 15
+  if (phone) score += 15
+  if (whatsApp) score += 10
+  if (gender) score += 5
+  if (state) score += 10
   score = Math.min(score, 100)
 
-  const recommendation = score >= 75 ? 'Strong Candidate' : score >= 50 ? 'Potential Candidate' : 'Not Recommended'
+  const recommendation = score >= 80 ? 'Complete Contact Profile' : score >= 60 ? 'Contact Profile Needs Review' : 'Incomplete Contact Profile'
   const strengths = [
-    motivation.length >= 80 ? 'Clear motivation for joining NEXORA.' : '',
-    leadership.length >= 40 ? 'Shows leadership or community experience.' : '',
-    sales.length >= 40 ? 'Has promotion, sales, or community-building exposure.' : '',
-    video ? 'Submitted a video assessment link.' : '',
-    status ? `Fits recruitment category: ${text(input.currentStatus, 80)}.` : '',
-    reach >= 30 ? `Claims reachable audience of about ${reach} people.` : '',
+    email ? 'Email address provided.' : '',
+    phone ? 'Phone number provided.' : '',
+    whatsApp ? 'WhatsApp number provided.' : '',
+    state ? `State provided: ${state}.` : '',
   ].filter(Boolean)
 
   const weaknesses = [
-    motivation.length < 80 ? 'Motivation answer needs more depth.' : '',
-    !video ? 'No video assessment link provided.' : '',
-    !status ? 'Current status was not provided.' : '',
-    socialTotal < 300 ? 'Social reach appears limited or was not provided.' : '',
+    !email ? 'Email address was not provided.' : '',
+    !whatsApp ? 'WhatsApp number was not provided.' : '',
+    !gender ? 'Gender was not provided.' : '',
+    !state ? 'State was not provided.' : '',
   ].filter(Boolean)
 
   const questions = [
@@ -86,11 +75,11 @@ export function screenGrowthAssociate(input: Record<string, unknown>) {
     'How would you handle a prospect who is interested but unsure about paying for AI training?',
   ]
 
-  const roleFit = score >= 75
-    ? 'Campus or community growth lead'
-    : score >= 50
-      ? 'Growth trainee with interview validation'
-      : 'Needs further review before field activity'
+  const roleFit = score >= 80
+    ? 'Ready for interview screening'
+    : score >= 60
+      ? 'Contact details require admin review'
+      : 'Incomplete first-stage application'
 
   return {
     score,

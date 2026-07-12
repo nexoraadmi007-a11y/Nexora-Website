@@ -1,7 +1,6 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import Link from 'next/link'
 import { CheckCircle2, Network, ShieldCheck, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -12,7 +11,46 @@ function submissionId() {
 }
 
 const inputClass = 'min-h-[50px] w-full rounded-lg border border-white/10 bg-white/[0.035] px-4 text-sm text-white outline-none transition placeholder:text-steel/45 focus:border-signal/70 focus:ring-2 focus:ring-signal/15'
-const textareaClass = `${inputClass} resize-y py-3`
+
+const nigerianStates = [
+  'Abia',
+  'Adamawa',
+  'Akwa Ibom',
+  'Anambra',
+  'Bauchi',
+  'Bayelsa',
+  'Benue',
+  'Borno',
+  'Cross River',
+  'Delta',
+  'Ebonyi',
+  'Edo',
+  'Ekiti',
+  'Enugu',
+  'FCT',
+  'Gombe',
+  'Imo',
+  'Jigawa',
+  'Kaduna',
+  'Kano',
+  'Katsina',
+  'Kebbi',
+  'Kogi',
+  'Kwara',
+  'Lagos',
+  'Nasarawa',
+  'Niger',
+  'Ogun',
+  'Ondo',
+  'Osun',
+  'Oyo',
+  'Plateau',
+  'Rivers',
+  'Sokoto',
+  'Taraba',
+  'Yobe',
+  'Zamfara',
+]
 
 export default function AmbassadorApplicationForm() {
   const [state, setState] = useState<FormState>('idle')
@@ -33,8 +71,8 @@ export default function AmbassadorApplicationForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
-          communicationsConsent: form.communicationsConsent.checked,
-          ambassadorTermsAccepted: form.ambassadorTermsAccepted.checked,
+          communicationsConsent: true,
+          ambassadorTermsAccepted: true,
           externalSubmissionId: requestId,
         }),
       })
@@ -71,9 +109,9 @@ export default function AmbassadorApplicationForm() {
           </p>
 
           <div className="mt-10 grid gap-5 border-y border-white/10 py-7">
-            <Benefit icon={Users} title="Structured selection" copy="Applications are reviewed alongside other candidates before any official associate status is granted." />
+            <Benefit icon={Users} title="Short application" copy="Submit only the basic contact details needed for first-stage screening." />
             <Benefit icon={Network} title="Interview scheduling" copy="Selected applicants receive an interview invitation and choose a suitable time through Calendly." />
-            <Benefit icon={ShieldCheck} title="Official onboarding" copy="Applicants who pass the interview receive the official group invite and next instructions." />
+            <Benefit icon={ShieldCheck} title="Biodata after selection" copy="Full biodata will be requested only from candidates who are selected for onboarding." />
           </div>
         </div>
 
@@ -97,7 +135,7 @@ export default function AmbassadorApplicationForm() {
             <form onSubmit={submit} className="glass rounded-lg p-5 md:p-9">
               <div className="border-b border-white/10 pb-7">
                 <p className="text-xs font-bold uppercase text-[#8fb7f3]">Growth associate application</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white md:text-3xl">Tell us about your reach and motivation.</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-white md:text-3xl">Start your Growth Associate application.</h2>
                 <p className="mt-3 text-sm leading-7 text-steel">Required fields are marked with an asterisk.</p>
               </div>
 
@@ -106,58 +144,11 @@ export default function AmbassadorApplicationForm() {
                 <Field label="Email address" name="email" type="email" autoComplete="email" />
                 <Field label="Phone number" name="phoneNumber" type="tel" autoComplete="tel" required />
                 <Field label="WhatsApp number" name="whatsAppNumber" type="tel" />
-                <SelectField label="Gender" name="gender" options={['Female', 'Male', 'Prefer not to say']} />
-                <Field label="Date of birth" name="dateOfBirth" type="date" />
-                <Field label="State" name="state" />
-                <Field label="LGA" name="lga" />
-                <Field label="Current location" name="location" autoComplete="address-level2" />
-              </FormSection>
-
-              <FormSection title="Education">
-                <SelectField label="Institution type" name="institutionType" options={['University', 'Polytechnic', 'College', 'Other Institution']} />
-                <Field label="Institution name" name="institutionOrOrganization" />
-                <Field label="Course of study" name="courseOfStudy" />
-                <SelectField label="Current status" name="currentStatus" options={['Undergraduate', 'NYSC Corp Member', 'Young Professional', 'Unemployed']} />
-              </FormSection>
-
-              <FormSection title="Social media reach">
-                <Field label="Facebook profile" name="facebookProfile" type="url" />
-                <Field label="TikTok profile" name="tiktokProfile" type="url" />
-                <Field label="Instagram profile" name="instagramProfile" />
-                <Field label="LinkedIn profile" name="linkedInProfile" type="url" />
-                <Field label="Facebook followers" name="facebookFollowers" type="number" min="0" />
-                <Field label="TikTok followers" name="tiktokFollowers" type="number" min="0" />
-                <Field label="Instagram followers" name="instagramFollowers" type="number" min="0" />
-                <Field label="LinkedIn connections" name="linkedInConnections" type="number" min="0" />
-              </FormSection>
-
-              <FormSection title="Leadership experience">
-                <TextArea label="Student union, department, church, association, community, business, or other leadership roles" name="leadershipExperience" wide />
-                <TextArea label="Promotion, sales, or community-building experience" name="promotionExperience" wide />
-                <Field label="Estimated people you can reach" name="estimatedReach" type="number" min="0" />
-                <Field label="Telegram username" name="telegramUsername" placeholder="@username" />
-              </FormSection>
-
-              <FormSection title="Short answers">
-                <TextArea label="Why do you want to become a NEXORA Growth Associate?" name="whyAmbassador" required wide />
-                <TextArea label="Why should we choose you?" name="whyChooseYou" required wide />
-                <TextArea label="Have you sold or promoted anything before?" name="salesExperience" wide />
-                <TextArea label="Describe your greatest achievement." name="greatestAchievement" wide />
-                <TextArea label="Which communities or networks can you reach?" name="communitiesOrNetworks" required wide />
-              </FormSection>
-
-              <FormSection title="Video assessment">
-                <Field label="60-second video link" name="videoAssessmentLink" type="url" wide placeholder="Upload your MP4/MOV to Google Drive, Dropbox, or another secure link and paste it here." />
+                <SelectField label="Gender" name="gender" options={['Female', 'Male']} />
+                <SelectField label="State" name="state" options={nigerianStates} />
               </FormSection>
 
               <fieldset className="border-0 border-t border-white/10 px-0 pb-0 pt-7">
-                <legend className="mb-5 text-base font-semibold text-white">Consent</legend>
-                <CheckField name="communicationsConsent" required>
-                  I consent to NEXORA storing my information and contacting me about this application. See the <Link href="/privacy" className="text-[#9ec2f7] underline underline-offset-4">privacy notice</Link>.
-                </CheckField>
-                <CheckField name="ambassadorTermsAccepted" required>
-                  I accept the <Link href="/ambassadors/terms" className="text-[#9ec2f7] underline underline-offset-4">growth associate terms</Link>, including verified referral and performance rules.
-                </CheckField>
                 <label className="sr-only" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
               </fieldset>
 
@@ -186,14 +177,6 @@ function Field({ label, wide, ...props }: FieldProps) {
   return <label className={`grid min-w-0 gap-2 text-sm text-steel ${wide ? 'md:col-span-2' : ''}`}>{label}{props.required ? ' *' : ''}<input {...props} className={inputClass} /></label>
 }
 
-function TextArea({ label, name, required, wide }: { label: string; name: string; required?: boolean; wide?: boolean }) {
-  return <label className={`grid min-w-0 gap-2 text-sm text-steel ${wide ? 'md:col-span-2' : ''}`}>{label}{required ? ' *' : ''}<textarea name={name} required={required} rows={4} className={textareaClass} /></label>
-}
-
 function SelectField({ label, name, options }: { label: string; name: string; options: string[] }) {
   return <label className="grid min-w-0 gap-2 text-sm text-steel">{label}<select name={name} className={`${inputClass} nexora-select`}><option value="">Select option</option>{options.map((option) => <option key={option}>{option}</option>)}</select></label>
-}
-
-function CheckField({ name, required, children }: { name: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="mb-4 flex items-start gap-3 text-sm leading-6 text-steel"><input name={name} required={required} type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-signal" /><span>{children}</span></label>
 }

@@ -15,33 +15,7 @@ type RegistrationPayload = {
   phoneNumber?: unknown
   whatsAppNumber?: unknown
   gender?: unknown
-  dateOfBirth?: unknown
   state?: unknown
-  lga?: unknown
-  location?: unknown
-  currentStatus?: unknown
-  institutionType?: unknown
-  institutionOrOrganization?: unknown
-  courseOfStudy?: unknown
-  industry?: unknown
-  facebookProfile?: unknown
-  tiktokProfile?: unknown
-  instagramProfile?: unknown
-  linkedInProfile?: unknown
-  facebookFollowers?: unknown
-  tiktokFollowers?: unknown
-  instagramFollowers?: unknown
-  linkedInConnections?: unknown
-  leadershipExperience?: unknown
-  whyAmbassador?: unknown
-  whyChooseYou?: unknown
-  salesExperience?: unknown
-  greatestAchievement?: unknown
-  communitiesOrNetworks?: unknown
-  estimatedReach?: unknown
-  promotionExperience?: unknown
-  telegramUsername?: unknown
-  videoAssessmentLink?: unknown
   communicationsConsent?: unknown
   ambassadorTermsAccepted?: unknown
   externalSubmissionId?: unknown
@@ -56,16 +30,7 @@ const registrationFields = new Set([
   'Email',
   'Phone Number',
   'Location',
-  'Current Status',
-  'Institution or Organization',
-  'Industry',
-  'Why Become an Ambassador?',
-  'Communities or Networks',
-  'Estimated Reach',
-  'Promotion Experience',
   'Source Channel',
-  'Telegram Username',
-  'Telegram Chat ID',
   'WhatsApp Number',
   'Platform User ID',
   'Conversation ID',
@@ -113,11 +78,6 @@ function phone(value: unknown) {
   return text(value, 40).replace(/[^0-9+]/g, '')
 }
 
-function integer(value: unknown) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed) : 0
-}
-
 function pickFields(fields: Record<string, unknown>, allowed: Set<string>) {
   return Object.fromEntries(Object.entries(fields).filter(([key, value]) => {
     if (!allowed.has(key)) return false
@@ -129,24 +89,7 @@ function pickFields(fields: Record<string, unknown>, allowed: Set<string>) {
 function registrationSummary(body: RegistrationPayload) {
   return [
     text(body.gender, 80) ? `Gender: ${text(body.gender, 80)}` : '',
-    text(body.dateOfBirth, 40) ? `Date of birth: ${text(body.dateOfBirth, 40)}` : '',
     text(body.state, 120) ? `State: ${text(body.state, 120)}` : '',
-    text(body.lga, 120) ? `LGA: ${text(body.lga, 120)}` : '',
-    text(body.institutionType, 120) ? `Institution type: ${text(body.institutionType, 120)}` : '',
-    text(body.courseOfStudy, 180) ? `Course of study: ${text(body.courseOfStudy, 180)}` : '',
-    text(body.facebookProfile, 500) ? `Facebook: ${text(body.facebookProfile, 500)}` : '',
-    text(body.tiktokProfile, 500) ? `TikTok: ${text(body.tiktokProfile, 500)}` : '',
-    text(body.instagramProfile, 500) ? `Instagram: ${text(body.instagramProfile, 500)}` : '',
-    text(body.linkedInProfile, 500) ? `LinkedIn: ${text(body.linkedInProfile, 500)}` : '',
-    integer(body.facebookFollowers) ? `Facebook followers: ${integer(body.facebookFollowers)}` : '',
-    integer(body.tiktokFollowers) ? `TikTok followers: ${integer(body.tiktokFollowers)}` : '',
-    integer(body.instagramFollowers) ? `Instagram followers: ${integer(body.instagramFollowers)}` : '',
-    integer(body.linkedInConnections) ? `LinkedIn connections: ${integer(body.linkedInConnections)}` : '',
-    text(body.leadershipExperience) ? `Leadership: ${text(body.leadershipExperience)}` : '',
-    text(body.whyChooseYou) ? `Why choose you: ${text(body.whyChooseYou)}` : '',
-    text(body.salesExperience) ? `Sales/promotions: ${text(body.salesExperience)}` : '',
-    text(body.greatestAchievement) ? `Greatest achievement: ${text(body.greatestAchievement)}` : '',
-    text(body.videoAssessmentLink, 500) ? `Video assessment: ${text(body.videoAssessmentLink, 500)}` : '',
   ].filter(Boolean).join('\n')
 }
 
@@ -210,11 +153,9 @@ export async function POST(request: NextRequest) {
     const email = text(body.email, 254).toLowerCase()
     const phoneNumber = phone(body.phoneNumber || body.whatsAppNumber)
     const externalSubmissionId = text(body.externalSubmissionId, 100)
-    const whyAmbassador = text(body.whyAmbassador)
-    const communities = text(body.communitiesOrNetworks)
 
-    if (!fullName || (!email && !phoneNumber) || !whyAmbassador || !communities) {
-      return NextResponse.json({ error: 'Complete the required identity and ambassador profile fields.' }, { status: 400 })
+    if (!fullName || !phoneNumber) {
+      return NextResponse.json({ error: 'Full name and phone number are required.' }, { status: 400 })
     }
     if (body.communicationsConsent !== true || body.ambassadorTermsAccepted !== true) {
       return NextResponse.json({ error: 'Consent and ambassador terms acceptance are required.' }, { status: 400 })
@@ -244,8 +185,6 @@ export async function POST(request: NextRequest) {
       'Interview Status': 'Not Scheduled',
       'Bootcamp Status': 'Not Started',
       'Probation Status': 'Not Started',
-      'Why Become an Ambassador?': whyAmbassador,
-      'Communities or Networks': communities,
       Notes: registrationSummary(body),
       'Raw Channel Response': JSON.stringify(body).slice(0, 9000),
     }
@@ -254,17 +193,10 @@ export async function POST(request: NextRequest) {
       ['Email', email],
       ['Phone Number', phoneNumber],
       ['WhatsApp Number', phone(body.whatsAppNumber)],
-      ['Location', text(body.location, 160)],
-      ['Current Status', text(body.currentStatus, 80)],
-      ['Institution or Organization', text(body.institutionOrOrganization, 200)],
-      ['Industry', text(body.industry, 120)],
-      ['Promotion Experience', text(body.promotionExperience)],
-      ['Telegram Username', text(body.telegramUsername, 100)],
+      ['Location', text(body.state, 160)],
     ]
     for (const [field, value] of values) if (value) fields[field] = value
 
-    const estimatedReach = integer(body.estimatedReach)
-    if (estimatedReach) fields['Estimated Reach'] = estimatedReach
     const screening = screenGrowthAssociate(body as Record<string, unknown>)
     fields['AI Score'] = screening.score
     fields['AI Recommendation'] = screening.recommendation
@@ -284,12 +216,13 @@ export async function POST(request: NextRequest) {
       `Name: ${fullName}`,
       `Email: ${email || 'Not provided'}`,
       `Phone: ${phoneNumber || 'Not provided'}`,
-      `Location: ${text(body.location || body.state, 160) || 'Not provided'}`,
-      `Estimated reach: ${estimatedReach || 0}`,
+      `WhatsApp: ${phone(body.whatsAppNumber) || 'Not provided'}`,
+      `Gender: ${text(body.gender, 80) || 'Not provided'}`,
+      `State: ${text(body.state, 160) || 'Not provided'}`,
       `Recruitment stage: ${fields['Recruitment Stage']}`,
       `AI score: ${screening.score}`,
       `AI recommendation: ${screening.recommendation}`,
-      `AI summary: ${fullName} applied for Growth Associate recruitment. Motivation: ${whyAmbassador.slice(0, 240) || 'Not provided'}.`,
+      `AI summary: ${screening.summary}`,
     ].join('\n'))
     return NextResponse.json({
       ok: true,
