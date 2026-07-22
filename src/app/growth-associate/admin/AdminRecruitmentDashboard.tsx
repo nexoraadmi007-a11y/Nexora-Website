@@ -60,6 +60,17 @@ type GrowthOverview = {
   error?: string
 }
 
+type AttributionRecord = {
+  id: string
+  fields: Record<string, unknown>
+}
+
+type AssociateOption = {
+  id: string
+  name: string
+  referralCode: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -72,6 +83,11 @@ function value(fields: Record<string, unknown>, key: string) {
   if (typeof data === 'number') return String(data)
   if (typeof data === 'boolean') return data ? 'Yes' : 'No'
   return typeof data === 'string' ? data : ''
+}
+
+function linkedRecordId(fields: Record<string, unknown>, key: string) {
+  const data = fields[key]
+  return Array.isArray(data) && typeof data[0] === 'string' ? data[0] : ''
 }
 
 function rawAnswer(fields: Record<string, unknown>, key: string) {
@@ -123,6 +139,10 @@ export default function AdminRecruitmentDashboard() {
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
   const [growthOverview, setGrowthOverview] = useState<GrowthOverview | null>(null)
   const [growthLoading, setGrowthLoading] = useState(false)
+  const [attributions, setAttributions] = useState<AttributionRecord[]>([])
+  const [associates, setAssociates] = useState<AssociateOption[]>([])
+  const [attributionLoading, setAttributionLoading] = useState(false)
+  const [selectedAssociates, setSelectedAssociates] = useState<Record<string, string>>({})
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -229,6 +249,60 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function loadAttributionReview() {
+    if (!secret) {
+      setMessage('Enter the admin secret to load attribution review records.')
+      return
+    }
+    setAttributionLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/attribution-review', {
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const result = (await response.json()) as { error?: string; attributions?: AttributionRecord[]; associates?: AssociateOption[] }
+      if (!response.ok) throw new Error(result.error || 'Could not load attribution review records.')
+      setAttributions(result.attributions || [])
+      setAssociates(result.associates || [])
+      setMessage(`${result.attributions?.length || 0} attribution review record${result.attributions?.length === 1 ? '' : 's'} loaded.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not load attribution review records.')
+    } finally {
+      setAttributionLoading(false)
+    }
+  }
+
+  async function reviewAttribution(record: AttributionRecord, action: 'approve' | 'reject' | 'assign') {
+    if (!secret) return
+    const selectedAssociate = selectedAssociates[record.id] || linkedRecordId(record.fields, 'Associate')
+    setAttributionLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/attribution-review', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({
+          id: record.id,
+          action,
+          associateId: selectedAssociate,
+          note,
+        }),
+      })
+      const result = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Attribution review action failed.')
+      await loadAttributionReview()
+      await loadGrowthPerformance()
+      setMessage(`Attribution ${action} completed for ${value(record.fields, 'Payment Reference') || record.id}.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Attribution review action failed.')
+    } finally {
+      setAttributionLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -302,6 +376,103 @@ export default function AdminRecruitmentDashboard() {
         </label>
 
         <div aria-live="polite" className="min-h-8 pt-5 text-sm font-semibold text-[#9ec2f7]">{message}</div>
+
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Referral attribution review</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Conflicts, held commissions and manual credit</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Review payments where referral code and assigned lead ownership need a final admin decision before commission or leaderboard credit is counted.
+              </p>
+            </div>
+            <button onClick={loadAttributionReview} disabled={attributionLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+              <RefreshCw className={`h-4 w-4 ${attributionLoading ? 'animate-spin' : ''}`} />
+              Load review
+            </button>
+          </div>
+
+          {attributions.length ? (
+            <div className="mt-6 overflow-x-auto rounded-lg border border-white/10">
+              <table className="min-w-[1100px] w-full border-collapse text-left text-sm">
+                <thead className="bg-black/30 text-xs uppercase tracking-[0.12em] text-steel">
+                  <tr>
+                    <th className="p-3">Payment</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Source</th>
+                    <th className="p-3">Amount</th>
+                    <th className="p-3">Current credit</th>
+                    <th className="p-3">Resolve to</th>
+                    <th className="p-3">Reason</th>
+                    <th className="p-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attributions.map((record) => {
+                    const fields = record.fields
+                    const currentAssociate = linkedRecordId(fields, 'Associate')
+                    const selected = selectedAssociates[record.id] || currentAssociate
+                    return (
+                      <tr key={record.id} className="border-t border-white/10 align-top">
+                        <td className="p-3">
+                          <p className="font-semibold text-white">{value(fields, 'Payment Reference') || record.id}</p>
+                          <p className="mt-1 text-xs text-steel">{record.id}</p>
+                        </td>
+                        <td className="p-3">
+                          <span className="rounded-full border border-[#f2c979]/30 bg-[#f2c979]/10 px-3 py-1 text-xs font-bold text-[#f6d999]">
+                            {value(fields, 'Attribution Status') || 'PENDING'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-steel">{value(fields, 'Attribution Source') || 'Not set'}</td>
+                        <td className="p-3 text-frost">NGN {Number(value(fields, 'Attributed Amount') || 0).toLocaleString()}</td>
+                        <td className="p-3 text-steel">{currentAssociate || 'No associate linked'}</td>
+                        <td className="p-3">
+                          <select
+                            value={selected}
+                            onChange={(event) => setSelectedAssociates((current) => ({ ...current, [record.id]: event.target.value }))}
+                            className="min-h-10 w-full rounded-lg border border-white/10 bg-[#07111f] px-3 text-white outline-none focus:border-signal"
+                          >
+                            <option value="">Select associate</option>
+                            {associates.map((associate) => (
+                              <option key={associate.id} value={associate.id}>
+                                {associate.name}{associate.referralCode ? ` - ${associate.referralCode}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="max-w-[260px] p-3 text-steel">{short(value(fields, 'Conflict Reason'), 220) || 'No conflict reason.'}</td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => reviewAttribution(record, currentAssociate === selected ? 'approve' : 'assign')}
+                              disabled={attributionLoading}
+                              className="min-h-9 rounded-lg border border-[#7fd3a6]/40 bg-[#7fd3a6]/10 px-3 text-xs font-bold text-[#b7f0ce] disabled:opacity-50"
+                            >
+                              {currentAssociate === selected ? 'Approve' : 'Assign credit'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => reviewAttribution(record, 'reject')}
+                              disabled={attributionLoading}
+                              className="min-h-9 rounded-lg border border-[#ff9b91]/40 bg-[#ff9b91]/10 px-3 text-xs font-bold text-[#ffc5bf] disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="mt-5 rounded-lg border border-white/10 p-5 text-sm text-steel">
+              No attribution review records loaded yet. Click Load review to check for pending or conflicted records.
+            </p>
+          )}
+        </section>
 
         <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

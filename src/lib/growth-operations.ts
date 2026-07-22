@@ -193,7 +193,7 @@ async function getAssociates() {
 
 async function getAttributions(month: string) {
   const { start, end } = monthBounds(month)
-  const formula = `AND({Attribution Status}!='REJECTED',IS_AFTER({Created At},'${start}'),IS_BEFORE({Created At},'${end}'))`
+  const formula = `AND({Attribution Status}='APPROVED',IS_AFTER({Created At},'${start}'),IS_BEFORE({Created At},'${end}'))`
   return listRecords<Fields>('Conversion Attribution', {
     formula,
     maxRecords: 100,

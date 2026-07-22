@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createRecord, escapeFormula, listRecords, updateRecord, type AirtableRecord } from '@/lib/airtable'
 import { getGrowthOverview, upsertMonthlyPerformance } from '@/lib/growth-operations'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
 
@@ -297,6 +298,14 @@ async function refreshMonthlyPerformance() {
   await upsertMonthlyPerformance(overview)
 }
 
+async function notifyAdmin(message: string) {
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
+  if (!chatId) return
+  await sendTelegramMessage(chatId, message).catch((error) => {
+    console.error('Paystack webhook Telegram notification failed', error instanceof Error ? error.message : error)
+  })
+}
+
 async function upsertBusinessParticipant(input: {
   reference: string
   fullName: string
@@ -413,6 +422,17 @@ export async function POST(request: NextRequest) {
         : assignedAssociateId
           ? 'ASSIGNED_LEAD'
           : 'ADMIN_CONFIRMED'
+    if (attributionConflict) {
+      await notifyAdmin([
+        'Growth attribution conflict detected',
+        `Payment reference: ${reference}`,
+        `Applicant: ${fullName || email || 'Unknown'}`,
+        `Amount: NGN ${amount.toLocaleString()}`,
+        `Referral ambassador: ${ambassadorId}`,
+        `Assigned associate: ${assignedAssociateId}`,
+        'Action needed: Open Growth Associate Admin and review attribution.',
+      ].join('\n'))
+    }
 
     if (websiteEvent) {
       await updateRecord('Website Payment Events', websiteEvent.id, compact({
