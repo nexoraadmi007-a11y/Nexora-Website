@@ -14,6 +14,52 @@ type ApiResult = {
   error?: string
 }
 
+type AssociatePerformance = {
+  associateId: string
+  associateName: string
+  referralCode: string
+  referralLink: string
+  active: boolean
+  target: number
+  confirmedIntake: number
+  remainingTarget: number
+  achievementPercentage: number
+  daysRemaining: number
+  dailyPaceRequired: number
+  projectedMonthEnd: number
+  status: string
+  grossRevenue: number
+  netRevenue: number
+  conversionRate: number
+  rank: number
+  bonusEligible: boolean
+  provisionalBonusAmount: number | null
+  bonusStatus: string
+}
+
+type GrowthOverview = {
+  month: string
+  generatedAt: string
+  defaultMonthlyTarget: number
+  associates: AssociatePerformance[]
+  topAssociate?: AssociatePerformance
+  totals: {
+    activeAssociates: number
+    confirmedIntake: number
+    netRevenue: number
+    grossRevenue: number
+    projectedMonthEnd: number
+    target: number
+  }
+  bonusConfiguration: {
+    name: string
+    numberOfWinners: number
+    minimumTargetRequired: boolean
+    bonusType: string
+  }
+  error?: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -75,6 +121,8 @@ export default function AdminRecruitmentDashboard() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [showSecret, setShowSecret] = useState(false)
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
+  const [growthOverview, setGrowthOverview] = useState<GrowthOverview | null>(null)
+  const [growthLoading, setGrowthLoading] = useState(false)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -126,6 +174,34 @@ export default function AdminRecruitmentDashboard() {
       setMessage(error instanceof Error ? error.message : 'Action failed.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadGrowthPerformance(options?: { persist?: boolean }) {
+    if (!secret) {
+      setMessage('Enter the admin secret to load growth performance.')
+      return
+    }
+    setGrowthLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/performance', {
+        method: options?.persist ? 'POST' : 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: options?.persist ? JSON.stringify({ persist: true }) : undefined,
+      })
+      const result = (await response.json()) as GrowthOverview | { error?: string; overview?: GrowthOverview }
+      if (!response.ok) throw new Error(result.error || 'Could not load growth performance.')
+      const overview = 'overview' in result && result.overview ? result.overview : result as GrowthOverview
+      setGrowthOverview(overview)
+      setMessage(options?.persist ? 'Growth performance recalculated and saved.' : 'Growth performance loaded.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not load growth performance.')
+    } finally {
+      setGrowthLoading(false)
     }
   }
 
@@ -203,6 +279,76 @@ export default function AdminRecruitmentDashboard() {
 
         <div aria-live="polite" className="min-h-8 pt-5 text-sm font-semibold text-[#9ec2f7]">{message}</div>
 
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Growth operations</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Monthly targets, ranking and provisional bonus</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Backend-calculated performance based on attributed paid intake. Default monthly target is 30 confirmed paid intakes per associate.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => loadGrowthPerformance()} disabled={growthLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${growthLoading ? 'animate-spin' : ''}`} />
+                Load performance
+              </button>
+              <button onClick={() => loadGrowthPerformance({ persist: true })} disabled={growthLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Recalculate month
+              </button>
+            </div>
+          </div>
+
+          {growthOverview ? (
+            <div className="mt-6 grid gap-5">
+              <div className="grid gap-4 md:grid-cols-4">
+                <MetricCard label="Active associates" value={String(growthOverview.totals.activeAssociates)} />
+                <MetricCard label="Confirmed intake" value={`${growthOverview.totals.confirmedIntake}/${growthOverview.totals.target}`} />
+                <MetricCard label="Net revenue" value={`NGN ${growthOverview.totals.netRevenue.toLocaleString()}`} />
+                <MetricCard label="Bonus winners" value={String(growthOverview.bonusConfiguration.numberOfWinners)} />
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-white/10">
+                <table className="min-w-[980px] w-full border-collapse text-left text-sm">
+                  <thead className="bg-black/30 text-xs uppercase tracking-[0.12em] text-steel">
+                    <tr>
+                      <th className="p-3">Rank</th>
+                      <th className="p-3">Associate</th>
+                      <th className="p-3">Intake</th>
+                      <th className="p-3">Target</th>
+                      <th className="p-3">Progress</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Revenue</th>
+                      <th className="p-3">Bonus</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {growthOverview.associates.map((associate) => (
+                      <tr key={associate.associateId} className="border-t border-white/10">
+                        <td className="p-3 text-white">{associate.rank || '-'}</td>
+                        <td className="p-3">
+                          <p className="font-semibold text-white">{associate.associateName}</p>
+                          <p className="mt-1 text-xs text-steel">{associate.referralCode || 'No referral code'}</p>
+                        </td>
+                        <td className="p-3 text-frost">{associate.confirmedIntake}</td>
+                        <td className="p-3 text-steel">{associate.target}</td>
+                        <td className="p-3 text-steel">{Math.round(associate.achievementPercentage * 100)}% | {associate.remainingTarget} left</td>
+                        <td className="p-3"><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1 text-xs font-bold text-frost">{associate.status}</span></td>
+                        <td className="p-3 text-steel">NGN {associate.netRevenue.toLocaleString()}</td>
+                        <td className="p-3 text-steel">{associate.bonusEligible ? `Eligible${associate.provisionalBonusAmount ? ` - NGN ${associate.provisionalBonusAmount.toLocaleString()}` : ''}` : 'Not eligible'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-xs leading-6 text-steel">
+                Month: {growthOverview.month}. Bonus config: {growthOverview.bonusConfiguration.name}, type {growthOverview.bonusConfiguration.bonusType}, minimum target required: {growthOverview.bonusConfiguration.minimumTargetRequired ? 'Yes' : 'No'}.
+              </p>
+            </div>
+          ) : null}
+        </section>
+
         <div className="mt-4 grid gap-5">
           {visibleApplicants.map((applicant) => {
             const fields = applicant.fields
@@ -275,6 +421,15 @@ export default function AdminRecruitmentDashboard() {
       </section>
       {selectedApplicant ? <ApplicationModal applicant={selectedApplicant} onClose={() => setSelectedApplicant(null)} /> : null}
     </main>
+  )
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-steel">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+    </div>
   )
 }
 

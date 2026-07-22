@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createRecord, escapeFormula, listRecords, updateRecord, type AirtableRecord } from '@/lib/airtable'
+import { getGrowthOverview, upsertMonthlyPerformance } from '@/lib/growth-operations'
 
 export const runtime = 'nodejs'
 
@@ -183,6 +184,88 @@ async function createPaymentIfMissing(input: {
   })
 }
 
+async function createReferralEvent(input: {
+  reference: string
+  referralCode: string
+  ambassadorId?: string
+  contactId?: string
+  programmeIds?: string[]
+  eventType: string
+}) {
+  if (!input.referralCode && !input.ambassadorId) return null
+  const existing = await findByReference<Fields>('Referral Events', 'Referral Event ID', `REVT-${input.reference}-${input.eventType}`).catch(() => null)
+  const fields = compact({
+    'Referral Event ID': `REVT-${input.reference}-${input.eventType}`,
+    'Referral Code': input.referralCode,
+    ...(input.ambassadorId ? { Associate: [input.ambassadorId] } : {}),
+    ...(input.contactId ? { Lead: [input.contactId] } : {}),
+    'Event Type': input.eventType,
+    ...(input.programmeIds?.length ? { Programme: [input.programmeIds[0]] } : {}),
+    'Occurred At': new Date().toISOString(),
+  })
+  if (existing) return updateRecord('Referral Events', existing.id, fields)
+  return createRecord('Referral Events', fields)
+}
+
+async function upsertConversionAttribution(input: {
+  reference: string
+  ambassadorId?: string
+  contactId?: string
+  applicationId?: string
+  paymentId?: string
+  enrollmentId?: string
+  amount: number
+  source: string
+}) {
+  if (!input.ambassadorId) return null
+  const existing = await findByReference<Fields>('Conversion Attribution', 'Payment Reference', input.reference).catch(() => null)
+  const now = new Date().toISOString()
+  const fields = compact({
+    ...(input.ambassadorId ? { Associate: [input.ambassadorId] } : {}),
+    ...(input.contactId ? { Lead: [input.contactId] } : {}),
+    ...(input.applicationId ? { Application: [input.applicationId] } : {}),
+    ...(input.paymentId ? { Payment: [input.paymentId] } : {}),
+    ...(input.enrollmentId ? { Enrollment: [input.enrollmentId] } : {}),
+    'Payment Reference': input.reference,
+    'Attribution Source': input.source,
+    'Attribution Status': 'APPROVED',
+    'Attributed Amount': input.amount,
+    'Net Amount': input.amount,
+    'Updated At': now,
+  })
+  if (existing) return updateRecord('Conversion Attribution', existing.id, fields)
+  return createRecord('Conversion Attribution', {
+    'Attribution ID': `ATTR-${input.reference}`,
+    ...fields,
+    'Created At': now,
+  })
+}
+
+async function updateAssociateReferralStats(ambassadorId: string, amount: number) {
+  if (!ambassadorId) return
+  const records = await listRecords<Fields>('Ambassadors', {
+    formula: `RECORD_ID()='${escapeFormula(ambassadorId)}'`,
+    maxRecords: 1,
+  }).catch(() => [])
+  const ambassador = records[0]
+  if (!ambassador) return
+  const paidCount = number(ambassador.fields['Paid Referral Count']) + 1
+  const commissionRate = number(ambassador.fields['Commission Rate Percent']) || 5
+  const earned = number(ambassador.fields['Total Commission Earned']) + Math.round(amount * (commissionRate / 100))
+  const paid = number(ambassador.fields['Commission Paid'])
+  await updateRecord('Ambassadors', ambassadorId, compact({
+    'Paid Referral Count': paidCount,
+    'Total Commission Earned': earned,
+    'Commission Balance': Math.max(earned - paid, 0),
+    'Updated At': new Date().toISOString(),
+  })).catch(() => undefined)
+}
+
+async function refreshMonthlyPerformance() {
+  const overview = await getGrowthOverview()
+  await upsertMonthlyPerformance(overview)
+}
+
 async function upsertBusinessParticipant(input: {
   reference: string
   fullName: string
@@ -328,7 +411,7 @@ export async function POST(request: NextRequest) {
       selectedTracks,
     })
 
-    await createPaymentIfMissing({
+    const payment = await createPaymentIfMissing({
       reference,
       enrollmentId: enrollment.id,
       amount,
@@ -369,6 +452,29 @@ export async function POST(request: NextRequest) {
         Notes: `Payment confirmed automatically by Paystack webhook. Reference: ${reference}`,
       }))
     }
+
+    await createReferralEvent({
+      reference,
+      referralCode: text(metadata.referral_code, 120),
+      ambassadorId,
+      contactId: contact?.id,
+      programmeIds,
+      eventType: 'PAYMENT_SUCCEEDED',
+    }).catch((error) => console.error('Referral event write failed', error instanceof Error ? error.message : error))
+
+    await upsertConversionAttribution({
+      reference,
+      ambassadorId,
+      contactId: contact?.id,
+      applicationId: application?.id,
+      paymentId: (payment as AirtableRecord<Fields>)?.id,
+      enrollmentId: enrollment.id,
+      amount,
+      source: text(metadata.referral_code, 120) ? 'DIRECT_REFERRAL' : 'ADMIN_CONFIRMED',
+    }).catch((error) => console.error('Conversion attribution write failed', error instanceof Error ? error.message : error))
+
+    await updateAssociateReferralStats(ambassadorId, amount).catch((error) => console.error('Associate stats update failed', error instanceof Error ? error.message : error))
+    await refreshMonthlyPerformance().catch((error) => console.error('Monthly performance refresh failed', error instanceof Error ? error.message : error))
 
     return NextResponse.json({ ok: true, reference, enrollmentId: enrollment.id })
   } catch (error) {

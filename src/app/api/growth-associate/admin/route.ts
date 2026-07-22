@@ -43,6 +43,7 @@ async function createOfficialAssociate(recordId: string, fields: Fields, note: s
   const phone = text(fields['Phone Number'] || fields['WhatsApp Number'], 80)
   const referralCode = codeFromName(fullName, recordId)
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'
+  const referralLink = `${baseUrl}/career-accelerator?ref=${encodeURIComponent(referralCode)}`
   const created = await createRecord<{ id: string; fields: Fields }>('Ambassadors', compact({
     'Ambassador Name': fullName,
     'Ambassador ID': `GA-${Date.now()}`,
@@ -62,7 +63,15 @@ async function createOfficialAssociate(recordId: string, fields: Fields, note: s
     'Commission Paid': 0,
     'Commission Balance': 0,
     'Referral Code': referralCode,
-    'Ambassador Referral Link': `${baseUrl}/career-accelerator?ref=${encodeURIComponent(referralCode)}`,
+    'Ambassador Referral Link': referralLink,
+    'Referral Link': referralLink,
+    Active: true,
+    'Daily Lead Quota': 10,
+    'Monthly Intake Target': 30,
+    'Onboarding Status': 'Invited',
+    'Referral Status': 'Active',
+    'Created At': new Date().toISOString(),
+    'Updated At': new Date().toISOString(),
     'Discount Eligibility Status': 'Not Eligible',
     'Ambassador Score': Number(fields['AI Score'] || 0),
     'Ambassador Level': 'Bronze Ambassador',
