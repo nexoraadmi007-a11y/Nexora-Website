@@ -109,6 +109,18 @@ Phase 1:
 - Admin: daily summary, leaderboard, target progress.
 - Test Associate: view assigned leads, quick activity buttons.
 
+Implemented command surface:
+
+- Admin `/today`: sends current monthly growth summary.
+- Admin `/assign ASSOCIATE_RECORD_ID 5`: assigns available Growth Leads to an associate.
+- Associate `/leads`: sends assigned lead cards.
+- Associate `/contacted LEAD_ID`: records contacted activity.
+- Associate `/interested LEAD_ID`: records interested activity.
+- Associate `/pending LEAD_ID`: records payment-pending activity.
+- Associate `/converted LEAD_ID`: records converted activity.
+- Associate `/invalid LEAD_ID`: records invalid lead activity.
+- Associate `/reply LEAD_ID pasted conversation`: produces a WhatsApp-style reply suggestion and logs sales-assistant usage.
+
 Phase 2:
 
 - Conversation paste -> sales assistant reply suggestion.
