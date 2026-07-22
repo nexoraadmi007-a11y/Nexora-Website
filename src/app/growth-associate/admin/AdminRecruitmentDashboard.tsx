@@ -205,6 +205,30 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function assignLeads(associate: AssociatePerformance, count = 5) {
+    if (!secret) return
+    setGrowthLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ associateId: associate.associateId, count }),
+      })
+      const result = (await response.json()) as { error?: string; assignedCount?: number }
+      if (!response.ok) throw new Error(result.error || 'Lead assignment failed.')
+      setMessage(`Assigned ${result.assignedCount || 0} lead${result.assignedCount === 1 ? '' : 's'} to ${associate.associateName}.`)
+      await loadGrowthPerformance()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Lead assignment failed.')
+    } finally {
+      setGrowthLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -320,6 +344,7 @@ export default function AdminRecruitmentDashboard() {
                       <th className="p-3">Status</th>
                       <th className="p-3">Revenue</th>
                       <th className="p-3">Bonus</th>
+                      <th className="p-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -336,6 +361,16 @@ export default function AdminRecruitmentDashboard() {
                         <td className="p-3"><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1 text-xs font-bold text-frost">{associate.status}</span></td>
                         <td className="p-3 text-steel">NGN {associate.netRevenue.toLocaleString()}</td>
                         <td className="p-3 text-steel">{associate.bonusEligible ? `Eligible${associate.provisionalBonusAmount ? ` - NGN ${associate.provisionalBonusAmount.toLocaleString()}` : ''}` : 'Not eligible'}</td>
+                        <td className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => assignLeads(associate, 5)}
+                            disabled={growthLoading}
+                            className="min-h-9 rounded-lg border border-[#5793ff]/40 bg-[#5793ff]/10 px-3 text-xs font-bold text-[#bcd6ff] disabled:opacity-50"
+                          >
+                            Assign 5 leads
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
