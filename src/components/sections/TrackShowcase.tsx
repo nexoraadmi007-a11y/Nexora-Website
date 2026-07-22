@@ -69,7 +69,7 @@ export default function TrackShowcase({ tracks, programName, priceLabel, pathway
                 <div className="mt-6 grid gap-3">
                   <InfoLine icon={Target} label="Goal" body={track.goal} />
                   <InfoLine icon={Layers3} label="Structure" body={`${track.modules.length} modules plus final capstone project`} />
-                  <InfoLine icon={Award} label="Price" body={`NGN ${track.price.toLocaleString()} per track`} />
+                  <InfoLine icon={Award} label="Price" body={`NGN ${track.price.toLocaleString()} per programme`} />
                 </div>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <a href={applyHref} className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold">

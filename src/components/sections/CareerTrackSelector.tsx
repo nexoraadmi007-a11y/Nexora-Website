@@ -23,15 +23,15 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
   const pricing = useMemo(() => calculateCareerTrackPricing(selected), [selected])
   const selectedTracks = careerAcceleratorTracks.filter((track) => selected.includes(track.slug))
 
-  function toggle(slug: string) {
-    setSelected((current) => current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug])
+  function selectProgramme(slug: string) {
+    setSelected((current) => current.includes(slug) ? [] : [slug])
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected.length) {
       setStatus('error')
-      setMessage('Select at least one career track before payment.')
+      setMessage('Select a Career Accelerator programme before payment.')
       return
     }
 
@@ -43,7 +43,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
     const payload = {
       kind: 'accelerator',
       programCode: 'NGTP',
-      programName: selectedTracks.length === 1 ? selectedTracks[0].title : `Career Accelerator Bundle (${selectedTracks.length} Tracks)`,
+      programName: selectedTracks[0]?.title || 'Career Accelerator',
       amount: pricing.total,
       selectedTrackSlugs: selectedTracks.map((track) => track.slug),
       selectedTrackNames: selectedTracks.map((track) => track.title),
@@ -85,10 +85,10 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
     <section id="enroll" className="section border-t border-white/10 bg-white/[0.012]">
       <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-[1.05fr_.95fr]">
         <div>
-          <span className="eyebrow">Select Track(s)</span>
-          <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Build your own Career Accelerator path.</h2>
+          <span className="eyebrow">Choose Programme</span>
+          <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Select the Career Accelerator programme you want.</h2>
           <p className="mt-5 max-w-2xl text-base leading-8 text-steel">
-            Pick one track or combine two tracks at the bundle price. The pricing engine is built to support more bundle rules later.
+            Each programme is independent and costs NGN 10,000. Pick one programme now, then proceed securely through Paystack.
           </p>
 
           <div className="mt-8 grid gap-3">
@@ -98,7 +98,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
                 <button
                   key={track.slug}
                   type="button"
-                  onClick={() => toggle(track.slug)}
+                  onClick={() => selectProgramme(track.slug)}
                   className={`grid gap-3 rounded-lg border p-4 text-left transition md:grid-cols-[auto_1fr_auto] md:items-center ${isSelected ? 'border-signal/70 bg-signal/10' : 'border-white/10 bg-white/[0.035] hover:border-white/25'}`}
                 >
                   <span className={`flex h-6 w-6 items-center justify-center rounded-md border ${isSelected ? 'border-signal bg-signal text-white' : 'border-white/20 text-transparent'}`}>
@@ -123,17 +123,16 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
 
           <div className="rounded-lg border border-white/10 bg-black/20 p-4">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-steel">Selected Courses</span>
-              <span className="text-sm font-bold text-white">{pricing.selectedCount} Track{pricing.selectedCount === 1 ? '' : 's'}</span>
+              <span className="text-sm text-steel">Selected Programme</span>
+              <span className="text-sm font-bold text-white">{pricing.selectedCount ? '1 Programme' : 'None'}</span>
             </div>
             <div className="mt-4 grid gap-2">
               {selectedTracks.length ? selectedTracks.map((track) => (
                 <p key={track.slug} className="text-sm text-frost">{track.title}</p>
-              )) : <p className="text-sm text-steel">No track selected yet.</p>}
+              )) : <p className="text-sm text-steel">No programme selected yet.</p>}
             </div>
             <div className="mt-5 grid gap-3 border-t border-white/10 pt-4 text-sm">
-              <Line label="Current Total" value={`NGN ${pricing.subtotal.toLocaleString()}`} />
-              <Line label="Discount Applied" value={`NGN ${pricing.discount.toLocaleString()}`} />
+              <Line label="Programme Fee" value={`NGN ${pricing.subtotal.toLocaleString()}`} />
               <Line label="Pricing Rule" value={pricing.ruleName} />
               <div className="flex items-center justify-between gap-4 text-lg font-semibold text-white">
                 <span>Final Price</span>

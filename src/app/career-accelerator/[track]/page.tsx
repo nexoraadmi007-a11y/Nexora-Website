@@ -17,7 +17,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { track: slug } = await params
   const track = getCareerTrack(slug)
-  if (!track) return { title: 'Career Track Not Found | NEXORA Institute' }
+  if (!track) return { title: 'Career Programme Not Found | NEXORA Institute' }
   return {
     title: `${track.title} | NEXORA Career Accelerator`,
     description: track.description,
@@ -36,16 +36,16 @@ export default async function CareerTrackPage({ params }: PageProps) {
         <div className="relative mx-auto max-w-7xl">
           <Link href="/career-accelerator" className="button-secondary inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold">
             <ArrowLeft className="h-4 w-4" />
-            Back to Career Tracks
+            Back to Career Accelerator
           </Link>
           <div className="mt-10 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
             <div>
-              <span className="eyebrow mb-7">Career Track</span>
+              <span className="eyebrow mb-7">Career Programme</span>
               <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">{track.title}</h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{track.description}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="#enroll" className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold">
-                  Enroll in this Track
+                  Enrol in this Programme
                   <ArrowRight className="h-4 w-4" />
                 </a>
                 <a href="#curriculum" className="button-secondary inline-flex min-h-12 items-center justify-center rounded-full px-6 text-sm font-semibold">
@@ -58,6 +58,7 @@ export default async function CareerTrackPage({ params }: PageProps) {
                 <HeroMetric label="Duration" value={track.duration} />
                 <HeroMetric label="Price" value={`NGN ${track.price.toLocaleString()}`} />
                 <HeroMetric label="Certificate" value="Included after capstone review" />
+                <HeroMetric label="Professional Path" value={track.profession} />
               </div>
             </div>
           </div>
@@ -68,12 +69,13 @@ export default async function CareerTrackPage({ params }: PageProps) {
         <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-[.85fr_1.15fr]">
           <div>
             <span className="eyebrow">Career Overview</span>
-            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">What this track prepares you to do.</h2>
+            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">What this programme prepares you to do.</h2>
             <p className="mt-5 text-base leading-8 text-steel">{track.overview}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
             <InfoCard icon={Target} title="Goal" items={[track.goal]} />
-            <InfoCard icon={Lightbulb} title="Who this is for" items={[track.bestFor]} />
+            <InfoCard icon={Lightbulb} title="Who This Is For" items={[track.bestFor]} />
+            <InfoCard icon={Award} title="Professional Identity" items={[track.profession]} />
             <InfoCard icon={BriefcaseBusiness} title="Why companies hire this role" items={track.whyCompaniesHire} />
             <InfoCard icon={Wrench} title="AI tools used" items={track.tools} />
           </div>
@@ -84,7 +86,7 @@ export default async function CareerTrackPage({ params }: PageProps) {
         <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-[.75fr_1.25fr]">
           <div className="lg:sticky lg:top-28 lg:self-start">
             <span className="eyebrow">Detailed Curriculum</span>
-            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Modules, projects, and portfolio.</h2>
+            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Modules, assignments, capstone, and portfolio.</h2>
             <p className="mt-5 text-base leading-8 text-steel">
               The curriculum is practical and portfolio-driven. Every module helps you produce something useful, not just watch lessons.
             </p>
@@ -112,12 +114,23 @@ export default async function CareerTrackPage({ params }: PageProps) {
 
             <div className="grid gap-5 md:grid-cols-2">
               <PremiumCard>
+                <h3 className="text-2xl font-semibold text-white">Assignments</h3>
+                <Checklist items={track.assignments} />
+              </PremiumCard>
+              <PremiumCard>
                 <h3 className="text-2xl font-semibold text-white">Projects</h3>
                 <Checklist items={track.projects} />
               </PremiumCard>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
               <PremiumCard>
                 <h3 className="text-2xl font-semibold text-white">Portfolio</h3>
                 <Checklist items={track.portfolio} />
+              </PremiumCard>
+              <PremiumCard>
+                <h3 className="text-2xl font-semibold text-white">Tools</h3>
+                <Checklist items={track.tools} />
               </PremiumCard>
             </div>
 

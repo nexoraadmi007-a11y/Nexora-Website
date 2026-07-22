@@ -40,12 +40,12 @@ const steps = [
 
 const faqs = [
   ['Do I need a tech background?', 'No. The programs are built for practical users who want to apply AI at work or in business.'],
-  ['How long are the programs?', 'Each track contains 6 modules plus a final capstone project. Learners can take one track or combine multiple tracks.'],
+  ['How long are the programs?', 'Each Career Accelerator programme contains 6 modules plus assignments and a final capstone project.'],
   ['Can companies train their teams?', 'Yes. Companies can request corporate AI training, leadership workshops, and employee productivity sessions.'],
 ]
 
 function trackLabel(code: string) {
-  return code === 'BATP' ? '4 weeks - NGN 35,000' : '5 career tracks - NGN 25,000 each'
+  return code === 'BATP' ? '4 weeks - NGN 35,000' : '3 career programmes - NGN 10,000 each'
 }
 
 export default async function HomePage() {
@@ -108,8 +108,8 @@ export default async function HomePage() {
                 <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
                 <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
                 <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
-                  <span>{code === 'BATP' ? '4 weeks' : '5 career tracks'}</span>
-                  <span>{code === 'BATP' ? 'NGN 35,000' : 'NGN 25,000 per track'}</span>
+                  <span>{code === 'BATP' ? '4 weeks' : '3 career programmes'}</span>
+                  <span>{code === 'BATP' ? 'NGN 35,000' : 'NGN 10,000 per programme'}</span>
                 </div>
                 <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>Apply Now</CTA>
               </PremiumCard>

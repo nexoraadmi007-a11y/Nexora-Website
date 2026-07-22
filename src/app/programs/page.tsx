@@ -23,10 +23,10 @@ const fallbackCards: Array<{
     code: 'NGTP',
     name: 'AI Career Accelerator',
     slug: 'career-accelerator',
-    priceLabel: 'NGN 25,000 per track / NGN 40,000 for any two',
-    duration: '5 career tracks',
+    priceLabel: 'NGN 10,000 per programme',
+    duration: '3 career programmes',
     target: ['NYSC Members', 'Final-Year Students', 'Graduates', 'Young Professionals'],
-    focus: ['Data analysis', 'Digital marketing', 'Software building', 'Business operations', 'UI/UX design'],
+    focus: ['AI content creation', 'Certified UI/UX design', 'AI financial analysis'],
     icon: GraduationCap,
   },
   {

@@ -1,11 +1,13 @@
 export type CareerTrack = {
   slug: string
+  code: string
   title: string
   shortTitle: string
   description: string
   duration: string
   price: number
   bestFor: string
+  profession: string
   skills: string[]
   opportunities: string[]
   tools: string[]
@@ -14,6 +16,7 @@ export type CareerTrack = {
   whyCompaniesHire: string[]
   outcomes: string[]
   modules: Array<{ title: string; lessons: string[] }>
+  assignments: string[]
   projects: string[]
   portfolio: string[]
   applications: string[]
@@ -30,205 +33,135 @@ export type PricingRule = {
   status: 'Active' | 'Inactive'
 }
 
-export const careerTrackBasePrice = 25000
+export const careerTrackBasePrice = 10000
 
 export const careerTrackPricingRules: PricingRule[] = [
-  { name: 'Single Track', minTracks: 1, maxTracks: 1, price: 25000, status: 'Active' },
-  { name: 'Two Track Bundle', minTracks: 2, maxTracks: 2, price: 40000, status: 'Active' },
+  { name: 'Single Programme', minTracks: 1, maxTracks: 1, price: 10000, status: 'Active' },
 ]
 
 export function calculateCareerTrackPricing(selectedSlugs: string[]) {
   const selectedCount = new Set(selectedSlugs).size
-  const activeRules = careerTrackPricingRules.filter((rule) => rule.status === 'Active')
-  const exactRule = activeRules.find((rule) => selectedCount >= rule.minTracks && selectedCount <= rule.maxTracks)
-  const twoTrackRule = activeRules.find((rule) => rule.minTracks === 2 && rule.maxTracks === 2)
   const subtotal = selectedCount * careerTrackBasePrice
-  const total = selectedCount === 0
-    ? 0
-    : exactRule
-      ? exactRule.price
-      : twoTrackRule && selectedCount > 2
-        ? twoTrackRule.price + ((selectedCount - 2) * careerTrackBasePrice)
-        : subtotal
 
   return {
     selectedCount,
     subtotal,
-    total,
-    discount: Math.max(subtotal - total, 0),
-    ruleName: selectedCount === 0 ? 'No Track Selected' : exactRule?.name || (twoTrackRule && selectedCount > 2 ? 'Two Track Bundle + Extra Tracks' : 'Standard Track Pricing'),
+    total: subtotal,
+    discount: 0,
+    ruleName: selectedCount === 0 ? 'No Programme Selected' : selectedCount === 1 ? 'Single Programme' : 'Multiple Programmes',
   }
 }
 
 export const careerAcceleratorTracks: CareerTrack[] = [
   {
-    slug: 'ai-powered-data-analyst',
-    title: 'AI-Powered Data Analyst',
-    shortTitle: 'Data Analyst',
-    description: 'Learn how to turn raw business data into reports, dashboards, and clear decisions using Excel, Power BI, SQL basics, and AI assistants.',
+    slug: 'ai-content-creation',
+    code: 'NGTP-CONTENT',
+    title: 'AI Content Creation',
+    shortTitle: 'Content Creation',
+    description: 'Learn how to think like a content professional, plan audience-led ideas, and use AI to research, write, design, publish, and measure content.',
     duration: '4 weeks',
-    price: 25000,
-    bestFor: 'NYSC members, graduates, and young professionals who like numbers, business problems, reports, and decision-making.',
-    skills: ['Excel analysis', 'Power BI dashboards', 'Data cleaning', 'SQL basics', 'AI-assisted reporting', 'Business insight writing'],
-    opportunities: ['Data Analyst', 'Business Analyst', 'Reporting Assistant', 'Operations Analyst', 'AI Data Support Officer'],
-    tools: ['ChatGPT', 'Microsoft Excel', 'Power BI', 'Google Sheets', 'SQL practice tools', 'Notion AI'],
-    goal: 'Train students to collect, clean, analyse, visualise, and explain data in a way that helps teams make better decisions.',
-    overview: 'This track is for people who want a practical data career but do not want to start with heavy mathematics or complex programming. Students learn how companies use data every day: sales reports, customer trends, operational issues, financial summaries, and performance dashboards.',
-    whyCompaniesHire: ['They need people who can explain what the numbers mean.', 'They want dashboards that managers can use quickly.', 'They need analysts who can clean messy spreadsheets and reduce manual reporting.', 'They want entry-level talent that can use AI without losing accuracy.'],
-    outcomes: ['Clean and structure messy datasets.', 'Build useful dashboards in Excel and Power BI.', 'Use AI to speed up analysis while checking for mistakes.', 'Write simple reports that explain business problems and recommendations.'],
+    price: 10000,
+    bestFor: 'Aspiring creators, social media managers, brand builders, freelancers, marketing assistants, and young professionals who want practical content skills.',
+    profession: 'AI Content Creator / Content Operations Specialist',
+    skills: ['Audience research', 'Content strategy', 'Copywriting', 'Storytelling', 'AI writing workflow', 'Visual content planning', 'Content analytics'],
+    opportunities: ['AI Content Operator', 'Content Operations Specialist', 'Social Media Strategist', 'AI Copywriter', 'Creative Marketing Assistant'],
+    tools: ['ChatGPT', 'Canva', 'CapCut', 'Google Trends', 'Meta Business Suite', 'Notion AI'],
+    goal: 'Produce a content creator who understands audience psychology, storytelling, platform strategy, and AI-supported production.',
+    overview: 'This programme helps learners move beyond random posting. Students learn how content works as a professional communication system: audience, message, format, distribution, analytics, and improvement.',
+    whyCompaniesHire: ['Businesses need consistent content that supports trust and sales.', 'Teams want people who can turn ideas into publishable assets quickly.', 'Brands need creators who understand audience pain points and platform behavior.', 'Companies want AI speed with human judgment and quality control.'],
+    outcomes: ['Create a practical content strategy for a brand or creator.', 'Write stronger hooks, captions, scripts, and campaign assets.', 'Use AI to speed up research, writing, design, and repurposing.', 'Measure content performance and improve future ideas.'],
     modules: [
-      { title: 'Data Thinking for Business', lessons: ['What data analysts actually do at work', 'Common business questions data can answer', 'Metrics, KPIs, dimensions, and measures', 'How to ask better questions before opening a spreadsheet'] },
-      { title: 'Spreadsheet Analysis', lessons: ['Cleaning rows, columns, duplicates, and missing values', 'Useful Excel formulas for analysis', 'Pivot tables and summary reports', 'Using AI to explain formulas and check logic'] },
-      { title: 'Data Visualisation', lessons: ['Choosing the right chart for the message', 'Dashboard layout, filters, and readability', 'Power BI basics', 'Avoiding misleading charts'] },
-      { title: 'SQL and Data Sources', lessons: ['Tables, records, and relationships', 'SELECT, WHERE, GROUP BY, and JOIN in plain English', 'Connecting data sources', 'Using AI to draft and explain queries'] },
-      { title: 'AI Analysis Workflow', lessons: ['Prompting AI with clean context', 'Summarising datasets safely', 'Finding patterns and anomalies', 'Validating AI output before sharing'] },
-      { title: 'Business Reporting', lessons: ['Turning findings into insight', 'Writing executive summaries', 'Presenting recommendations', 'Building a data portfolio case study'] },
+      { title: 'Foundations of Content and Communication', lessons: ['What content actually is', 'Audience psychology and attention', 'Personas, pain points, and awareness levels', 'Content-market fit'] },
+      { title: 'Storytelling and Copywriting', lessons: ['Hooks, curiosity, and narrative tension', 'AIDA, PAS, BAB, and the 4 Us', 'Voice, tone, and brand personality', 'Editing for clarity and persuasion'] },
+      { title: 'Platform and Format Strategy', lessons: ['Long-form vs short-form platforms', 'SEO basics and search intent', 'Repurposing one idea into many assets', 'Building a realistic content calendar'] },
+      { title: 'AI-Powered Writing Workflow', lessons: ['Prompting with role, context, constraints, and examples', 'AI for research, ideation, outlining, and drafts', 'Maintaining brand voice', 'Fact-checking and avoiding AI hallucination'] },
+      { title: 'AI Visual and Multimedia Production', lessons: ['Design basics for non-designers', 'AI images for posts and thumbnails', 'Video scripting, captions, voiceover, and editing workflows', 'Quality control before publishing'] },
+      { title: 'Distribution, Analytics, and Monetisation', lessons: ['What to measure and what to ignore', 'Hook rate, retention, CTR, and engagement', 'Improving content from performance data', 'Services, sponsorships, products, and affiliates'] },
     ],
-    projects: ['Sales performance dashboard', 'Customer segmentation report', 'Operations KPI tracker'],
-    portfolio: ['Cleaned dataset', 'Power BI dashboard', 'Insight report', 'Recorded dashboard walkthrough'],
-    applications: ['Sales analysis', 'Customer reporting', 'Operations monitoring', 'Finance summaries', 'Management dashboards'],
-    capstone: 'Analyse a realistic company dataset, build a dashboard, and present a short decision report with clear recommendations.',
-    certificate: 'Certificate is issued after completing the modules, dashboard project, and final capstone review.',
+    assignments: ['Build a 14-day content calendar.', 'Write 10 AI-assisted content pieces in two formats.', 'Create a simple content performance report.'],
+    projects: ['Brand content strategy', 'AI-assisted campaign content pack', 'Content analytics report'],
+    portfolio: ['Audience persona', 'Content strategy document', 'Published/sample content assets', 'Performance report', 'Content workflow template'],
+    applications: ['Social media management', 'Personal brand building', 'Small business marketing', 'Campaign content', 'Content operations'],
+    capstone: 'Build a 30-day content system for a real or simulated brand, including strategy, 10 content assets across two formats, and a performance improvement report.',
+    certificate: 'Certificate is issued after assignments, portfolio assets, and the final capstone are reviewed.',
     faqs: [
-      { question: 'Do I need coding experience?', answer: 'No. You will learn SQL basics, but the track starts from practical spreadsheet and dashboard work.' },
-      { question: 'Can I use this for remote jobs?', answer: 'Yes. The portfolio is designed to show reporting, dashboard, and business analysis skills.' },
-      { question: 'Will AI do the analysis for me?', answer: 'AI will help you move faster, but you will learn how to verify the result and explain the business meaning.' },
+      { question: 'Do I need to be a designer or video editor?', answer: 'No. You will learn practical AI-supported workflows and simple design principles for content production.' },
+      { question: 'Is this only for influencers?', answer: 'No. It is useful for creators, businesses, brands, social media managers, and marketing support roles.' },
+      { question: 'Will AI write everything for me?', answer: 'AI supports the workflow, but you will learn how to direct, edit, verify, and improve the output.' },
     ],
   },
   {
-    slug: 'ai-powered-digital-marketing-specialist',
-    title: 'AI-Powered Digital Marketing Specialist',
-    shortTitle: 'Digital Marketing',
-    description: 'Learn how to plan campaigns, create content, write ads, understand funnels, and use AI to grow brands and businesses online.',
-    duration: '4 weeks',
-    price: 25000,
-    bestFor: 'Creatives, NYSC members, small business promoters, content creators, and young professionals who want marketing skills.',
-    skills: ['Content strategy', 'Copywriting', 'Campaign planning', 'Social media analytics', 'AI content workflows', 'Lead generation'],
-    opportunities: ['Digital Marketing Specialist', 'Social Media Manager', 'Content Strategist', 'Growth Assistant', 'AI Marketing Operator'],
-    tools: ['ChatGPT', 'Canva', 'Meta Business Suite', 'Google Trends', 'CapCut', 'MailerLite or Brevo'],
-    goal: 'Train students to use AI to plan, create, publish, measure, and improve digital marketing campaigns for real products and services.',
-    overview: 'This track teaches marketing as a business growth skill, not just posting online. Students learn how to understand customers, write better messages, create content faster, and track what is working.',
-    whyCompaniesHire: ['They need consistent content and campaigns.', 'They want marketers who understand leads, conversion, and customer follow-up.', 'They need people who can use AI tools to reduce content production time.', 'They want growth support without hiring a full agency.'],
-    outcomes: ['Plan campaigns around customer problems.', 'Create content calendars and ad copy with AI.', 'Set up simple lead generation flows.', 'Read basic marketing analytics and improve campaigns.'],
-    modules: [
-      { title: 'Marketing Foundations', lessons: ['Customer awareness levels', 'Positioning and offers', 'Funnels in simple terms', 'What makes people click, trust, and buy'] },
-      { title: 'Content and Copywriting', lessons: ['Hooks, captions, and calls to action', 'AIDA, PAS, and before-after-bridge', 'Using AI for content ideas and drafts', 'Editing AI content so it sounds human'] },
-      { title: 'Campaign Planning', lessons: ['Campaign goals and audiences', 'Content calendars', 'Organic vs paid channels', 'Budget and channel decisions'] },
-      { title: 'Social Media Execution', lessons: ['Instagram, TikTok, LinkedIn, and WhatsApp marketing', 'Creative formats that work', 'Repurposing one idea into many posts', 'Basic community engagement'] },
-      { title: 'Lead Generation and Follow-Up', lessons: ['Landing pages and forms', 'Lead magnets', 'Email and WhatsApp follow-up sequences', 'CRM thinking for marketers'] },
-      { title: 'Analytics and Optimisation', lessons: ['Reach, CTR, conversion, CAC, and retention', 'Reading campaign results', 'Using AI to summarise performance', 'Improving the next campaign'] },
-    ],
-    projects: ['30-day content calendar', 'Campaign landing page copy', 'Lead generation follow-up sequence'],
-    portfolio: ['Campaign strategy document', 'Content samples', 'Ad copy set', 'Performance report'],
-    applications: ['Social media marketing', 'Product launches', 'Community growth', 'Lead generation', 'Small business marketing'],
-    capstone: 'Create a complete AI-assisted marketing campaign for a real or sample business, including strategy, content, copy, and reporting plan.',
-    certificate: 'Certificate is issued after campaign project submission and capstone review.',
-    faqs: [
-      { question: 'Must I be a designer?', answer: 'No. You will learn practical content and campaign execution, with simple design support from tools like Canva.' },
-      { question: 'Is this only for social media?', answer: 'No. Social media is included, but the track also covers funnels, leads, follow-up, and reporting.' },
-      { question: 'Can I use it for freelancing?', answer: 'Yes. Your portfolio can help you pitch small businesses and founders.' },
-    ],
-  },
-  {
-    slug: 'ai-powered-software-builder',
-    title: 'AI-Powered Software Builder',
-    shortTitle: 'Software Builder',
-    description: 'Learn how to use AI coding tools, no-code platforms, and product thinking to build simple websites, apps, automations, and MVPs.',
-    duration: '4 weeks',
-    price: 25000,
-    bestFor: 'Beginners, product-minded graduates, founders, and young professionals who want to build useful digital tools.',
-    skills: ['Product thinking', 'AI coding prompts', 'Frontend basics', 'No-code workflows', 'API concepts', 'MVP building'],
-    opportunities: ['AI Software Builder', 'No-Code Builder', 'Junior Product Builder', 'Automation Assistant', 'MVP Builder'],
-    tools: ['ChatGPT', 'Cursor or Replit', 'Lovable or Bolt-style builders', 'Airtable', 'Supabase basics', 'GitHub'],
-    goal: 'Help students move from idea to working digital product using AI-assisted building, clear requirements, and practical testing.',
-    overview: 'This track is not about becoming a senior developer in one month. It is about learning how software works, how to describe what you want, how to use AI safely, and how to ship simple useful products.',
-    whyCompaniesHire: ['They need people who can prototype internal tools quickly.', 'They want operators who understand product, data, and automation.', 'They need builders who can work with technical teams better.', 'They want faster MVP experiments.'],
-    outcomes: ['Write clear product requirements.', 'Use AI to generate and improve simple code.', 'Build and test basic web tools.', 'Deploy a simple product and explain how it works.'],
-    modules: [
-      { title: 'Software Builder Mindset', lessons: ['Problems, users, and product requirements', 'What software is: frontend, backend, database, API', 'MVP thinking', 'How to break a feature into tasks'] },
-      { title: 'AI Coding Workflow', lessons: ['Writing prompts for code generation', 'Reading and reviewing AI output', 'Debugging with error messages', 'Keeping projects organised'] },
-      { title: 'Web App Basics', lessons: ['HTML, CSS, and JavaScript concepts', 'Components and pages', 'Forms and validation', 'Responsive UI thinking'] },
-      { title: 'Data and Integrations', lessons: ['Databases in plain English', 'Airtable and Supabase concepts', 'APIs and webhooks', 'Connecting forms to data'] },
-      { title: 'No-Code and Automation', lessons: ['Choosing no-code vs code', 'Building workflows', 'Automation triggers and actions', 'Human review and quality control'] },
-      { title: 'Testing, Deployment, and Portfolio', lessons: ['Testing user flows', 'Fixing bugs with AI help', 'Deploying a simple app', 'Writing a case study'] },
-    ],
-    projects: ['Personal landing page', 'Form-to-database app', 'Simple AI-assisted business tool'],
-    portfolio: ['Product requirement document', 'Working app link', 'GitHub or build notes', 'Demo video'],
-    applications: ['Internal tools', 'Startup MVPs', 'Workflow automation', 'Landing pages', 'Simple customer portals'],
-    capstone: 'Build and deploy a simple useful software product that solves a clear problem, with documentation and a short demo.',
-    certificate: 'Certificate is issued after the deployed project and capstone demo are reviewed.',
-    faqs: [
-      { question: 'Do I need to know programming first?', answer: 'No. The track starts from software concepts and uses AI to help you build.' },
-      { question: 'Will I become a full developer?', answer: 'You will become a practical beginner builder. You can later continue into deeper frontend or backend training.' },
-      { question: 'Can I build my business idea?', answer: 'Yes. The capstone can be based on your own idea if it is realistic for the timeline.' },
-    ],
-  },
-  {
-    slug: 'ai-powered-business-operations-specialist',
-    title: 'AI-Powered Business Operations Specialist',
-    shortTitle: 'Business Operations',
-    description: 'Learn how to document processes, improve workflows, build simple dashboards, and use AI to help businesses run better.',
-    duration: '4 weeks',
-    price: 25000,
-    bestFor: 'Organised people, admin staff, business graduates, SME operators, and young professionals who enjoy structure and execution.',
-    skills: ['Process mapping', 'SOP writing', 'Workflow automation', 'KPI tracking', 'AI operations support', 'Business reporting'],
-    opportunities: ['Business Operations Specialist', 'Operations Assistant', 'Process Analyst', 'AI Automation Assistant', 'Business Support Officer'],
-    tools: ['ChatGPT', 'Notion', 'Airtable', 'Google Sheets', 'Zapier or Make concepts', 'Trello or ClickUp'],
-    goal: 'Train students to help businesses reduce confusion, document work, track performance, and use AI for daily operations.',
-    overview: 'Many small businesses do not fail because there is no idea. They struggle because follow-up, records, tasks, and processes are scattered. This track teaches students how to bring order and visibility.',
-    whyCompaniesHire: ['They need clear processes and accountability.', 'They want fewer missed tasks and better follow-up.', 'They need simple dashboards and reports.', 'They want AI automation without losing human control.'],
-    outcomes: ['Map how a business currently works.', 'Write SOPs that staff can follow.', 'Build simple trackers and dashboards.', 'Recommend AI-assisted improvements.'],
-    modules: [
-      { title: 'Business Operations Basics', lessons: ['How work flows in a business', 'Inputs, processes, outputs, and owners', 'Common SME bottlenecks', 'The role of an operations specialist'] },
-      { title: 'Process Mapping', lessons: ['Flowcharts and simple process maps', 'Finding delays and repeated work', 'Documenting responsibilities', 'Using AI to turn interviews into process notes'] },
-      { title: 'SOPs and Work Systems', lessons: ['Writing clear SOPs', 'Checklists and templates', 'Task boards and calendars', 'Building an operating rhythm'] },
-      { title: 'Dashboards and KPIs', lessons: ['Choosing practical KPIs', 'Building trackers in Sheets or Airtable', 'Weekly reporting', 'Using AI to summarise operations data'] },
-      { title: 'Automation Thinking', lessons: ['What to automate and what not to automate', 'Triggers, actions, and approvals', 'Customer follow-up automation', 'Quality control for AI workflows'] },
-      { title: 'Operations Improvement Project', lessons: ['Diagnosing a business case', 'Prioritising fixes', 'Writing recommendations', 'Presenting an operations improvement plan'] },
-    ],
-    projects: ['SOP pack', 'Operations dashboard', 'Customer follow-up workflow'],
-    portfolio: ['Process map', 'SOP document', 'KPI dashboard', 'Improvement recommendation report'],
-    applications: ['SME operations', 'Customer follow-up', 'Admin systems', 'Team coordination', 'Workflow automation'],
-    capstone: 'Audit a sample business operation and create a process map, SOP, dashboard, and improvement plan.',
-    certificate: 'Certificate is issued after submitting the operations toolkit and capstone report.',
-    faqs: [
-      { question: 'Is this for business owners only?', answer: 'No. It is also good for people who want operations, admin, or business support roles.' },
-      { question: 'Do I need technical skills?', answer: 'No. You will use simple tools and learn automation concepts step by step.' },
-      { question: 'Can this help me work with SMEs?', answer: 'Yes. The portfolio is built around real SME problems.' },
-    ],
-  },
-  {
-    slug: 'ai-powered-ui-ux-designer',
-    title: 'AI-Powered UI/UX Designer',
+    slug: 'ui-ux-designer',
+    code: 'NGTP-UX',
+    title: 'Certified UI/UX Designer (AI-Powered)',
     shortTitle: 'UI/UX Designer',
-    description: 'Learn how to research users, design clean interfaces, prototype screens, and use AI to speed up the product design process.',
+    description: 'Learn user-centered design, interface thinking, prototyping, and AI-assisted design workflows while building a portfolio-ready product case study.',
     duration: '4 weeks',
-    price: 25000,
-    bestFor: 'Creative beginners, product-minded students, frontend learners, and young professionals who want a design portfolio.',
-    skills: ['User research', 'Wireframing', 'Interface design', 'Prototyping', 'AI design prompts', 'Portfolio case study'],
-    opportunities: ['UI/UX Designer', 'Product Designer Assistant', 'UX Research Assistant', 'Interface Designer', 'AI Product Design Operator'],
-    tools: ['ChatGPT', 'Figma', 'FigJam', 'Canva', 'Uizard or similar AI UI tools', 'Notion'],
-    goal: 'Train students to understand users, design usable interfaces, and build a portfolio-ready product design case study with AI support.',
-    overview: 'This track teaches design as problem-solving. Students learn how to understand user needs, organise screens, use design principles, prototype ideas, and present a professional case study.',
-    whyCompaniesHire: ['They need better digital product experiences.', 'They want designers who can explain decisions, not just decorate screens.', 'They need faster wireframes and prototypes.', 'They want design talent that can work with developers and product teams.'],
-    outcomes: ['Conduct simple user research.', 'Create user flows and wireframes.', 'Design polished screens in Figma.', 'Build a case study that explains the problem, process, and solution.'],
+    price: 10000,
+    bestFor: 'Aspiring UI/UX designers, product-minded creatives, frontend learners, no-code builders, and digital product founders.',
+    profession: 'Certified UI/UX Designer',
+    skills: ['User research', 'Information architecture', 'Wireframing', 'Interface design', 'Prototyping', 'AI design prompting', 'Design handoff'],
+    opportunities: ['AI UI/UX Designer', 'Product Designer', 'UX Research Assistant', 'Interface Designer', 'AI Product Design Operator'],
+    tools: ['Figma', 'FigJam', 'ChatGPT', 'Canva', 'Uizard or similar AI UI tools', 'Notion'],
+    goal: 'Produce a designer who thinks in terms of users, hierarchy, flows, and interactions, then uses AI to move faster without losing design judgment.',
+    overview: 'This programme teaches UI/UX as problem-solving, not decoration. Learners study users, map journeys, create wireframes, design polished interfaces, prototype flows, and present a professional case study.',
+    whyCompaniesHire: ['Digital products need interfaces people can understand and use.', 'Teams need designers who can explain decisions clearly.', 'Companies want faster research, wireframing, and prototyping cycles.', 'Product teams need designers who can work with developers and stakeholders.'],
+    outcomes: ['Conduct practical user research and synthesize findings.', 'Create user flows, wireframes, and product screens.', 'Use AI tools to support research, ideation, critique, and prototyping.', 'Present a complete portfolio case study.'],
     modules: [
-      { title: 'UI/UX Foundations', lessons: ['UI vs UX in simple terms', 'Design as problem-solving', 'User-centred thinking', 'Good and bad interface examples'] },
-      { title: 'User Research and Flows', lessons: ['Personas and user stories', 'Interview questions and surveys', 'User journeys', 'Task flows and information architecture'] },
-      { title: 'Design Principles', lessons: ['Hierarchy, alignment, spacing, contrast, and consistency', 'Typography and colour basics', 'Components and patterns', 'Accessibility basics'] },
-      { title: 'Wireframes and Prototypes', lessons: ['Low-fidelity wireframes', 'High-fidelity screens', 'Clickable prototypes', 'Using AI for wireframe ideas and UX critique'] },
-      { title: 'Figma Practice', lessons: ['Frames, auto layout, components, and variants', 'Design systems basics', 'Mobile and web layouts', 'Developer handoff basics'] },
-      { title: 'Portfolio Case Study', lessons: ['Writing the design story', 'Showing research and decisions', 'Presenting screens clearly', 'Preparing for design interviews'] },
+      { title: 'What UI/UX Actually Is', lessons: ['UI vs UX in simple terms', 'Design as problem-solving', 'The designer role in a product team', 'Design ethics and user-centered thinking'] },
+      { title: 'User Experience Foundations', lessons: ['Interviews, surveys, personas, and empathy maps', 'User journeys and task flows', 'Information architecture', 'Usability heuristics and accessibility basics'] },
+      { title: 'Design Principles', lessons: ['Hierarchy, contrast, balance, alignment, proximity, and repetition', 'Typography, color, spacing, and grids', 'Responsive design thinking', 'Good and bad interface examples'] },
+      { title: 'Interface Patterns and Systems', lessons: ['Buttons, forms, navigation, cards, and modals', 'Components and design systems', 'Mobile, web, and dashboard conventions', 'Feedback states and micro-interactions'] },
+      { title: 'AI as a Design Tool', lessons: ['Prompting for wireframes and UI ideas', 'Using AI for UX critique and research synthesis', 'Generating design alternatives', 'Evaluating AI output with design principles'] },
+      { title: 'Prototyping, Handoff, and Case Study', lessons: ['Clickable prototypes', 'Annotations and developer handoff', 'Presenting design decisions', 'Writing a portfolio case study'] },
     ],
+    assignments: ['Create a user persona and user flow.', 'Design wireframes and high-fidelity screens.', 'Build a clickable prototype and case study outline.'],
     projects: ['Mobile app redesign', 'Landing page interface', 'Clickable product prototype'],
-    portfolio: ['Research notes', 'User flow', 'Wireframes', 'High-fidelity screens', 'Clickable prototype', 'Case study'],
+    portfolio: ['Research summary', 'User flow', 'Wireframes', 'High-fidelity screens', 'Clickable prototype', 'Case study'],
     applications: ['Mobile app design', 'Website design', 'Product redesign', 'SaaS dashboards', 'User research support'],
-    capstone: 'Design a complete product experience from research to prototype and present it as a professional UI/UX case study.',
-    certificate: 'Certificate is issued after completing the prototype, case study, and final presentation.',
+    capstone: 'Complete an end-to-end product design project: research summary, user flow, wireframes, high-fidelity UI, clickable prototype, and case study write-up.',
+    certificate: 'Certificate is issued after completing assignments, prototype, case study, and final capstone review.',
     faqs: [
-      { question: 'Do I need to know Figma before joining?', answer: 'No. The track introduces Figma and design thinking from beginner level.' },
-      { question: 'Is this only about making beautiful screens?', answer: 'No. You will learn usability, research, user flows, and design decisions.' },
-      { question: 'Will I have a portfolio after the track?', answer: 'Yes. The capstone is structured as a portfolio case study.' },
+      { question: 'Do I need Figma experience?', answer: 'No. The programme introduces Figma and design thinking from beginner level.' },
+      { question: 'Is this just about making beautiful screens?', answer: 'No. You will learn research, flows, usability, interface decisions, and portfolio storytelling.' },
+      { question: 'Will I have portfolio work after the programme?', answer: 'Yes. The capstone is structured as a portfolio-ready case study.' },
+    ],
+  },
+  {
+    slug: 'ai-financial-analyst',
+    code: 'NGTP-FIN',
+    title: 'AI Financial Analyst',
+    shortTitle: 'Financial Analyst',
+    description: 'Learn financial statement thinking, analysis, forecasting, valuation logic, and AI-assisted reporting for business and investment decisions.',
+    duration: '4 weeks',
+    price: 10000,
+    bestFor: 'Finance students, accounting graduates, analysts, SME finance operators, business owners, consultants, and young professionals interested in finance.',
+    profession: 'AI Financial Analyst',
+    skills: ['Financial statements', 'Ratio analysis', 'Forecasting', 'Valuation logic', 'AI-assisted modelling', 'Financial reporting', 'Dashboarding'],
+    opportunities: ['AI Financial Analyst', 'Business Analyst', 'Finance Operations Analyst', 'Investment Research Assistant', 'AI Reporting Specialist'],
+    tools: ['ChatGPT', 'Microsoft Excel', 'Google Sheets', 'Power BI', 'Company reports', 'Notion AI'],
+    goal: 'Produce an analyst who understands financial statements, valuation logic, and business economics, then uses AI to model, analyse, validate, and report.',
+    overview: 'This programme pairs finance fundamentals with AI-supported analysis. Learners understand how businesses make money, read financial statements, build simple forecasts, validate AI output, and communicate insights.',
+    whyCompaniesHire: ['Businesses need people who can explain numbers clearly.', 'Leaders need analysis for pricing, cash flow, growth, and investment decisions.', 'Finance teams want faster modelling and reporting without losing accuracy.', 'Companies need analysts who can validate AI-generated financial outputs.'],
+    outcomes: ['Read and interpret financial statements.', 'Analyse business performance using ratios, trends, and benchmarks.', 'Build AI-assisted forecasts and simple financial models.', 'Write executive-ready financial reports with documented validation.'],
+    modules: [
+      { title: 'Foundations of Finance and Business Economics', lessons: ['Financial analysis for decisions', 'Revenue models, costs, margins, and profit', 'Time value of money', 'Risk vs return'] },
+      { title: 'The Three Financial Statements', lessons: ['Income statement basics', 'Balance sheet basics', 'Cash flow statement basics', 'How the statements connect', 'Reading real company financials'] },
+      { title: 'Financial Analysis Techniques', lessons: ['Liquidity, profitability, efficiency, and leverage ratios', 'Trend and variance analysis', 'Industry and competitor benchmarking', 'Break-even analysis and unit economics'] },
+      { title: 'Financial Modelling and Forecasting', lessons: ['Assumptions, logic, and outputs', 'Driver-based forecasting', 'Scenario and sensitivity analysis', 'Valuation basics: DCF, multiples, and comparables'] },
+      { title: 'AI-Powered Analysis Workflow', lessons: ['Using AI to read reports and statements', 'Building spreadsheet models with AI assistance', 'Extracting and cleaning data', 'Prompting for better financial questions', 'Validating AI output'] },
+      { title: 'Reporting and Decision Support', lessons: ['Turning analysis into insight', 'Dashboards and visualizations', 'Investment memos and executive summaries', 'Presenting numbers to non-financial audiences', 'Accuracy, ethics, and AI limitations'] },
+    ],
+    assignments: ['Analyse a simple income statement.', 'Build a forecast from clear assumptions.', 'Write a one-page executive finance memo.'],
+    projects: ['Ratio analysis workbook', 'Forecast model', 'Financial dashboard', 'Executive report'],
+    portfolio: ['Financial analysis workbook', 'Forecast model', 'Dashboard screenshots', 'Executive finance memo', 'Validation notes'],
+    applications: ['Business performance review', 'Investment research', 'SME finance operations', 'Budgeting and forecasting', 'Management reporting'],
+    capstone: 'Complete a financial analysis of a real or sample company, including statement review, driver-based forecast, valuation estimate, and executive report.',
+    certificate: 'Certificate is issued after assignments, model review, executive report, and final capstone are completed.',
+    faqs: [
+      { question: 'Do I need an accounting background?', answer: 'It helps, but it is not required. The programme starts with financial statement foundations.' },
+      { question: 'Will this give financial advice certification?', answer: 'No. It builds practical analysis and reporting capability, not regulated financial advisory licensing.' },
+      { question: 'Can business owners take it?', answer: 'Yes. It is useful for owners who want to understand pricing, profit, cash flow, and growth decisions.' },
     ],
   },
 ]

@@ -57,7 +57,7 @@ async function createApplication(body: Record<string, unknown>, contactId: strin
   const isBusiness = programCode === 'BATP'
   const isComplete = programCode === 'COMPLETE'
   const selectedTrackNames = stringArray(body.selectedTrackNames)
-  const selectedTrackLabel = selectedTrackNames.length > 1 ? `Career Bundle: ${selectedTrackNames.join(', ')}` : selectedTrackNames[0] || (isComplete ? 'Complete' : isBusiness ? 'Business' : 'Career')
+  const selectedTrackLabel = selectedTrackNames.length > 1 ? `Career Programmes: ${selectedTrackNames.join(', ')}` : selectedTrackNames[0] || (isComplete ? 'Complete' : isBusiness ? 'Business' : 'Career')
   return createRecord('NGTP Applications', compact({
     'Application ID': `APP-${Date.now()}`,
     Applicant: [contactId],
@@ -97,15 +97,16 @@ export async function POST(request: NextRequest) {
     const selectedTrackNames = validCareerTracks.length
       ? validCareerTracks.map((track) => track.title)
       : stringArray(body.selectedTrackNames)
-    const careerPricing = programCode === 'NGTP' && selectedTrackSlugs.length
+    const careerPricing = programCode === 'NGTP'
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
-    const amount = careerPricing?.total || Number(body.amount || 25000)
-    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Bundle (${selectedTrackNames.length} Tracks)` : selectedTrackNames[0] || 'Career Accelerator')
+    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 25000))
+    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Programmes (${selectedTrackNames.length})` : selectedTrackNames[0] || 'Career Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120)
     const ambassador = await findAmbassador(referralCode)
-    const program = await findProgram(programCode)
+    const selectedProgrammeCode = programCode === 'NGTP' ? validCareerTracks[0]?.code || 'NGTP' : programCode
+    const program = await findProgram(selectedProgrammeCode)
     const commissionPercent = ambassador ? 5 : 0
     const commissionAmount = ambassador ? Math.round(amount * 0.05) : 0
     const reference = `NEXORA-${programCode}-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
@@ -113,8 +114,8 @@ export async function POST(request: NextRequest) {
     if (!fullName || !email) {
       return NextResponse.json({ error: 'Full name and email are required.' }, { status: 400 })
     }
-    if (programCode === 'NGTP' && selectedTrackSlugs.length && !validCareerTracks.length) {
-      return NextResponse.json({ error: 'Select a valid Career Accelerator track.' }, { status: 400 })
+    if (programCode === 'NGTP' && !validCareerTracks.length) {
+      return NextResponse.json({ error: 'Select a valid Career Accelerator programme.' }, { status: 400 })
     }
     if (!amount || amount < 1) {
       return NextResponse.json({ error: 'A valid payment amount is required.' }, { status: 400 })
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),
       notes: [
         `Payment/application initialized for ${programCode}. Reference: ${reference}`,
-        selectedTrackNames.length ? `Selected tracks: ${selectedTrackNames.join(', ')}` : '',
+        selectedTrackNames.length ? `Selected programmes: ${selectedTrackNames.join(', ')}` : '',
         careerPricing ? `Pricing rule: ${careerPricing.ruleName}. Subtotal NGN ${careerPricing.subtotal}. Discount NGN ${careerPricing.discount}. Final NGN ${careerPricing.total}.` : '',
       ].filter(Boolean).join('\n'),
     })
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
       `Name: ${fullName}`,
       `Email: ${email}`,
       `Program: ${programName} (${programCode})`,
-      selectedTrackNames.length ? `Tracks: ${selectedTrackNames.join(', ')}` : '',
+      selectedTrackNames.length ? `Programme: ${selectedTrackNames.join(', ')}` : '',
       `Amount: NGN ${amount.toLocaleString()}`,
       `Lead score: ${lead.contact.fields?.['Priority Score'] || 'Captured'}`,
       `Follow-up stage: Payment Initialized`,
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
           'Commission Status': 'Pending',
           'Source Page': sourcePage,
           'Payment Reference': reference,
-          Notes: `${programCode} application captured before Paystack was configured.${selectedTrackNames.length ? ` Selected tracks: ${selectedTrackNames.join(', ')}` : ''}`,
+          Notes: `${programCode} application captured before Paystack was configured.${selectedTrackNames.length ? ` Selected programmes: ${selectedTrackNames.join(', ')}` : ''}`,
         }))
       }
       return NextResponse.json({ error: `Online payment is not configured yet. Nexora has received your ${programCode} application interest.` }, { status: 503 })
@@ -193,6 +194,7 @@ export async function POST(request: NextRequest) {
           phone: phone(body.phone),
           program: programName,
           program_code: programCode,
+          selected_programme_code: selectedProgrammeCode,
           cohort: text(body.cohort, 160),
           source_page: sourcePage,
           referral_code: referralCode,
@@ -256,7 +258,7 @@ export async function POST(request: NextRequest) {
         'Commission Status': 'Pending',
         'Source Page': sourcePage,
         'Payment Reference': reference,
-        Notes: `${programCode} website payment initialized through Paystack.${selectedTrackNames.length ? ` Selected tracks: ${selectedTrackNames.join(', ')}` : ''}`,
+        Notes: `${programCode} website payment initialized through Paystack.${selectedTrackNames.length ? ` Selected programmes: ${selectedTrackNames.join(', ')}` : ''}`,
       }))
     }
 
