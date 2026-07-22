@@ -3,6 +3,7 @@ import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import WhatsAppButton from '@/components/layout/WhatsAppButton'
+import ReferralTracker from '@/components/layout/ReferralTracker'
 
 export const metadata: Metadata = {
   title: 'NEXORA Institute | Practical AI Training for Careers and Businesses',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>{children}</main>
         <Footer />
         <WhatsAppButton />
+        <ReferralTracker />
       </body>
     </html>
   )

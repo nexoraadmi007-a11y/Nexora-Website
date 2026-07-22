@@ -38,6 +38,31 @@ async function findProgram(code: string) {
   return records[0] || null
 }
 
+async function createReferralEvent(input: {
+  referralCode: string
+  ambassadorId?: string
+  contactId?: string
+  programmeId?: string
+  visitorId?: string
+  sessionId?: string
+  eventType: string
+  pageUrl?: string
+}) {
+  if (!input.referralCode && !input.ambassadorId) return null
+  return createRecord('Referral Events', compact({
+    'Referral Event ID': `REVT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+    'Referral Code': input.referralCode,
+    ...(input.ambassadorId ? { Associate: [input.ambassadorId] } : {}),
+    ...(input.contactId ? { Lead: [input.contactId] } : {}),
+    ...(input.programmeId ? { Programme: [input.programmeId] } : {}),
+    'Visitor ID': input.visitorId,
+    'Session ID': input.sessionId,
+    'Event Type': input.eventType,
+    'Page URL': input.pageUrl,
+    'Occurred At': new Date().toISOString(),
+  }))
+}
+
 function compact(fields: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(fields).filter(([, value]) => {
     if (Array.isArray(value)) return value.length > 0
@@ -104,6 +129,8 @@ export async function POST(request: NextRequest) {
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Programmes (${selectedTrackNames.length})` : selectedTrackNames[0] || 'Career Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120)
+    const visitorId = text(body.visitorId, 160)
+    const sessionId = text(body.sessionId, 160)
     const ambassador = await findAmbassador(referralCode)
     const selectedProgrammeCode = programCode === 'NGTP' ? validCareerTracks[0]?.code || 'NGTP' : programCode
     const program = await findProgram(selectedProgrammeCode)
@@ -139,7 +166,19 @@ export async function POST(request: NextRequest) {
       ].filter(Boolean).join('\n'),
     })
 
-    await createApplication(body, lead.contact.id, program?.id, programCode, reference)
+    const application = await createApplication(body, lead.contact.id, program?.id, programCode, reference)
+    if (ambassador) {
+      await createReferralEvent({
+        referralCode,
+        ambassadorId: ambassador.id,
+        contactId: lead.contact.id,
+        programmeId: program?.id,
+        visitorId,
+        sessionId,
+        eventType: 'APPLICATION_STARTED',
+        pageUrl: sourcePage,
+      }).catch((error) => console.error('Application referral event failed', error instanceof Error ? error.message : error))
+    }
     await notifyAdmin([
       'New NEXORA application initialized',
       `Name: ${fullName}`,
@@ -199,6 +238,11 @@ export async function POST(request: NextRequest) {
           source_page: sourcePage,
           referral_code: referralCode,
           ambassador_record_id: ambassador?.id || '',
+          visitor_id: visitorId,
+          session_id: sessionId,
+          contact_record_id: lead.contact.id,
+          application_record_id: application.id,
+          programme_record_id: program?.id || '',
           commission_percent: commissionPercent,
           commission_amount: commissionAmount,
           selected_track_slugs: validCareerTracks.map((track) => track.slug).join(','),
@@ -240,10 +284,21 @@ export async function POST(request: NextRequest) {
       'Paystack Access Code': data.data.access_code,
       'Source Page': sourcePage,
       'Date Submitted': new Date().toISOString(),
-      'Raw Response': JSON.stringify({ paystack: data, selectedTracks: selectedTrackNames, pricing: careerPricing }).slice(0, 9000),
+      'Raw Response': JSON.stringify({ paystack: data, selectedTracks: selectedTrackNames, pricing: careerPricing, visitorId, sessionId }).slice(0, 9000),
     }))
 
     if (ambassador) {
+      await createReferralEvent({
+        referralCode,
+        ambassadorId: ambassador.id,
+        contactId: lead.contact.id,
+        programmeId: program?.id,
+        visitorId,
+        sessionId,
+        eventType: 'CHECKOUT_STARTED',
+        pageUrl: sourcePage,
+      }).catch((error) => console.error('Checkout referral event failed', error instanceof Error ? error.message : error))
+
       await createRecord('Ambassador Referrals', compact({
         'Referral ID': `REF-${Date.now()}`,
         Ambassador: [ambassador.id],

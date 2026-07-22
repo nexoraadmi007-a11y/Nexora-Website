@@ -23,6 +23,10 @@ function stringArray(value: unknown) {
   return raw.split(',').map((item) => text(item, 180)).filter(Boolean)
 }
 
+function normalizePhone(value: string) {
+  return value.replace(/[^0-9]/g, '')
+}
+
 function compact(fields: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(fields).filter(([, value]) => {
     if (Array.isArray(value)) return value.length > 0
@@ -64,6 +68,30 @@ async function findByReference<T extends Fields>(table: string, field: string, r
 async function findContact(email: string) {
   if (!email) return null
   return findByReference<Fields>('Master Contacts', 'Email', email)
+}
+
+async function findAssignedAssociate(input: { email?: string; phone?: string }) {
+  const email = text(input.email, 254).toLowerCase()
+  const phoneDigits = normalizePhone(text(input.phone, 80))
+
+  if (email) {
+    const byEmail = await listRecords<Fields>('Growth Leads', {
+      formula: `LOWER({Email})='${escapeFormula(email)}'`,
+      maxRecords: 1,
+    }).catch(() => [])
+    if (byEmail[0]?.fields?.['Assigned Associate']?.[0]) {
+      return byEmail[0].fields['Assigned Associate'][0] as string
+    }
+  }
+
+  if (!phoneDigits) return ''
+  const candidates = await listRecords<Fields>('Growth Leads', {
+    maxRecords: 100,
+    sortField: 'Assigned At',
+    direction: 'desc',
+  }).catch(() => [])
+  const byPhone = candidates.find((record) => normalizePhone(text(record.fields.Phone, 80)) === phoneDigits)
+  return byPhone?.fields?.['Assigned Associate']?.[0] || ''
 }
 
 async function findProgramme(programCode: string, programName: string) {
@@ -216,6 +244,8 @@ async function upsertConversionAttribution(input: {
   enrollmentId?: string
   amount: number
   source: string
+  status?: string
+  conflictReason?: string
 }) {
   if (!input.ambassadorId) return null
   const existing = await findByReference<Fields>('Conversion Attribution', 'Payment Reference', input.reference).catch(() => null)
@@ -228,7 +258,8 @@ async function upsertConversionAttribution(input: {
     ...(input.enrollmentId ? { Enrollment: [input.enrollmentId] } : {}),
     'Payment Reference': input.reference,
     'Attribution Source': input.source,
-    'Attribution Status': 'APPROVED',
+    'Attribution Status': input.status || 'APPROVED',
+    'Conflict Reason': input.conflictReason,
     'Attributed Amount': input.amount,
     'Net Amount': input.amount,
     'Updated At': now,
@@ -372,6 +403,16 @@ export async function POST(request: NextRequest) {
     const paymentPlan = await findPaymentPlan(amount)
     const application = await findApplication(reference, contact?.id)
     const ambassadorId = websiteEvent?.fields?.Ambassador?.[0] || text(metadata.ambassador_record_id, 120)
+    const assignedAssociateId = await findAssignedAssociate({ email, phone })
+    const attributionConflict = Boolean(ambassadorId && assignedAssociateId && ambassadorId !== assignedAssociateId)
+    const attributionAssociateId = ambassadorId || assignedAssociateId
+    const attributionSource = attributionConflict
+      ? 'CONFLICT_REVIEW'
+      : ambassadorId
+        ? 'DIRECT_REFERRAL'
+        : assignedAssociateId
+          ? 'ASSIGNED_LEAD'
+          : 'ADMIN_CONFIRMED'
 
     if (websiteEvent) {
       await updateRecord('Website Payment Events', websiteEvent.id, compact({
@@ -407,7 +448,7 @@ export async function POST(request: NextRequest) {
       paymentPlanId: paymentPlan?.id,
       amount,
       paymentDate: paidAt,
-      ambassadorId,
+      ambassadorId: attributionConflict ? undefined : attributionAssociateId,
       selectedTracks,
     })
 
@@ -445,11 +486,13 @@ export async function POST(request: NextRequest) {
     if (referral) {
       await updateRecord('Ambassador Referrals', referral.id, compact({
         Enrollment: [enrollment.id],
-        'Referral Status': 'Payment Confirmed',
-        'Commission Status': 'Earned',
-        'Qualifying Referral': true,
+        'Referral Status': attributionConflict ? 'Conflict Review' : 'Payment Confirmed',
+        'Commission Status': attributionConflict ? 'On Hold' : 'Earned',
+        'Qualifying Referral': !attributionConflict,
         'Qualification Date': paidAt,
-        Notes: `Payment confirmed automatically by Paystack webhook. Reference: ${reference}`,
+        Notes: attributionConflict
+          ? `Payment confirmed, but attribution conflict needs admin review. Referral ambassador ${ambassadorId}; assigned associate ${assignedAssociateId}. Reference: ${reference}`
+          : `Payment confirmed automatically by Paystack webhook. Reference: ${reference}`,
       }))
     }
 
@@ -464,16 +507,20 @@ export async function POST(request: NextRequest) {
 
     await upsertConversionAttribution({
       reference,
-      ambassadorId,
+      ambassadorId: attributionAssociateId,
       contactId: contact?.id,
       applicationId: application?.id,
       paymentId: (payment as AirtableRecord<Fields>)?.id,
       enrollmentId: enrollment.id,
       amount,
-      source: text(metadata.referral_code, 120) ? 'DIRECT_REFERRAL' : 'ADMIN_CONFIRMED',
+      source: attributionSource,
+      status: attributionConflict ? 'CONFLICT' : 'APPROVED',
+      conflictReason: attributionConflict ? `Referral ambassador ${ambassadorId} differs from assigned associate ${assignedAssociateId}.` : '',
     }).catch((error) => console.error('Conversion attribution write failed', error instanceof Error ? error.message : error))
 
-    await updateAssociateReferralStats(ambassadorId, amount).catch((error) => console.error('Associate stats update failed', error instanceof Error ? error.message : error))
+    if (ambassadorId && !attributionConflict) {
+      await updateAssociateReferralStats(ambassadorId, amount).catch((error) => console.error('Associate stats update failed', error instanceof Error ? error.message : error))
+    }
     await refreshMonthlyPerformance().catch((error) => console.error('Monthly performance refresh failed', error instanceof Error ? error.message : error))
 
     return NextResponse.json({ ok: true, reference, enrollmentId: enrollment.id })

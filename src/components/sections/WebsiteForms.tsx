@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ensureReferralIdentity, getStoredReferralCode } from '@/components/layout/ReferralTracker'
 
 type FormKind = 'webinar' | 'accelerator' | 'batp' | 'complete' | 'community' | 'contact' | 'corporate'
 
@@ -111,12 +112,15 @@ const fieldsByKind: Record<FormKind, Field[]> = {
 function sourceParams() {
   if (typeof window === 'undefined') return {}
   const params = new URLSearchParams(window.location.search)
+  const identity = ensureReferralIdentity()
   return {
     sourcePage: window.location.pathname,
     utmSource: params.get('utm_source') || '',
     utmMedium: params.get('utm_medium') || '',
     utmCampaign: params.get('utm_campaign') || '',
-    referralCode: params.get('ref') || params.get('referral') || params.get('ambassador') || '',
+    referralCode: params.get('ref') || params.get('referral') || params.get('ambassador') || getStoredReferralCode(),
+    visitorId: identity.visitorId,
+    sessionId: identity.sessionId,
   }
 }
 
