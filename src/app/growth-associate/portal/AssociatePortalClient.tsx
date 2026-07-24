@@ -57,6 +57,30 @@ type PortalData = {
   }>
 }
 
+type WorkspaceLead = {
+  id: string
+  index: number
+  title: string
+  leadType: string
+  status: string
+  location: string
+  programme: string
+  signal: string
+  phone: string
+  email: string
+  score: string
+  lastContactedAt: string
+  nextFollowUpAt: string
+}
+
+type AssistantResult = {
+  salesStage: string
+  objection: string
+  recommendedReply: string
+  nextAction: string
+  suggestedFollowUpAt: string
+}
+
 function money(value: number) {
   return `NGN ${Math.round(value || 0).toLocaleString()}`
 }
@@ -75,6 +99,13 @@ export default function AssociatePortalClient() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const [copied, setCopied] = useState(false)
+  const [leads, setLeads] = useState<WorkspaceLead[]>([])
+  const [workspaceLoading, setWorkspaceLoading] = useState(false)
+  const [workspaceMessage, setWorkspaceMessage] = useState('')
+  const [selectedLeadId, setSelectedLeadId] = useState('')
+  const [activityNote, setActivityNote] = useState('')
+  const [conversation, setConversation] = useState('')
+  const [assistant, setAssistant] = useState<AssistantResult | null>(null)
 
   async function load(nextCode = code) {
     const cleanCode = nextCode.trim()
@@ -93,6 +124,7 @@ export default function AssociatePortalClient() {
       setCode(cleanCode)
       window.localStorage.setItem('nexora-associate-referral-code', cleanCode)
       setMessage('Dashboard loaded.')
+      await loadWorkspace(cleanCode)
     } catch (error) {
       setData(null)
       setStatus('error')
@@ -113,6 +145,82 @@ export default function AssociatePortalClient() {
     await navigator.clipboard.writeText(data.associate.referralLink)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1800)
+  }
+
+  async function loadWorkspace(nextCode = code) {
+    const cleanCode = nextCode.trim()
+    if (!cleanCode) return
+    setWorkspaceLoading(true)
+    setWorkspaceMessage('')
+    try {
+      const response = await fetch(`/api/growth/associate-workspace?code=${encodeURIComponent(cleanCode)}`)
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Lead workspace could not be loaded.')
+      setLeads(result.leads || [])
+      setSelectedLeadId((current) => current || result.leads?.[0]?.id || '')
+      setWorkspaceMessage(`${result.leads?.length || 0} assigned lead${result.leads?.length === 1 ? '' : 's'} loaded.`)
+    } catch (error) {
+      setWorkspaceMessage(error instanceof Error ? error.message : 'Lead workspace could not be loaded.')
+    } finally {
+      setWorkspaceLoading(false)
+    }
+  }
+
+  async function updateLead(action: string) {
+    if (!selectedLeadId) {
+      setWorkspaceMessage('Select a lead first.')
+      return
+    }
+    setWorkspaceLoading(true)
+    setWorkspaceMessage('')
+    try {
+      const response = await fetch('/api/growth/associate-workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, leadId: selectedLeadId, action, note: activityNote }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Lead update failed.')
+      setWorkspaceMessage(`Lead updated to ${result.status || result.stage || action}.`)
+      setActivityNote('')
+      await loadWorkspace(code)
+    } catch (error) {
+      setWorkspaceMessage(error instanceof Error ? error.message : 'Lead update failed.')
+    } finally {
+      setWorkspaceLoading(false)
+    }
+  }
+
+  async function askAssistant() {
+    if (!selectedLeadId || !conversation.trim()) {
+      setWorkspaceMessage('Select a lead and paste the conversation first.')
+      return
+    }
+    setWorkspaceLoading(true)
+    setWorkspaceMessage('')
+    setAssistant(null)
+    try {
+      const lead = leads.find((item) => item.id === selectedLeadId)
+      const response = await fetch('/api/growth/associate-workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          mode: 'sales_assistant',
+          leadId: selectedLeadId,
+          conversation,
+          programme: lead?.programme || '',
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Sales assistant failed.')
+      setAssistant(result)
+      setWorkspaceMessage('Sales assistant reply generated.')
+    } catch (error) {
+      setWorkspaceMessage(error instanceof Error ? error.message : 'Sales assistant failed.')
+    } finally {
+      setWorkspaceLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -241,6 +349,85 @@ export default function AssociatePortalClient() {
               ))}
             </Panel>
 
+            <section className="rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Lead workspace</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">Assigned outreach leads</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                    Work your assigned leads, log outreach, and use the sales assistant to turn conversations into next actions.
+                  </p>
+                </div>
+                <button onClick={() => loadWorkspace()} disabled={workspaceLoading} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                  <RefreshCw className={`h-4 w-4 ${workspaceLoading ? 'animate-spin' : ''}`} />
+                  Refresh leads
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+                <div className="grid gap-3">
+                  {leads.length ? leads.map((lead) => (
+                    <button
+                      key={lead.id}
+                      type="button"
+                      onClick={() => setSelectedLeadId(lead.id)}
+                      className={`rounded-lg border p-4 text-left transition ${selectedLeadId === lead.id ? 'border-[#5793ff]/70 bg-[#5793ff]/10' : 'border-white/10 bg-black/20 hover:border-white/25'}`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-white">{lead.index}. {lead.title}</p>
+                          <p className="mt-1 text-sm text-steel">{lead.leadType} | {lead.location} | {lead.programme}</p>
+                        </div>
+                        <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-bold uppercase text-[#bcd6ff]">{lead.status}</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-steel">{lead.signal}</p>
+                      <p className="mt-2 text-xs text-steel">{[lead.phone, lead.email].filter(Boolean).join(' | ') || 'No contact details'}</p>
+                    </button>
+                  )) : <p className="rounded-lg border border-white/10 p-5 text-sm text-steel">No assigned leads yet.</p>}
+                </div>
+
+                <div className="grid gap-4 self-start rounded-lg border border-white/10 bg-black/20 p-4">
+                  <label className="grid gap-2 text-sm text-steel">
+                    Selected lead
+                    <select value={selectedLeadId} onChange={(event) => setSelectedLeadId(event.target.value)} className="min-h-11 rounded-lg border border-white/10 bg-[#07111f] px-3 text-white outline-none focus:border-signal">
+                      <option value="">Select lead</option>
+                      {leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.title}</option>)}
+                    </select>
+                  </label>
+                  <label className="grid gap-2 text-sm text-steel">
+                    Outreach note
+                    <textarea value={activityNote} onChange={(event) => setActivityNote(event.target.value)} rows={3} className="rounded-lg border border-white/10 bg-white/[0.045] px-3 py-3 text-white outline-none focus:border-signal" />
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <ActionButton label="Contacted" onClick={() => updateLead('contacted')} disabled={workspaceLoading} />
+                    <ActionButton label="Interested" onClick={() => updateLead('interested')} disabled={workspaceLoading} />
+                    <ActionButton label="Payment pending" onClick={() => updateLead('payment_pending')} disabled={workspaceLoading} />
+                    <ActionButton label="Converted" onClick={() => updateLead('converted')} disabled={workspaceLoading} />
+                    <ActionButton label="Invalid" onClick={() => updateLead('invalid')} disabled={workspaceLoading} />
+                    <ActionButton label="Not interested" onClick={() => updateLead('not_interested')} disabled={workspaceLoading} />
+                  </div>
+
+                  <div className="hairline" />
+
+                  <label className="grid gap-2 text-sm text-steel">
+                    Conversation for sales assistant
+                    <textarea value={conversation} onChange={(event) => setConversation(event.target.value)} rows={6} placeholder="Paste the WhatsApp/DM conversation here" className="rounded-lg border border-white/10 bg-white/[0.045] px-3 py-3 text-white outline-none focus:border-signal" />
+                  </label>
+                  <button onClick={askAssistant} disabled={workspaceLoading} className="button-primary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                    Generate reply
+                  </button>
+                  {assistant ? (
+                    <div className="rounded-lg border border-[#5793ff]/30 bg-[#5793ff]/10 p-4 text-sm leading-6 text-steel">
+                      <p className="font-semibold text-white">Stage: {assistant.salesStage} | Objection: {assistant.objection}</p>
+                      <p className="mt-3 whitespace-pre-line text-white">{assistant.recommendedReply}</p>
+                      <p className="mt-3">Next action: {assistant.nextAction}</p>
+                    </div>
+                  ) : null}
+                  {workspaceMessage ? <p className="text-sm text-[#9ec2f7]">{workspaceMessage}</p> : null}
+                </div>
+              </div>
+            </section>
+
             <div className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.025] p-4 text-sm leading-6 text-steel">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#7fd3a6]" />
               <p>
@@ -251,6 +438,19 @@ export default function AssociatePortalClient() {
         ) : null}
       </section>
     </main>
+  )
+}
+
+function ActionButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="min-h-10 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-xs font-bold text-white transition hover:border-[#9ec2f7]/50 disabled:opacity-50"
+    >
+      {label}
+    </button>
   )
 }
 
