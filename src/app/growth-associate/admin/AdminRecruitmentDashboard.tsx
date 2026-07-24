@@ -79,6 +79,14 @@ type LeadQueue = {
   sample: Array<{ id: string; name: string; sector: string; status: string; location: string; score: string }>
 }
 
+type ApifyImportResult = {
+  received: number
+  normalized: number
+  imported: Array<{ id: string; name: string; sector: string; score: number }>
+  skipped: Array<{ name: string; reason: string }>
+  error?: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -154,6 +162,11 @@ export default function AdminRecruitmentDashboard() {
   const [leadQueue, setLeadQueue] = useState<LeadQueue | null>(null)
   const [leadQueueLoading, setLeadQueueLoading] = useState(false)
   const [leadBatchSize, setLeadBatchSize] = useState(5)
+  const [apifyLoading, setApifyLoading] = useState(false)
+  const [apifySector, setApifySector] = useState('restaurants')
+  const [apifyLocation, setApifyLocation] = useState('Abeokuta, Ogun State')
+  const [apifyLimit, setApifyLimit] = useState(20)
+  const [apifyResult, setApifyResult] = useState<ApifyImportResult | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -366,6 +379,40 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function importApifyLeads() {
+    if (!secret) {
+      setMessage('Enter the admin secret to import Apify leads.')
+      return
+    }
+    setApifyLoading(true)
+    setMessage('')
+    setApifyResult(null)
+    try {
+      const response = await fetch('/api/growth/apify-leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({
+          sector: apifySector,
+          location: apifyLocation,
+          query: apifySector,
+          limit: apifyLimit,
+        }),
+      })
+      const result = (await response.json()) as ApifyImportResult
+      if (!response.ok) throw new Error(result.error || 'Apify lead import failed.')
+      setApifyResult(result)
+      setMessage(`Apify import complete: ${result.imported?.length || 0} imported, ${result.skipped?.length || 0} skipped.`)
+      await loadLeadQueue()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Apify lead import failed.')
+    } finally {
+      setApifyLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -439,6 +486,46 @@ export default function AdminRecruitmentDashboard() {
         </label>
 
         <div aria-live="polite" className="min-h-8 pt-5 text-sm font-semibold text-[#9ec2f7]">{message}</div>
+
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Apify lead generation</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Generate fresh business leads</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Runs the configured Apify actor/task, imports new business leads into Airtable, skips duplicates, and feeds the daily lead queue.
+              </p>
+            </div>
+            <button onClick={importApifyLeads} disabled={apifyLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+              <RefreshCw className={`h-4 w-4 ${apifyLoading ? 'animate-spin' : ''}`} />
+              Run Apify import
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_160px]">
+            <label className="grid gap-2 text-sm text-steel">
+              Sector / search
+              <input value={apifySector} onChange={(event) => setApifySector(event.target.value)} className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-white outline-none focus:border-signal" />
+            </label>
+            <label className="grid gap-2 text-sm text-steel">
+              Location
+              <input value={apifyLocation} onChange={(event) => setApifyLocation(event.target.value)} className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-white outline-none focus:border-signal" />
+            </label>
+            <label className="grid gap-2 text-sm text-steel">
+              Limit
+              <input type="number" min={1} max={100} value={apifyLimit} onChange={(event) => setApifyLimit(Number(event.target.value || 20))} className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-white outline-none focus:border-signal" />
+            </label>
+          </div>
+
+          {apifyResult ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-4">
+              <MetricCard label="Received" value={String(apifyResult.received || 0)} />
+              <MetricCard label="Normalized" value={String(apifyResult.normalized || 0)} />
+              <MetricCard label="Imported" value={String(apifyResult.imported?.length || 0)} />
+              <MetricCard label="Duplicates skipped" value={String(apifyResult.skipped?.length || 0)} />
+            </div>
+          ) : null}
+        </section>
 
         <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

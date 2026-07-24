@@ -9,6 +9,12 @@ services:
         value: appNkFVWpoI8ihHmA
       - key: AIRTABLE_TOKEN
         sync: false
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: APIFY_LEAD_ACTOR_ID
+        sync: false
+      - key: APIFY_LEAD_TASK_ID
+        sync: false
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: TELEGRAM_BOT_TOKEN
