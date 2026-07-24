@@ -19,7 +19,7 @@ export function escapeFormula(value: string) {
 
 export async function listRecords<T>(table: string, params?: { formula?: string; maxRecords?: number; sortField?: string; direction?: 'asc' | 'desc' }) {
   const url = new URL(`${AIRTABLE_API}/${encodeURIComponent(table)}`)
-  url.searchParams.set('pageSize', String(params?.maxRecords || 20))
+  url.searchParams.set('pageSize', String(Math.min(params?.maxRecords || 20, 100)))
   if (params?.maxRecords) url.searchParams.set('maxRecords', String(params.maxRecords))
   if (params?.formula) url.searchParams.set('filterByFormula', params.formula)
   if (params?.sortField) {
