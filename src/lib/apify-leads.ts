@@ -154,7 +154,7 @@ export async function runApifyLeadImport(input: ApifyLeadInput) {
       continue
     }
     const created = await createRecord<{ id: string; fields: Fields }>('Growth Leads', compact({
-      'Lead ID': `GL-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+      'Growth Lead ID': `GL-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       'Lead Type': 'BUSINESS_TRANSFORMATION',
       Name: lead.name,
       'Business Name': lead.name,

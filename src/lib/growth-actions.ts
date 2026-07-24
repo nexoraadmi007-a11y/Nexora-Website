@@ -226,7 +226,7 @@ export async function findGrowthLead(idOrLeadId: string) {
   if (byRecord[0]) return byRecord[0]
 
   const byLeadId = await listRecords<Fields>('Growth Leads', {
-    formula: `{Lead ID}='${escapeFormula(id)}'`,
+    formula: `{Growth Lead ID}='${escapeFormula(id)}'`,
     maxRecords: 1,
   }).catch(() => [])
   return byLeadId[0] || null
