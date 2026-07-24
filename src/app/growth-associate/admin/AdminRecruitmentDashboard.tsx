@@ -71,6 +71,14 @@ type AssociateOption = {
   referralCode: string
 }
 
+type LeadQueue = {
+  associateCount: number
+  totalAvailable: number
+  estimatedAssignable?: number
+  sectors: Array<{ name: string; count: number }>
+  sample: Array<{ id: string; name: string; sector: string; status: string; location: string; score: string }>
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -143,6 +151,9 @@ export default function AdminRecruitmentDashboard() {
   const [associates, setAssociates] = useState<AssociateOption[]>([])
   const [attributionLoading, setAttributionLoading] = useState(false)
   const [selectedAssociates, setSelectedAssociates] = useState<Record<string, string>>({})
+  const [leadQueue, setLeadQueue] = useState<LeadQueue | null>(null)
+  const [leadQueueLoading, setLeadQueueLoading] = useState(false)
+  const [leadBatchSize, setLeadBatchSize] = useState(5)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -303,6 +314,58 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function loadLeadQueue() {
+    if (!secret) {
+      setMessage('Enter the admin secret to load the lead queue.')
+      return
+    }
+    setLeadQueueLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/lead-queue', {
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const result = (await response.json()) as LeadQueue & { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Lead queue could not be loaded.')
+      setLeadQueue(result)
+      setMessage(`${result.totalAvailable || 0} unassigned lead${result.totalAvailable === 1 ? '' : 's'} available for ${result.associateCount || 0} associate${result.associateCount === 1 ? '' : 's'}.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Lead queue could not be loaded.')
+    } finally {
+      setLeadQueueLoading(false)
+    }
+  }
+
+  async function assignDailyQueue(dryRun = false) {
+    if (!secret) return
+    setLeadQueueLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/lead-queue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ countPerAssociate: leadBatchSize, dryRun }),
+      })
+      const result = (await response.json()) as LeadQueue & { error?: string; totalAssigned?: number; estimatedAssignable?: number }
+      if (!response.ok) throw new Error(result.error || 'Daily queue assignment failed.')
+      if (dryRun) {
+        setLeadQueue(result)
+        setMessage(`Dry run: ${result.estimatedAssignable || 0} lead${result.estimatedAssignable === 1 ? '' : 's'} can be assigned.`)
+      } else {
+        setMessage(`Daily queue assigned: ${result.totalAssigned || 0} lead${result.totalAssigned === 1 ? '' : 's'} distributed.`)
+        await loadLeadQueue()
+        await loadGrowthPerformance()
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Daily queue assignment failed.')
+    } finally {
+      setLeadQueueLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -376,6 +439,93 @@ export default function AdminRecruitmentDashboard() {
         </label>
 
         <div aria-live="polite" className="min-h-8 pt-5 text-sm font-semibold text-[#9ec2f7]">{message}</div>
+
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Daily lead queue</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Preview and assign outreach leads</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Shows unassigned Growth Leads only. Batch assignment distributes leads across active associates and records assignment activity in Airtable.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="grid gap-2 text-xs font-bold uppercase tracking-[0.12em] text-steel">
+                Leads per associate
+                <input
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={leadBatchSize}
+                  onChange={(event) => setLeadBatchSize(Number(event.target.value || 5))}
+                  className="min-h-11 w-28 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-sm text-white outline-none focus:border-signal"
+                />
+              </label>
+              <button onClick={loadLeadQueue} disabled={leadQueueLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${leadQueueLoading ? 'animate-spin' : ''}`} />
+                Preview
+              </button>
+              <button onClick={() => assignDailyQueue(true)} disabled={leadQueueLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Dry run
+              </button>
+              <button onClick={() => assignDailyQueue(false)} disabled={leadQueueLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Assign queue
+              </button>
+            </div>
+          </div>
+
+          {leadQueue ? (
+            <div className="mt-6 grid gap-5">
+              <div className="grid gap-4 md:grid-cols-4">
+                <MetricCard label="Unassigned leads" value={String(leadQueue.totalAvailable || 0)} />
+                <MetricCard label="Active associates" value={String(leadQueue.associateCount || 0)} />
+                <MetricCard label="Possible assignment" value={String(leadQueue.estimatedAssignable ?? Math.min((leadQueue.totalAvailable || 0), (leadQueue.associateCount || 0) * leadBatchSize))} />
+                <MetricCard label="Sector spread" value={String(leadQueue.sectors?.length || 0)} />
+              </div>
+              <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
+                <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8fb7f3]">Sectors</p>
+                  <div className="mt-3 grid gap-2">
+                    {leadQueue.sectors?.slice(0, 12).map((item) => (
+                      <div key={item.name} className="flex justify-between gap-4 text-sm text-steel">
+                        <span>{item.name}</span>
+                        <span className="font-semibold text-white">{item.count}</span>
+                      </div>
+                    ))}
+                    {!leadQueue.sectors?.length ? <p className="text-sm text-steel">No sectors available.</p> : null}
+                  </div>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-white/10">
+                  <table className="min-w-[760px] w-full border-collapse text-left text-sm">
+                    <thead className="bg-black/30 text-xs uppercase tracking-[0.12em] text-steel">
+                      <tr>
+                        <th className="p-3">Lead</th>
+                        <th className="p-3">Sector</th>
+                        <th className="p-3">Location</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leadQueue.sample?.map((lead) => (
+                        <tr key={lead.id} className="border-t border-white/10">
+                          <td className="p-3 text-white">{lead.name}</td>
+                          <td className="p-3 text-steel">{lead.sector}</td>
+                          <td className="p-3 text-steel">{lead.location || 'Unknown'}</td>
+                          <td className="p-3 text-steel">{lead.status}</td>
+                          <td className="p-3 text-steel">{lead.score || '-'}</td>
+                        </tr>
+                      ))}
+                      {!leadQueue.sample?.length ? (
+                        <tr><td colSpan={5} className="p-5 text-center text-steel">No unassigned leads available.</td></tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
 
         <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

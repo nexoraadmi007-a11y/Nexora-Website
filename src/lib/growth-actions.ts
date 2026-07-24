@@ -110,17 +110,45 @@ export async function getAssociateLeads(associateId: string, maxRecords = 10) {
   }).catch(() => [])
 }
 
-export async function assignLeadsToAssociate(input: { associateId: string; count?: number; adminUserId?: string }) {
-  const count = Math.min(Math.max(input.count || 5, 1), 25)
-  const leads = await listRecords<Fields>('Growth Leads', {
+export async function getAvailableGrowthLeads(maxRecords = 100) {
+  const candidates = await listRecords<Fields>('Growth Leads', {
     formula: "OR({Status}='New',{Status}='Researching',{Status}='Active',{Status}='Qualified')",
-    maxRecords: count,
+    maxRecords,
     sortField: 'Score',
     direction: 'desc',
-  }).catch(async () => listRecords<Fields>('Growth Leads', { maxRecords: count }))
+  }).catch(async () => listRecords<Fields>('Growth Leads', { maxRecords }))
 
+  return candidates.filter((lead) => !linkedId(lead.fields, 'Assigned Associate'))
+}
+
+function sector(fields: Fields) {
+  return value(fields, 'Industry') || value(fields, 'Lead Type') || value(fields, 'Pipeline') || 'Other'
+}
+
+function pickLeadBatch(records: Array<AirtableRecord<Fields>>, count: number) {
+  const selected: Array<AirtableRecord<Fields>> = []
+  const usedSectors = new Set<string>()
+
+  for (const record of records) {
+    const key = sector(record.fields)
+    if (usedSectors.has(key)) continue
+    selected.push(record)
+    usedSectors.add(key)
+    if (selected.length >= count) return selected
+  }
+
+  for (const record of records) {
+    if (selected.some((item) => item.id === record.id)) continue
+    selected.push(record)
+    if (selected.length >= count) return selected
+  }
+
+  return selected
+}
+
+async function assignSpecificLeads(input: { associateId: string; leads: Array<AirtableRecord<Fields>>; adminUserId?: string }) {
   const assigned = []
-  for (const lead of leads) {
+  for (const lead of input.leads) {
     await updateRecord('Growth Leads', lead.id, compact({
       'Assigned Associate': [input.associateId],
       Status: 'Assigned',
@@ -137,8 +165,55 @@ export async function assignLeadsToAssociate(input: { associateId: string; count
     })
     assigned.push(lead)
   }
-
   return assigned
+}
+
+export async function assignLeadsToAssociate(input: { associateId: string; count?: number; adminUserId?: string }) {
+  const count = Math.min(Math.max(input.count || 5, 1), 25)
+  const leads = pickLeadBatch(await getAvailableGrowthLeads(100), count)
+  return assignSpecificLeads({ associateId: input.associateId, leads, adminUserId: input.adminUserId })
+}
+
+export async function getActiveAssociates(maxRecords = 100) {
+  return listRecords<Fields>('Ambassadors', {
+    formula: "OR({Ambassador Status}='Active',{Active}=TRUE())",
+    maxRecords,
+  }).catch(async () => listRecords<Fields>('Ambassadors', { maxRecords }))
+}
+
+export async function assignDailyLeadBatch(input: { countPerAssociate?: number; adminUserId?: string }) {
+  const countPerAssociate = Math.min(Math.max(input.countPerAssociate || 5, 1), 25)
+  const associates = await getActiveAssociates(100)
+  let available = await getAvailableGrowthLeads(500)
+  const availableBeforeAssignment = available.length
+  const assignments: Array<{ associateId: string; associateName: string; assignedCount: number }> = []
+
+  for (const associate of associates) {
+    const batch = pickLeadBatch(available, countPerAssociate)
+    const assignedIds = new Set(batch.map((lead) => lead.id))
+    available = available.filter((lead) => !assignedIds.has(lead.id))
+    if (!batch.length) {
+      assignments.push({
+        associateId: associate.id,
+        associateName: value(associate.fields, 'Ambassador Name') || value(associate.fields, 'Full Name') || 'Unnamed associate',
+        assignedCount: 0,
+      })
+      continue
+    }
+    const assigned = await assignSpecificLeads({ associateId: associate.id, leads: batch, adminUserId: input.adminUserId || 'daily-queue' })
+    assignments.push({
+      associateId: associate.id,
+      associateName: value(associate.fields, 'Ambassador Name') || value(associate.fields, 'Full Name') || 'Unnamed associate',
+      assignedCount: assigned.length,
+    })
+  }
+
+  return {
+    associateCount: associates.length,
+    availableBeforeAssignment,
+    totalAssigned: assignments.reduce((sum, item) => sum + item.assignedCount, 0),
+    assignments,
+  }
 }
 
 export async function findGrowthLead(idOrLeadId: string) {
