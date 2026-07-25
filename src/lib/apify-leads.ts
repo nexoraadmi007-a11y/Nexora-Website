@@ -119,8 +119,8 @@ async function findDuplicate(lead: ImportedLead) {
 export async function runApifyLeadImport(input: ApifyLeadInput) {
   const token = process.env.APIFY_API_TOKEN
   if (!token) throw new Error('APIFY_API_TOKEN is not configured.')
-  const actorOrTask = text(input.taskId || input.actorId || process.env.APIFY_LEAD_ACTOR_ID || 'compass/crawler-google-places', 200)
-  const isTask = Boolean(input.taskId || process.env.APIFY_LEAD_TASK_ID)
+  const actorOrTask = text(input.taskId || input.actorId || process.env.APIFY_LEAD_TASK_ID || process.env.APIFY_LEAD_ACTOR_ID || 'compass/crawler-google-places', 200)
+  const isTask = Boolean(input.taskId || (!input.actorId && process.env.APIFY_LEAD_TASK_ID))
   const limit = Math.min(Math.max(Number(input.limit || 20), 1), 100)
   const actorInput = input.actorInput && Object.keys(input.actorInput).length ? input.actorInput : defaultActorInput({ ...input, limit })
   const encoded = actorOrTask.replace('/', '~')

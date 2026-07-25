@@ -87,6 +87,18 @@ type ApifyImportResult = {
   error?: string
 }
 
+type DailyAutomationResult = {
+  dryRun: boolean
+  importPlan: Array<{ sector: string; location: string }>
+  imports: Array<{ sector: string; location: string; received: number; normalized: number; imported: number; skipped: number; error?: string }>
+  associateCount: number
+  estimatedAssignable: number
+  queueBeforeAssignment: LeadQueue
+  queueAfterAssignment: LeadQueue
+  assignment?: { totalAssigned: number } | null
+  error?: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -167,6 +179,8 @@ export default function AdminRecruitmentDashboard() {
   const [apifyLocation, setApifyLocation] = useState('Abeokuta, Ogun State')
   const [apifyLimit, setApifyLimit] = useState(20)
   const [apifyResult, setApifyResult] = useState<ApifyImportResult | null>(null)
+  const [automationLoading, setAutomationLoading] = useState(false)
+  const [automationResult, setAutomationResult] = useState<DailyAutomationResult | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -413,6 +427,46 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function runDailyAutomation(dryRun = true) {
+    if (!secret) {
+      setMessage('Enter the admin secret to run daily automation.')
+      return
+    }
+    setAutomationLoading(true)
+    setMessage('')
+    setAutomationResult(null)
+    try {
+      const response = await fetch('/api/growth/daily-automation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({
+          dryRun,
+          sectors: [apifySector],
+          locations: [apifyLocation],
+          importLimit: apifyLimit,
+          countPerAssociate: leadBatchSize,
+        }),
+      })
+      const result = (await response.json()) as DailyAutomationResult
+      if (!response.ok) throw new Error(result.error || 'Daily automation failed.')
+      setAutomationResult(result)
+      setLeadQueue(result.queueAfterAssignment || result.queueBeforeAssignment)
+      const imported = result.imports?.reduce((sum, item) => sum + (item.imported || 0), 0) || 0
+      const assigned = result.assignment?.totalAssigned || 0
+      setMessage(dryRun
+        ? `Automation dry run ready: ${result.estimatedAssignable || 0} lead${result.estimatedAssignable === 1 ? '' : 's'} can be assigned.`
+        : `Daily automation complete: ${imported} imported, ${assigned} assigned.`)
+      if (!dryRun) await loadGrowthPerformance()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Daily automation failed.')
+    } finally {
+      setAutomationLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -496,10 +550,19 @@ export default function AdminRecruitmentDashboard() {
                 Runs the configured Apify actor/task, imports new business leads into Airtable, skips duplicates, and feeds the daily lead queue.
               </p>
             </div>
-            <button onClick={importApifyLeads} disabled={apifyLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
-              <RefreshCw className={`h-4 w-4 ${apifyLoading ? 'animate-spin' : ''}`} />
-              Run Apify import
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={importApifyLeads} disabled={apifyLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${apifyLoading ? 'animate-spin' : ''}`} />
+                Run Apify import
+              </button>
+              <button onClick={() => runDailyAutomation(true)} disabled={automationLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Automation dry run
+              </button>
+              <button onClick={() => runDailyAutomation(false)} disabled={automationLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${automationLoading ? 'animate-spin' : ''}`} />
+                Run daily automation
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_160px]">
@@ -523,6 +586,15 @@ export default function AdminRecruitmentDashboard() {
               <MetricCard label="Normalized" value={String(apifyResult.normalized || 0)} />
               <MetricCard label="Imported" value={String(apifyResult.imported?.length || 0)} />
               <MetricCard label="Duplicates skipped" value={String(apifyResult.skipped?.length || 0)} />
+            </div>
+          ) : null}
+
+          {automationResult ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-4">
+              <MetricCard label="Automation searches" value={String(automationResult.importPlan?.length || 0)} />
+              <MetricCard label="Imported by automation" value={String(automationResult.imports?.reduce((sum, item) => sum + (item.imported || 0), 0) || 0)} />
+              <MetricCard label="Assignable" value={String(automationResult.estimatedAssignable || 0)} />
+              <MetricCard label="Assigned" value={String(automationResult.assignment?.totalAssigned || 0)} />
             </div>
           ) : null}
         </section>

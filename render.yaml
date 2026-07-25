@@ -15,6 +15,16 @@ services:
         sync: false
       - key: APIFY_LEAD_TASK_ID
         sync: false
+      - key: GROWTH_AUTOMATION_SECTORS
+        value: restaurants,fashion,schools,solar companies
+      - key: GROWTH_AUTOMATION_LOCATIONS
+        value: Abeokuta, Ogun State
+      - key: GROWTH_AUTOMATION_IMPORT_LIMIT
+        value: "10"
+      - key: GROWTH_AUTOMATION_ASSIGN_COUNT
+        value: "5"
+      - key: CRON_SECRET
+        sync: false
       - key: PAYSTACK_SECRET_KEY
         sync: false
       - key: TELEGRAM_BOT_TOKEN
@@ -37,3 +47,23 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.nexoragroup.ink
+
+  - type: cron
+    name: nexora-growth-daily-automation
+    runtime: node
+    schedule: "0 8 * * 1-5"
+    buildCommand: npm ci --registry=https://registry.npmjs.org
+    startCommand: node scripts/run-growth-automation.mjs
+    envVars:
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://www.nexoragroup.ink
+      - key: GROWTH_AUTOMATION_URL
+        value: https://www.nexoragroup.ink/api/growth/daily-automation
+      - key: GROWTH_AUTOMATION_IMPORT_LIMIT
+        value: "10"
+      - key: GROWTH_AUTOMATION_ASSIGN_COUNT
+        value: "5"
+      - key: TELEGRAM_QUEUE_SECRET
+        sync: false
+      - key: CRON_SECRET
+        sync: false
