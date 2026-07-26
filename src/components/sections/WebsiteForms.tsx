@@ -124,6 +124,12 @@ function sourceParams() {
   }
 }
 
+function initialReferralCode() {
+  if (typeof window === 'undefined') return ''
+  const params = new URLSearchParams(window.location.search)
+  return params.get('ref') || params.get('referral') || params.get('ambassador') || getStoredReferralCode()
+}
+
 export default function WebsiteForm({
   kind,
   title,
@@ -140,7 +146,9 @@ export default function WebsiteForm({
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const [selectedIndustry, setSelectedIndustry] = useState('')
+  const [referralCode, setReferralCode] = useState(initialReferralCode)
   const fields = useMemo(() => fieldsByKind[kind], [kind])
+  const shouldShowReferral = kind === 'accelerator' || kind === 'batp' || kind === 'complete' || payAfterSubmit
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -149,7 +157,8 @@ export default function WebsiteForm({
     const form = event.currentTarget
     const formData = new FormData(form)
     const sources = sourceParams()
-    const payload: Record<string, unknown> = { kind, ...context, ...sources, referralCode: sources.referralCode }
+    const submittedReferralCode = String(formData.get('referralCode') || sources.referralCode || '').trim()
+    const payload: Record<string, unknown> = { kind, ...context, ...sources, referralCode: submittedReferralCode }
     fields.forEach((field) => {
       const value = String(formData.get(field.name) || '').trim()
       payload[field.name] = value
@@ -212,6 +221,19 @@ export default function WebsiteForm({
           <label className="md:col-span-2">
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">Type your industry</span>
             <input name="otherIndustry" required type="text" className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
+          </label>
+        ) : null}
+        {shouldShowReferral ? (
+          <label className="md:col-span-2">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">Referral code</span>
+            <input
+              name="referralCode"
+              value={referralCode}
+              onChange={(event) => setReferralCode(event.target.value)}
+              placeholder="Enter referral code if someone invited you"
+              className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal"
+            />
+            {referralCode ? <span className="mt-2 block text-xs text-frost">Referral code will be attached to this enrolment.</span> : null}
           </label>
         ) : null}
       </div>

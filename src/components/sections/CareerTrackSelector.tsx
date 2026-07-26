@@ -20,10 +20,17 @@ function sourceParams() {
   }
 }
 
+function initialReferralCode() {
+  if (typeof window === 'undefined') return ''
+  const params = new URLSearchParams(window.location.search)
+  return params.get('ref') || params.get('referral') || params.get('ambassador') || getStoredReferralCode()
+}
+
 export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrackSlug?: string }) {
   const [selected, setSelected] = useState<string[]>(defaultTrackSlug ? [defaultTrackSlug] : [])
   const [status, setStatus] = useState<'idle' | 'sending' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [referralCode, setReferralCode] = useState(initialReferralCode)
   const pricing = useMemo(() => calculateCareerTrackPricing(selected), [selected])
   const selectedTracks = careerAcceleratorTracks.filter((track) => selected.includes(track.slug))
 
@@ -63,6 +70,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
       referralCode: String(formData.get('referralCode') || sources.referralCode || '').trim(),
       ...sources,
     }
+    payload.referralCode = String(formData.get('referralCode') || sources.referralCode || '').trim()
 
     try {
       const response = await fetch('/api/paystack/initialize', {
@@ -164,6 +172,17 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
             <label className="md:col-span-2">
               <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">Career challenge</span>
               <textarea name="biggestChallenge" rows={4} className="w-full rounded-lg border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal" />
+            </label>
+            <label className="md:col-span-2">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-steel">Referral code</span>
+              <input
+                name="referralCode"
+                value={referralCode}
+                onChange={(event) => setReferralCode(event.target.value)}
+                placeholder="Enter referral code if someone invited you"
+                className="w-full rounded-lg border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white outline-none transition focus:border-signal"
+              />
+              {referralCode ? <span className="mt-2 block text-xs text-frost">Referral code will be attached to this enrolment.</span> : null}
             </label>
           </div>
 
