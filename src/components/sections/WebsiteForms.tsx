@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { ensureReferralIdentity, getStoredReferralCode } from '@/components/layout/ReferralTracker'
 
@@ -149,6 +149,10 @@ export default function WebsiteForm({
   const [referralCode, setReferralCode] = useState(initialReferralCode)
   const fields = useMemo(() => fieldsByKind[kind], [kind])
   const shouldShowReferral = kind === 'accelerator' || kind === 'batp' || kind === 'complete' || payAfterSubmit
+
+  useEffect(() => {
+    setReferralCode(initialReferralCode())
+  }, [])
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, CheckCircle2 } from 'lucide-react'
 import { calculateCareerTrackPricing, careerAcceleratorTracks } from '@/lib/career-accelerator-v2'
 import { ensureReferralIdentity, getStoredReferralCode } from '@/components/layout/ReferralTracker'
@@ -33,6 +33,10 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
   const [referralCode, setReferralCode] = useState(initialReferralCode)
   const pricing = useMemo(() => calculateCareerTrackPricing(selected), [selected])
   const selectedTracks = careerAcceleratorTracks.filter((track) => selected.includes(track.slug))
+
+  useEffect(() => {
+    setReferralCode(initialReferralCode())
+  }, [])
 
   function selectProgramme(slug: string) {
     setSelected((current) => current.includes(slug) ? [] : [slug])
