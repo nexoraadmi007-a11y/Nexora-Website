@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runApifyLeadImport } from '@/lib/apify-leads'
+import { runApifyIndividualLeadImport, runApifyLeadImport } from '@/lib/apify-leads'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { growthConfig } from '@/lib/growth-config'
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (businessRequested && !growthConfig.enableSmeGrowthEngine && !growthConfig.enableCorporateGrowthEngine) {
       return NextResponse.json({ error: 'Business/SME/corporate discovery is disabled in Individual Growth Engine Version 1.' }, { status: 403 })
     }
-    const result = await runApifyLeadImport({
+    const importInput = {
       actorId: text(body.actorId, 200),
       taskId: text(body.taskId, 200),
       query: text(body.query, 200),
@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
       sector: text(body.sector, 200),
       limit: Number(body.limit || 20),
       actorInput: typeof body.actorInput === 'object' && body.actorInput ? body.actorInput : undefined,
-    })
+    }
+    const result = businessRequested
+      ? await runApifyLeadImport(importInput)
+      : await runApifyIndividualLeadImport(importInput)
 
     await notify([
       'NEXORA Apify lead import completed',
@@ -54,7 +57,8 @@ export async function POST(request: NextRequest) {
       `Received: ${result.received}`,
       `Imported: ${result.imported.length}`,
       `Skipped duplicates: ${result.skipped.length}`,
-    ].join('\n'))
+      'failed' in result ? `Failed: ${result.failed.length}` : '',
+    ].filter(Boolean).join('\n'))
 
     return NextResponse.json({ ok: true, ...result })
   } catch (error) {

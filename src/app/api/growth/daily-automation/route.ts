@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runApifyLeadImport } from '@/lib/apify-leads'
+import { runApifyIndividualLeadImport, runApifyLeadImport } from '@/lib/apify-leads'
 import { assignDailyIndividualLeadBatch, getActiveEligibleAssociates, getAvailableIndividualLeads } from '@/lib/individual-growth-engine'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { growthConfig } from '@/lib/growth-config'
@@ -97,10 +97,28 @@ export async function POST(request: NextRequest) {
 
     const imports = []
     const businessDiscoveryDisabled = !growthConfig.enableSmeGrowthEngine && !growthConfig.enableCorporateGrowthEngine
-    if (!dryRun && !skipImport && !businessDiscoveryDisabled) {
+    if (!dryRun && !skipImport) {
       for (const item of importPlan) {
         try {
-          const result = await runApifyLeadImport({
+          const requestedText = `${item.sector} ${item.location}`.toLowerCase()
+          const businessRequested = ['business', 'restaurant', 'sme', 'corporate', 'company', 'batp'].some((term) => requestedText.includes(term))
+          if (businessRequested && businessDiscoveryDisabled) {
+            imports.push({
+              ...item,
+              received: 0,
+              normalized: 0,
+              imported: 0,
+              skipped: 0,
+              error: 'Business/SME/corporate discovery is disabled in Individual Growth Engine Version 1.',
+            })
+            continue
+          }
+          const result = businessRequested ? await runApifyLeadImport({
+            sector: item.sector,
+            query: item.sector,
+            location: item.location,
+            limit: importLimit,
+          }) : await runApifyIndividualLeadImport({
             sector: item.sector,
             query: item.sector,
             location: item.location,
@@ -112,6 +130,7 @@ export async function POST(request: NextRequest) {
             normalized: result.normalized,
             imported: result.imported.length,
             skipped: result.skipped.length,
+            failed: 'failed' in result ? result.failed.length : 0,
           })
         } catch (error) {
           imports.push({
@@ -120,6 +139,7 @@ export async function POST(request: NextRequest) {
             normalized: 0,
             imported: 0,
             skipped: 0,
+            failed: 0,
             error: error instanceof Error ? error.message : 'Import failed.',
           })
         }

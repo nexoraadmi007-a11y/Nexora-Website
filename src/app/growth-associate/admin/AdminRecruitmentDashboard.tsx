@@ -82,15 +82,16 @@ type LeadQueue = {
 type ApifyImportResult = {
   received: number
   normalized: number
-  imported: Array<{ id: string; name: string; sector: string; score: number }>
+  imported: Array<{ id: string; name: string; sector?: string; score?: number }>
   skipped: Array<{ name: string; reason: string }>
+  failed?: Array<{ name: string; error: string }>
   error?: string
 }
 
 type DailyAutomationResult = {
   dryRun: boolean
   importPlan: Array<{ sector: string; location: string }>
-  imports: Array<{ sector: string; location: string; received: number; normalized: number; imported: number; skipped: number; error?: string }>
+  imports: Array<{ sector: string; location: string; received: number; normalized: number; imported: number; skipped: number; failed?: number; error?: string }>
   associateCount: number
   estimatedAssignable: number
   queueBeforeAssignment: LeadQueue
@@ -846,11 +847,12 @@ export default function AdminRecruitmentDashboard() {
           </div>
 
           {apifyResult ? (
-            <div className="mt-5 grid gap-4 md:grid-cols-4">
+            <div className="mt-5 grid gap-4 md:grid-cols-5">
               <MetricCard label="Received" value={String(apifyResult.received || 0)} />
               <MetricCard label="Normalized" value={String(apifyResult.normalized || 0)} />
               <MetricCard label="Imported" value={String(apifyResult.imported?.length || 0)} />
               <MetricCard label="Duplicates skipped" value={String(apifyResult.skipped?.length || 0)} />
+              <MetricCard label="Failed" value={String(apifyResult.failed?.length || 0)} />
             </div>
           ) : null}
 
