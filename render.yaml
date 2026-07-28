@@ -16,13 +16,29 @@ services:
       - key: APIFY_LEAD_TASK_ID
         sync: false
       - key: GROWTH_AUTOMATION_SECTORS
-        value: restaurants,fashion,schools,solar companies
+        value: NYSC members,final-year students,recent graduates
       - key: GROWTH_AUTOMATION_LOCATIONS
-        value: Abeokuta, Ogun State
+        value: Nigeria
       - key: GROWTH_AUTOMATION_IMPORT_LIMIT
         value: "10"
       - key: GROWTH_AUTOMATION_ASSIGN_COUNT
-        value: "5"
+        value: "10"
+      - key: ENABLE_INDIVIDUAL_GROWTH_ENGINE
+        value: "true"
+      - key: ENABLE_SME_GROWTH_ENGINE
+        value: "false"
+      - key: ENABLE_CORPORATE_GROWTH_ENGINE
+        value: "false"
+      - key: ENABLE_AUTOMATIC_LEAD_ALLOCATION
+        value: "true"
+      - key: ENABLE_REFERRAL_REPAIR
+        value: "true"
+      - key: DEFAULT_DAILY_INDIVIDUAL_LEAD_QUOTA
+        value: "10"
+      - key: INDIVIDUAL_BATCH_PROCESSED_THRESHOLD
+        value: "8"
+      - key: GROWTH_ALLOCATION_MODE
+        value: HYBRID
       - key: CRON_SECRET
         sync: false
       - key: PAYSTACK_SECRET_KEY

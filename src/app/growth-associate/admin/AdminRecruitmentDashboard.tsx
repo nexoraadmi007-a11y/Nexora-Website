@@ -99,6 +99,37 @@ type DailyAutomationResult = {
   error?: string
 }
 
+type SystemHealthIssue = {
+  id: string
+  recordId: string
+  entity: string
+  code: string
+  severity: 'HIGH' | 'MEDIUM' | 'LOW'
+  name: string
+  message: string
+}
+
+type SystemHealthResult = {
+  generatedAt: string
+  associatesScanned: number
+  registrationsScanned: number
+  leadsScanned: number
+  issueCount: number
+  issues: SystemHealthIssue[]
+  error?: string
+}
+
+type ReferralRepairResult = {
+  dryRun: boolean
+  scanned: number
+  valid: number
+  repaired: number
+  wouldRepair: number
+  skipped: number
+  failed: number
+  error?: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -173,14 +204,17 @@ export default function AdminRecruitmentDashboard() {
   const [selectedAssociates, setSelectedAssociates] = useState<Record<string, string>>({})
   const [leadQueue, setLeadQueue] = useState<LeadQueue | null>(null)
   const [leadQueueLoading, setLeadQueueLoading] = useState(false)
-  const [leadBatchSize, setLeadBatchSize] = useState(5)
+  const [leadBatchSize, setLeadBatchSize] = useState(10)
   const [apifyLoading, setApifyLoading] = useState(false)
-  const [apifySector, setApifySector] = useState('restaurants')
-  const [apifyLocation, setApifyLocation] = useState('Abeokuta, Ogun State')
+  const [apifySector, setApifySector] = useState('NYSC members')
+  const [apifyLocation, setApifyLocation] = useState('Nigeria')
   const [apifyLimit, setApifyLimit] = useState(20)
   const [apifyResult, setApifyResult] = useState<ApifyImportResult | null>(null)
   const [automationLoading, setAutomationLoading] = useState(false)
   const [automationResult, setAutomationResult] = useState<DailyAutomationResult | null>(null)
+  const [systemHealth, setSystemHealth] = useState<SystemHealthResult | null>(null)
+  const [healthLoading, setHealthLoading] = useState(false)
+  const [repairResult, setRepairResult] = useState<ReferralRepairResult | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -467,6 +501,82 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function loadSystemHealth() {
+    if (!secret) {
+      setMessage('Enter the admin secret to load system health.')
+      return
+    }
+    setHealthLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/system-health', {
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const result = (await response.json()) as SystemHealthResult
+      if (!response.ok) throw new Error(result.error || 'System health check failed.')
+      setSystemHealth(result)
+      setMessage(`${result.issueCount || 0} system health issue${result.issueCount === 1 ? '' : 's'} found.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'System health check failed.')
+    } finally {
+      setHealthLoading(false)
+    }
+  }
+
+  async function runReferralRepair(apply = false) {
+    if (!secret) {
+      setMessage('Enter the admin secret to run referral repair.')
+      return
+    }
+    setHealthLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/referral-repair', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ apply, actor: 'growth-admin-dashboard' }),
+      })
+      const result = (await response.json()) as ReferralRepairResult
+      if (!response.ok) throw new Error(result.error || 'Referral repair failed.')
+      setRepairResult(result)
+      setMessage(apply
+        ? `Referral repair applied: ${result.repaired || 0} repaired, ${result.failed || 0} failed.`
+        : `Referral repair dry run: ${result.wouldRepair || 0} would be repaired.`)
+      await loadSystemHealth()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Referral repair failed.')
+    } finally {
+      setHealthLoading(false)
+    }
+  }
+
+  async function generateMissingReferral(associateId: string) {
+    if (!secret) return
+    setHealthLoading(true)
+    setMessage('')
+    try {
+      const response = await fetch('/api/growth/system-health', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ action: 'generate_missing_referral', associateId, actor: 'growth-admin-dashboard' }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Referral generation failed.')
+      setMessage('Missing referral generated.')
+      await loadSystemHealth()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Referral generation failed.')
+    } finally {
+      setHealthLoading(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -544,10 +654,89 @@ export default function AdminRecruitmentDashboard() {
         <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Apify lead generation</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Generate fresh business leads</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">System Health</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Associate referrals and individual growth readiness</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
-                Runs the configured Apify actor/task, imports new business leads into Airtable, skips duplicates, and feeds the daily lead queue.
+                Detects approved associates missing referral IDs, incomplete records, duplicate codes, and lead-quality issues without changing production data.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={loadSystemHealth} disabled={healthLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${healthLoading ? 'animate-spin' : ''}`} />
+                Recheck health
+              </button>
+              <button onClick={() => runReferralRepair(false)} disabled={healthLoading || !secret} className="button-secondary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Referral dry run
+              </button>
+              <button onClick={() => runReferralRepair(true)} disabled={healthLoading || !secret} className="button-primary inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+                Repair missing referrals
+              </button>
+            </div>
+          </div>
+
+          {systemHealth ? (
+            <div className="mt-6 grid gap-5">
+              <div className="grid gap-4 md:grid-cols-4">
+                <MetricCard label="Issues" value={String(systemHealth.issueCount || 0)} />
+                <MetricCard label="Associates scanned" value={String(systemHealth.associatesScanned || 0)} />
+                <MetricCard label="Registrations scanned" value={String(systemHealth.registrationsScanned || 0)} />
+                <MetricCard label="Leads scanned" value={String(systemHealth.leadsScanned || 0)} />
+              </div>
+              {repairResult ? (
+                <div className="grid gap-4 md:grid-cols-4">
+                  <MetricCard label={repairResult.dryRun ? 'Would repair' : 'Repaired'} value={String(repairResult.dryRun ? repairResult.wouldRepair || 0 : repairResult.repaired || 0)} />
+                  <MetricCard label="Valid" value={String(repairResult.valid || 0)} />
+                  <MetricCard label="Skipped" value={String(repairResult.skipped || 0)} />
+                  <MetricCard label="Failed" value={String(repairResult.failed || 0)} />
+                </div>
+              ) : null}
+              <div className="overflow-x-auto rounded-lg border border-white/10">
+                <table className="min-w-[980px] w-full border-collapse text-left text-sm">
+                  <thead className="bg-black/30 text-xs uppercase tracking-[0.12em] text-steel">
+                    <tr>
+                      <th className="p-3">Record</th>
+                      <th className="p-3">Issue</th>
+                      <th className="p-3">Severity</th>
+                      <th className="p-3">Message</th>
+                      <th className="p-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {systemHealth.issues?.slice(0, 40).map((issue) => (
+                      <tr key={issue.id} className="border-t border-white/10 align-top">
+                        <td className="p-3">
+                          <p className="font-semibold text-white">{issue.name}</p>
+                          <p className="mt-1 text-xs text-steel">{issue.recordId}</p>
+                        </td>
+                        <td className="p-3 text-steel">{issue.code}</td>
+                        <td className="p-3 text-steel">{issue.severity}</td>
+                        <td className="p-3 text-steel">{issue.message}</td>
+                        <td className="p-3">
+                          {issue.entity === 'Ambassadors' && ['MISSING_REFERRAL_CODE', 'MISSING_REFERRAL_LINK'].includes(issue.code) ? (
+                            <button onClick={() => generateMissingReferral(issue.recordId)} disabled={healthLoading} className="button-secondary min-h-9 rounded-lg px-3 text-xs font-bold disabled:opacity-60">
+                              Generate referral
+                            </button>
+                          ) : <span className="text-xs text-steel">Review</span>}
+                        </td>
+                      </tr>
+                    ))}
+                    {!systemHealth.issues?.length ? (
+                      <tr><td colSpan={5} className="p-5 text-center text-steel">No system health issues found.</td></tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Individual lead generation</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Generate Career Accelerator leads</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Version 1 is restricted to individual Career Accelerator audiences: NYSC members, final-year students, and recent graduates. Business, restaurant, SME, and corporate discovery are disabled by feature flags.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -567,7 +756,7 @@ export default function AdminRecruitmentDashboard() {
 
           <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_160px]">
             <label className="grid gap-2 text-sm text-steel">
-              Sector / search
+              Audience / search
               <input value={apifySector} onChange={(event) => setApifySector(event.target.value)} className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-white outline-none focus:border-signal" />
             </label>
             <label className="grid gap-2 text-sm text-steel">
@@ -603,9 +792,9 @@ export default function AdminRecruitmentDashboard() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Daily lead queue</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Preview and assign outreach leads</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Preview and assign individual outreach leads</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
-                Shows unassigned Growth Leads only. Batch assignment distributes leads across active associates and records assignment activity in Airtable.
+                Shows unassigned individual Career Accelerator leads only. Batch assignment gives up to 10 qualified leads and blocks new batches until enough leads have been meaningfully processed.
               </p>
             </div>
             <div className="flex flex-wrap items-end gap-3">

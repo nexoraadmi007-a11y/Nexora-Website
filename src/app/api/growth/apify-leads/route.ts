@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runApifyLeadImport } from '@/lib/apify-leads'
 import { sendTelegramMessage } from '@/lib/telegram'
+import { growthConfig } from '@/lib/growth-config'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +32,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}))
+    const requestedType = text(body.leadType || body.pipeline || body.programCode, 120).toUpperCase()
+    const requestedText = `${text(body.sector, 200)} ${text(body.query, 200)} ${requestedType}`.toLowerCase()
+    const businessRequested = ['business', 'restaurant', 'sme', 'corporate', 'company', 'batp'].some((term) => requestedText.includes(term))
+    if (businessRequested && !growthConfig.enableSmeGrowthEngine && !growthConfig.enableCorporateGrowthEngine) {
+      return NextResponse.json({ error: 'Business/SME/corporate discovery is disabled in Individual Growth Engine Version 1.' }, { status: 403 })
+    }
     const result = await runApifyLeadImport({
       actorId: text(body.actorId, 200),
       taskId: text(body.taskId, 200),

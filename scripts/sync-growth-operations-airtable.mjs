@@ -172,6 +172,8 @@ const ambassadorFields = [
   { name: 'Active', type: 'checkbox', options: { icon: 'check', color: 'greenBright' } },
   { name: 'Team ID', type: 'singleLineText' },
   { name: 'Daily Lead Quota', type: 'number', options: { precision: 0 } },
+  { name: 'Lead Access Status', ...singleSelect(['Enabled', 'Paused', 'Suspended']) },
+  { name: 'Operational Restriction', type: 'multilineText' },
   { name: 'Monthly Intake Target', type: 'number', options: { precision: 0 } },
   { name: 'Onboarding Status', ...singleSelect(['Pending', 'Invited', 'Active', 'Paused', 'Completed']) },
   { name: 'Referral Status', ...singleSelect(['Active', 'Paused', 'Suspended']) },
@@ -180,7 +182,7 @@ const ambassadorFields = [
 ]
 
 const growthLeadFields = [
-  { name: 'Lead Type', ...singleSelect(['CAREER_ACCELERATOR', 'BUSINESS_TRANSFORMATION', 'CORPORATE_AI_TRAINING']) },
+  { name: 'Lead Type', ...singleSelect(['INDIVIDUAL', 'NYSC_MEMBER', 'FINAL_YEAR_STUDENT', 'RECENT_GRADUATE', 'CAREER_ACCELERATOR', 'BUSINESS_TRANSFORMATION', 'CORPORATE_AI_TRAINING']) },
   { name: 'Name', type: 'singleLineText' },
   { name: 'Business Name', type: 'singleLineText' },
   { name: 'School', type: 'singleLineText' },
@@ -195,6 +197,13 @@ const growthLeadFields = [
   { name: 'Public Profile URL', type: 'url' },
   { name: 'Source URL', type: 'url' },
   { name: 'Observable Signal', type: 'multilineText' },
+  { name: 'Qualification Reason', type: 'multilineText' },
+  { name: 'Score Components JSON', type: 'multilineText' },
+  { name: 'Source Platform', type: 'singleLineText' },
+  { name: 'Source Group', type: 'singleLineText' },
+  { name: 'Education Stage', type: 'singleLineText' },
+  { name: 'Career Interest', type: 'singleLineText' },
+  { name: 'Discovery Timestamp', type: 'dateTime', options: { dateFormat: { name: 'iso' }, timeFormat: { name: '24hour' }, timeZone: 'Africa/Lagos' } },
   { name: 'Persona', type: 'singleLineText' },
   { name: 'Programme Match', type: 'singleLineText' },
   { name: 'Score', type: 'number', options: { precision: 0 } },

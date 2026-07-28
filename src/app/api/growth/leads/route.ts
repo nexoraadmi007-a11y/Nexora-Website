@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { assignLeadsToAssociate, formatLeadCard, getAssociateLeads } from '@/lib/growth-actions'
+import { formatLeadCard } from '@/lib/growth-actions'
+import { assignIndividualLeadsToAssociate, getAssociateIndividualLeads } from '@/lib/individual-growth-engine'
 
 export const runtime = 'nodejs'
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const associateId = text(searchParams.get('associateId'), 120)
   if (!associateId) return NextResponse.json({ error: 'associateId is required.' }, { status: 400 })
-  const leads = await getAssociateLeads(associateId, 25)
+  const leads = await getAssociateIndividualLeads(associateId, 25)
   return NextResponse.json({
     ok: true,
     leads: leads.map((lead, index) => ({ id: lead.id, fields: lead.fields, card: formatLeadCard(lead, index + 1) })),
@@ -36,9 +37,13 @@ export async function POST(request: NextRequest) {
     const associateId = text(body.associateId, 120)
     const count = Number(body.count || 5)
     if (!associateId) return NextResponse.json({ error: 'associateId is required.' }, { status: 400 })
-    const assigned = await assignLeadsToAssociate({ associateId, count, adminUserId: 'web-admin' })
+    const result = await assignIndividualLeadsToAssociate({ associateId, count, actor: 'web-admin', force: Boolean(body.force) })
+    const assigned = result.assigned
     return NextResponse.json({
       ok: true,
+      skipped: result.skipped,
+      reason: result.reason,
+      allocationStatus: result.status,
       assignedCount: assigned.length,
       leads: assigned.map((lead, index) => ({ id: lead.id, fields: lead.fields, card: formatLeadCard(lead, index + 1) })),
     })

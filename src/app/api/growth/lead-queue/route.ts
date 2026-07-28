@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { assignDailyLeadBatch, getActiveAssociates, getAvailableGrowthLeads } from '@/lib/growth-actions'
+import { assignDailyIndividualLeadBatch, getActiveEligibleAssociates, getAvailableIndividualLeads } from '@/lib/individual-growth-engine'
 import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const [available, associates] = await Promise.all([
-      getAvailableGrowthLeads(500),
-      getActiveAssociates(100),
+      getAvailableIndividualLeads(500),
+      getActiveEligibleAssociates(100),
     ])
 
     return NextResponse.json({
@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     if (dryRun) {
       const [available, associates] = await Promise.all([
-        getAvailableGrowthLeads(500),
-        getActiveAssociates(100),
+        getAvailableIndividualLeads(500),
+        getActiveEligibleAssociates(100),
       ])
       return NextResponse.json({
         ok: true,
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const result = await assignDailyLeadBatch({ countPerAssociate, adminUserId: text(body.adminUserId, 120) || 'web-admin' })
+    const result = await assignDailyIndividualLeadBatch({ countPerAssociate, actor: text(body.adminUserId, 120) || 'web-admin', force: Boolean(body.force) })
     await notify([
       'NEXORA daily lead queue assigned',
       `Associates: ${result.associateCount}`,

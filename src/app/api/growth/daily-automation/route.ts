@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runApifyLeadImport } from '@/lib/apify-leads'
-import { assignDailyLeadBatch, getActiveAssociates, getAvailableGrowthLeads } from '@/lib/growth-actions'
+import { assignDailyIndividualLeadBatch, getActiveEligibleAssociates, getAvailableIndividualLeads } from '@/lib/individual-growth-engine'
 import { sendTelegramMessage } from '@/lib/telegram'
+import { growthConfig } from '@/lib/growth-config'
 
 export const runtime = 'nodejs'
 
@@ -85,17 +86,18 @@ export async function POST(request: NextRequest) {
     const dryRun = Boolean(body.dryRun)
     const skipImport = Boolean(body.skipImport)
     const skipAssignment = Boolean(body.skipAssignment)
-    const sectors = csv(body.sectors || process.env.GROWTH_AUTOMATION_SECTORS, ['restaurants', 'fashion', 'schools', 'solar companies'])
-    const locations = csv(body.locations || process.env.GROWTH_AUTOMATION_LOCATIONS, ['Abeokuta, Ogun State'])
+    const sectors = csv(body.sectors || process.env.GROWTH_AUTOMATION_SECTORS, ['NYSC members', 'final-year students', 'recent graduates'])
+    const locations = csv(body.locations || process.env.GROWTH_AUTOMATION_LOCATIONS, ['Nigeria'])
     const importLimit = number(body.importLimit || process.env.GROWTH_AUTOMATION_IMPORT_LIMIT, 10, 1, 50)
     const countPerAssociate = number(body.countPerAssociate || process.env.GROWTH_AUTOMATION_ASSIGN_COUNT, 5, 1, 25)
     const importPlan = locations.flatMap((location) => sectors.map((sectorName) => ({ sector: sectorName, location })))
 
-    const availableBeforeImport = await getAvailableGrowthLeads(500)
-    const associates = await getActiveAssociates(100)
+    const availableBeforeImport = await getAvailableIndividualLeads(500)
+    const associates = await getActiveEligibleAssociates(100)
 
     const imports = []
-    if (!dryRun && !skipImport) {
+    const businessDiscoveryDisabled = !growthConfig.enableSmeGrowthEngine && !growthConfig.enableCorporateGrowthEngine
+    if (!dryRun && !skipImport && !businessDiscoveryDisabled) {
       for (const item of importPlan) {
         try {
           const result = await runApifyLeadImport({
@@ -124,16 +126,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const availableBeforeAssignment = dryRun ? availableBeforeImport : await getAvailableGrowthLeads(500)
+    const availableBeforeAssignment = dryRun ? availableBeforeImport : await getAvailableIndividualLeads(500)
     const assignment = !dryRun && !skipAssignment
-      ? await assignDailyLeadBatch({ countPerAssociate, adminUserId: 'daily-automation' })
+      ? await assignDailyIndividualLeadBatch({ countPerAssociate, actor: 'daily-automation', force: Boolean(body.force) })
       : null
-    const availableAfterAssignment = dryRun ? availableBeforeAssignment : await getAvailableGrowthLeads(500)
+    const availableAfterAssignment = dryRun ? availableBeforeAssignment : await getAvailableIndividualLeads(500)
 
     const response = {
       ok: true,
       dryRun,
       skipImport,
+      businessDiscoveryDisabled,
       skipAssignment,
       importLimit,
       countPerAssociate,
