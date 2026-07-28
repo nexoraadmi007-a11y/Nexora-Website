@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 type Fields = Record<string, any>
 
 function automationSecret() {
-  return process.env.CRON_SECRET || process.env.TELEGRAM_QUEUE_SECRET || process.env.GROWTH_ADMIN_SECRET || ''
+  return process.env.GROWTH_ADMIN_SECRET || process.env.TELEGRAM_QUEUE_SECRET || process.env.CRON_SECRET || ''
 }
 
 function authorized(request: NextRequest) {
