@@ -130,6 +130,14 @@ type ReferralRepairResult = {
   error?: string
 }
 
+type IndividualLeadImportResult = {
+  received: number
+  imported: number
+  skipped: number
+  failed: number
+  error?: string
+}
+
 const actions = [
   { key: 'schedule_interview', label: 'Schedule Interview', tone: 'neutral' },
   { key: 'pass_interview', label: 'Pass Interview', tone: 'green' },
@@ -215,6 +223,9 @@ export default function AdminRecruitmentDashboard() {
   const [systemHealth, setSystemHealth] = useState<SystemHealthResult | null>(null)
   const [healthLoading, setHealthLoading] = useState(false)
   const [repairResult, setRepairResult] = useState<ReferralRepairResult | null>(null)
+  const [individualLeadBulk, setIndividualLeadBulk] = useState('')
+  const [individualLeadImporting, setIndividualLeadImporting] = useState(false)
+  const [individualLeadResult, setIndividualLeadResult] = useState<IndividualLeadImportResult | null>(null)
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -577,6 +588,40 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function importIndividualLeads() {
+    if (!secret) {
+      setMessage('Enter the admin secret to import individual leads.')
+      return
+    }
+    if (!individualLeadBulk.trim()) {
+      setMessage('Paste at least one individual lead before importing.')
+      return
+    }
+    setIndividualLeadImporting(true)
+    setMessage('')
+    setIndividualLeadResult(null)
+    try {
+      const response = await fetch('/api/growth/individual-leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ bulk: individualLeadBulk }),
+      })
+      const result = (await response.json()) as IndividualLeadImportResult
+      if (!response.ok) throw new Error(result.error || 'Individual lead import failed.')
+      setIndividualLeadResult(result)
+      setMessage(`Individual leads imported: ${result.imported || 0} imported, ${result.skipped || 0} skipped, ${result.failed || 0} failed.`)
+      await loadLeadQueue()
+      await loadSystemHealth()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Individual lead import failed.')
+    } finally {
+      setIndividualLeadImporting(false)
+    }
+  }
+
   useEffect(() => {
     const saved = window.localStorage.getItem('nexora-growth-admin-secret') || ''
     setSecret(saved)
@@ -726,6 +771,37 @@ export default function AdminRecruitmentDashboard() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="mt-4 rounded-lg border border-white/10 bg-white/[0.025] p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Individual Lead Importer</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Add qualified Career Accelerator leads</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-steel">
+                Paste one lead per line. Format: Full name, Audience type, Public profile URL, Source URL, Observable evidence, Institution, Course, Level, NYSC status, State, Career interest, Programme match, Email, Phone.
+              </p>
+            </div>
+            <button onClick={importIndividualLeads} disabled={individualLeadImporting || !secret} className="button-primary inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold disabled:opacity-60">
+              <RefreshCw className={`h-4 w-4 ${individualLeadImporting ? 'animate-spin' : ''}`} />
+              Import leads
+            </button>
+          </div>
+          <textarea
+            value={individualLeadBulk}
+            onChange={(event) => setIndividualLeadBulk(event.target.value)}
+            rows={7}
+            placeholder={'Example:\nAmina Yusuf,NYSC_MEMBER,https://linkedin.com/in/example,https://source.example/post,\"Currently serving NYSC and asking for UI/UX portfolio guidance\",University of Lagos,Computer Science,,Currently serving,Lagos,UI/UX,Certified UI/UX Designer,,\nTunde Ade,FINAL_YEAR_STUDENT,https://x.com/example,https://x.com/example/status/1,\"Final-year student looking for internship and digital skills\",OOU,Accounting,400 level,,Ogun,Financial analysis,AI Financial Analyst,,'}
+            className="mt-5 w-full rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-sm leading-6 text-white outline-none focus:border-signal"
+          />
+          {individualLeadResult ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-4">
+              <MetricCard label="Received" value={String(individualLeadResult.received || 0)} />
+              <MetricCard label="Imported" value={String(individualLeadResult.imported || 0)} />
+              <MetricCard label="Skipped" value={String(individualLeadResult.skipped || 0)} />
+              <MetricCard label="Failed" value={String(individualLeadResult.failed || 0)} />
             </div>
           ) : null}
         </section>

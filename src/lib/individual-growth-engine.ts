@@ -68,6 +68,135 @@ export function isAssignableIndividualLead(fields: Fields) {
   return assignableStatuses.has(normalizedStatus(fields))
 }
 
+export type IndividualLeadInput = {
+  fullName: string
+  subtype?: string
+  email?: string
+  phone?: string
+  publicProfileUrl?: string
+  sourceUrl?: string
+  sourcePlatform?: string
+  sourceGroup?: string
+  observableSignal: string
+  institution?: string
+  courseOfStudy?: string
+  academicLevel?: string
+  nyscStatus?: string
+  nyscState?: string
+  state?: string
+  city?: string
+  careerInterest?: string
+  programmeMatch?: string
+}
+
+function normalizeLeadType(value: string) {
+  const raw = value.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+  if (raw.includes('NYSC')) return 'NYSC_MEMBER'
+  if (raw.includes('FINAL')) return 'FINAL_YEAR_STUDENT'
+  if (raw.includes('GRAD')) return 'RECENT_GRADUATE'
+  return 'INDIVIDUAL'
+}
+
+function lower(input: string) {
+  return input.toLowerCase()
+}
+
+function scoreIndividualLead(input: IndividualLeadInput) {
+  const evidence = lower(`${input.subtype || ''} ${input.observableSignal || ''} ${input.nyscStatus || ''} ${input.academicLevel || ''}`)
+  let audienceMatch = 0
+  if (['nysc', 'serving', 'corper', 'corp member'].some((term) => evidence.includes(term))) audienceMatch = 30
+  else if (['final year', 'final-year', '400', '500 level'].some((term) => evidence.includes(term))) audienceMatch = 30
+  else if (['recent graduate', 'graduate', 'graduated'].some((term) => evidence.includes(term))) audienceMatch = 22
+
+  let careerIntent = 0
+  if (['internship', 'entry-level', 'job', 'employment', 'remote work', 'career', 'skill', 'portfolio'].some((term) => evidence.includes(term))) careerIntent = 25
+  else if (input.careerInterest) careerIntent = 15
+
+  let programmeMatch = 0
+  if (['content', 'ui/ux', 'design', 'finance', 'financial', 'analysis', 'data'].some((term) => evidence.includes(term) || lower(input.programmeMatch || '').includes(term))) programmeMatch = 20
+  else if (input.programmeMatch) programmeMatch = 12
+
+  const recency = ['today', 'yesterday', '2026', 'recent', 'currently', 'now'].some((term) => evidence.includes(term)) ? 15 : 8
+  const contactability = input.email || input.phone ? 10 : input.publicProfileUrl || input.sourceUrl ? 7 : 0
+  const total = Math.min(audienceMatch + careerIntent + programmeMatch + recency + contactability, 100)
+  const confidence = total >= 75 ? 0.82 : total >= 60 ? 0.68 : 0.52
+  return {
+    total,
+    confidence,
+    components: { audienceMatch, careerIntent, programmeMatch, recency, contactability },
+  }
+}
+
+async function findIndividualDuplicate(input: IndividualLeadInput) {
+  const checks = [
+    input.publicProfileUrl ? `{Public Profile URL}='${escapeFormula(input.publicProfileUrl)}'` : '',
+    input.sourceUrl ? `{Source URL}='${escapeFormula(input.sourceUrl)}'` : '',
+    input.email ? `LOWER({Email})='${escapeFormula(input.email.toLowerCase())}'` : '',
+    input.phone ? `{Phone}='${escapeFormula(input.phone)}'` : '',
+  ].filter(Boolean)
+
+  for (const formula of checks) {
+    const records = await listRecords<Fields>('Growth Leads', { formula, maxRecords: 1 }).catch(() => [])
+    if (records[0]) return records[0]
+  }
+  return null
+}
+
+function programmeFor(input: IndividualLeadInput) {
+  const raw = lower(`${input.programmeMatch || ''} ${input.careerInterest || ''} ${input.observableSignal || ''}`)
+  if (raw.includes('ui') || raw.includes('design')) return 'Certified UI/UX Designer'
+  if (raw.includes('finance') || raw.includes('financial') || raw.includes('data') || raw.includes('analysis')) return 'AI Financial Analyst'
+  if (raw.includes('content') || raw.includes('creator') || raw.includes('social media')) return 'AI Content Creation'
+  return input.programmeMatch || 'Career Accelerator'
+}
+
+export async function createIndividualLead(input: IndividualLeadInput) {
+  const fullName = text(input.fullName, 180)
+  const signal = text(input.observableSignal, 2000)
+  if (!fullName) throw new Error('Full name is required.')
+  if (!signal) throw new Error('Observable evidence is required.')
+  if (!input.publicProfileUrl && !input.sourceUrl && !input.email && !input.phone) throw new Error('At least one source/profile/contact field is required.')
+
+  const duplicate = await findIndividualDuplicate(input)
+  if (duplicate) return { skipped: true, reason: 'duplicate', id: duplicate.id, name: fullName }
+
+  const score = scoreIndividualLead(input)
+  const leadType = normalizeLeadType(input.subtype || signal)
+  const programmeMatch = programmeFor(input)
+  const created = await createRecord<{ id: string; fields: Fields }>('Growth Leads', compact({
+    'Growth Lead ID': `IL-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
+    'Lead Type': leadType,
+    Name: fullName,
+    School: text(input.institution, 180),
+    Department: text(input.courseOfStudy, 180),
+    'Academic Level': text(input.academicLevel, 80),
+    'NYSC Status': text(input.nyscStatus, 120),
+    'NYSC State': text(input.nyscState, 120),
+    City: text(input.city, 120),
+    State: text(input.state, 120),
+    Email: text(input.email, 254).toLowerCase(),
+    Phone: text(input.phone, 80),
+    'Public Profile URL': text(input.publicProfileUrl, 500),
+    'Source URL': text(input.sourceUrl || input.publicProfileUrl, 500),
+    'Source Platform': text(input.sourcePlatform, 120),
+    'Source Group': text(input.sourceGroup, 180),
+    'Observable Signal': signal,
+    'Qualification Reason': `Public evidence supports ${leadType.replaceAll('_', ' ').toLowerCase()} fit for Career Accelerator.`,
+    'Score Components JSON': JSON.stringify(score.components),
+    'Education Stage': leadType.replaceAll('_', ' '),
+    'Career Interest': text(input.careerInterest, 180),
+    Persona: leadType.replaceAll('_', ' '),
+    'Programme Match': programmeMatch,
+    Score: score.total,
+    Confidence: score.confidence,
+    Status: score.total >= 60 ? 'Qualified' : 'New',
+    'Discovery Timestamp': new Date().toISOString(),
+    'Created At': new Date().toISOString(),
+    'Updated At': new Date().toISOString(),
+  }))
+  return { imported: true, id: created.id, name: fullName, leadType, score: score.total, programmeMatch }
+}
+
 export async function getAvailableIndividualLeads(maxRecords = 500) {
   const records = await listRecords<Fields>('Growth Leads', { maxRecords, sortField: 'Score', direction: 'desc' }).catch(() => [])
   return records.filter((record) => isAssignableIndividualLead(record.fields))
@@ -213,4 +342,3 @@ export async function assignDailyIndividualLeadBatch(input: { countPerAssociate?
     assignments,
   }
 }
-
