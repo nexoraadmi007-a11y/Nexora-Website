@@ -113,7 +113,7 @@ function defaultIndividualActorInput(input: ApifyLeadInput) {
   const queries = defaultIndividualQueries(input)
   const perPage = Math.min(Math.max(Number(input.limit || 10), 1), 20)
   return {
-    queries,
+    queries: queries.join('\n'),
     resultsPerPage: perPage,
     maxPagesPerQuery: 1,
     countryCode: 'ng',
