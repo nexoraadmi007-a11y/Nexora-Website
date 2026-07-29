@@ -1,6 +1,7 @@
 import { createRecord, escapeFormula, listRecords, updateRecord, type AirtableRecord } from './airtable'
 import { compact } from './growth-associate'
 import { growthConfig } from './growth-config'
+import { hasValidContactPath, isGenericArticleLead } from './growth-copilot'
 import { canonicalAssociateState } from './referral-repair'
 import { recordLeadActivity } from './growth-actions'
 
@@ -65,6 +66,10 @@ export function isAssignableIndividualLead(fields: Fields) {
   if (!isIndividualGrowthLead(fields)) return false
   if (value(fields, 'Opted Out').toLowerCase() === 'true') return false
   if (linkedIds(fields, 'Assigned Associate').length) return false
+  const contactEvidence = `${value(fields, 'Public Profile URL')} ${value(fields, 'Source URL')} ${value(fields, 'Email')} ${value(fields, 'Phone')}`
+  const sourceEvidence = `${contactEvidence} ${value(fields, 'Observable Signal')} ${value(fields, 'Qualification Reason')}`
+  if (growthConfig.requireValidContactPath && !hasValidContactPath(contactEvidence)) return false
+  if (!growthConfig.enableGenericBlogLeads && isGenericArticleLead(sourceEvidence)) return false
   return assignableStatuses.has(normalizedStatus(fields))
 }
 
@@ -178,6 +183,11 @@ export async function createIndividualLead(input: IndividualLeadInput) {
     Phone: text(input.phone, 80),
     'Public Profile URL': text(input.publicProfileUrl, 500),
     'Source URL': text(input.sourceUrl || input.publicProfileUrl, 500),
+    'Discovery Source': text(input.sourceGroup || input.sourcePlatform, 120),
+    'Final Contact Source': text(input.publicProfileUrl || input.sourceUrl || input.email || input.phone, 500),
+    'Contactability Status': hasValidContactPath(`${input.publicProfileUrl || ''} ${input.sourceUrl || ''} ${input.email || ''} ${input.phone || ''}`) ? 'CONTACTABLE' : 'NEEDS_CONTACT_PATH',
+    'Prospect Category': 'INDIVIDUAL',
+    'Source Quality Status': isGenericArticleLead(`${input.sourceUrl || ''} ${input.publicProfileUrl || ''} ${signal}`) ? 'GENERIC_ARTICLE' : 'PUBLIC_PROFILE',
     'Source Platform': text(input.sourcePlatform, 120),
     'Source Group': text(input.sourceGroup, 180),
     'Observable Signal': signal,

@@ -20,7 +20,19 @@ function mode(): GrowthAllocationMode {
 }
 
 export const growthConfig = {
+  enableGrowthCopilot: bool('ENABLE_GROWTH_COPILOT', true),
+  enableConversationCopilot: bool('ENABLE_CONVERSATION_COPILOT', true),
+  enableLeadAnalyzer: bool('ENABLE_LEAD_ANALYZER', true),
+  enableOutreachCopilot: bool('ENABLE_OUTREACH_COPILOT', true),
+  enableFollowUpCopilot: bool('ENABLE_FOLLOW_UP_COPILOT', true),
+  enableOpportunityCopilot: bool('ENABLE_OPPORTUNITY_COPILOT', true),
   enableIndividualGrowthEngine: bool('ENABLE_INDIVIDUAL_GROWTH_ENGINE', true),
+  enableBusinessVendorLeads: bool('ENABLE_BUSINESS_VENDOR_LEADS', true),
+  enableAssociateSubmittedLeads: bool('ENABLE_ASSOCIATE_SUBMITTED_LEADS', true),
+  enableLargeCorporateLeads: bool('ENABLE_LARGE_CORPORATE_LEADS', false),
+  enableBureaucraticOrganisationLeads: bool('ENABLE_BUREAUCRATIC_ORGANISATION_LEADS', false),
+  enableGenericBlogLeads: bool('ENABLE_GENERIC_BLOG_LEADS', false),
+  requireValidContactPath: bool('REQUIRE_VALID_CONTACT_PATH', true),
   enableSmeGrowthEngine: bool('ENABLE_SME_GROWTH_ENGINE', false),
   enableCorporateGrowthEngine: bool('ENABLE_CORPORATE_GROWTH_ENGINE', false),
   enableAutomaticLeadAllocation: bool('ENABLE_AUTOMATIC_LEAD_ALLOCATION', true),
@@ -30,4 +42,3 @@ export const growthConfig = {
   allocationMode: mode(),
   timezone: process.env.GROWTH_REPORT_TIMEZONE || 'Africa/Lagos',
 }
-

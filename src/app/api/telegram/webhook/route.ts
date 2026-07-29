@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createAssociateSubmittedLead, formatGrowthCopilotResult, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
 import { actionFromTelegramCommand, assignLeadsToAssociate, formatLeadCard, generateSalesAssistant, parseLeadCommand, recordLeadActivity, resolveGrowthTelegramRole, sendAssociateLeadDigest } from '@/lib/growth-actions'
 import { handleInboundConversation } from '@/lib/conversation-engine'
 import { adminTestHelp, adminTestStatus, beginRespondSession, clearRespondSession, handleAdminTestCallback, hasActiveRespondSession, isAllowedAdminTestUser, logTelegramTestEvent, runAdminSalesAssistant, sendAdminLeadPreview, startMessageForUnverified } from '@/lib/telegram-admin-test'
@@ -15,6 +16,63 @@ function isAuthorized(request: NextRequest) {
 async function reply(chatId: string, body: string, extra?: Record<string, unknown>) {
   await sendTelegramMessage(chatId, body)
   return NextResponse.json({ ok: true, reply: body, ...(extra || {}) })
+}
+
+function copilotHelp() {
+  return [
+    'NEXORA AI Growth Copilot',
+    '',
+    '/respond pasted conversation',
+    'Get the best next reply and action.',
+    '',
+    '/analyze profile, page or observation',
+    'Analyse a person or business before outreach.',
+    '',
+    '/outreach prospect details',
+    'Generate a first message.',
+    '',
+    '/followup stalled conversation',
+    'Recover a conversation that has gone quiet.',
+    '',
+    '/newindividual details',
+    'Submit an individual opportunity you know.',
+    '',
+    '/newbusiness details',
+    'Submit a vendor or small business opportunity.',
+    '',
+    '/cancel',
+    'Cancel the current test action.',
+  ].join('\n')
+}
+
+function commandBody(message: string, command: string) {
+  return message.replace(new RegExp(`^${command}(@\\w+)?`, 'i'), '').trim()
+}
+
+async function handleCopilotCommand(input: {
+  command: string
+  body: string
+  role: Awaited<ReturnType<typeof resolveGrowthTelegramRole>>
+  fromId: string
+}) {
+  const modeByCommand: Record<string, CopilotMode> = {
+    '/respond': 'conversation',
+    '/analyze': 'analyze',
+    '/outreach': 'outreach',
+    '/followup': 'followup',
+  }
+  const mode = modeByCommand[input.command]
+  if (!mode) return null
+  if (!input.body) {
+    return `Paste the ${mode === 'conversation' ? 'prospect conversation' : mode === 'followup' ? 'stalled conversation' : 'prospect details'} after ${input.command}.`
+  }
+  const result = runGrowthCopilot({ mode, text: input.body })
+  await logTelegramTestEvent({
+    telegramUserId: input.fromId,
+    eventType: `GROWTH_COPILOT_${mode.toUpperCase()}`,
+    payload: { role: input.role.role, prospectType: result.prospectType, intent: result.intent, is_test: input.role.role === 'ADMIN' },
+  })
+  return formatGrowthCopilotResult(result)
 }
 
 export async function POST(request: NextRequest) {
@@ -58,6 +116,37 @@ export async function POST(request: NextRequest) {
     if (text.startsWith('/')) {
       const command = text.split(/\s+/)[0].toLowerCase()
 
+      if (command === '/copilothelp') {
+        if (role.role === 'UNKNOWN' && !adminTestAllowed) return reply(chatId, startMessageForUnverified(message, chatId))
+        return reply(chatId, copilotHelp())
+      }
+
+      if (['/analyze', '/outreach', '/followup'].includes(command)) {
+        if (role.role === 'UNKNOWN' && !adminTestAllowed) return reply(chatId, startMessageForUnverified(message, chatId))
+        const response = await handleCopilotCommand({ command, body: commandBody(text, command), role, fromId })
+        return reply(chatId, response || 'Growth Copilot could not process that request.')
+      }
+
+      if (['/newlead', '/newindividual', '/newbusiness'].includes(command)) {
+        if (role.role !== 'ASSOCIATE' && !adminTestAllowed) return reply(chatId, startMessageForUnverified(message, chatId))
+        if (command === '/newlead') return reply(chatId, 'Use /newindividual followed by the details, or /newbusiness followed by the vendor/business details.')
+        const body = commandBody(text, command)
+        if (!body) return reply(chatId, `Paste the ${command === '/newbusiness' ? 'business' : 'individual'} details after ${command}.`)
+        const prospectType: ProspectType = command === '/newbusiness' ? 'BUSINESS' : 'INDIVIDUAL'
+        const created = await createAssociateSubmittedLead({
+          prospectType,
+          description: body,
+          associateId: role.associate?.id,
+          submittedBy: fromId,
+        })
+        const analysis = formatGrowthCopilotResult(created.analysis)
+        const prefix = 'skipped' in created
+          ? 'Duplicate found. I did not create another lead.'
+          : 'Lead submitted and analysed. Ownership stays with the submitting associate where available.'
+        await logTelegramTestEvent({ telegramUserId: fromId, eventType: `ASSOCIATE_SUBMITTED_${prospectType}_LEAD`, leadId: 'id' in created ? created.id : '', payload: { created } })
+        return reply(chatId, [prefix, '', analysis].join('\n'))
+      }
+
       if (['/testhelp', '/teststatus', '/testleads', '/respond', '/cancel', '/demoobjection'].includes(command)) {
         if (!adminTestAllowed) {
           await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'UNAUTHORIZED_COMMAND_ATTEMPT', payload: { command } })
@@ -80,7 +169,7 @@ export async function POST(request: NextRequest) {
           const conversation = text.replace(/^\/respond(@\w+)?/i, '').trim()
           if (conversation) {
             try {
-              const response = await runAdminSalesAssistant(conversation)
+              const response = formatGrowthCopilotResult(runGrowthCopilot({ mode: 'conversation', text: conversation }))
               await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'AI_RESPONSE_SUCCEEDED', payload: { inputLength: conversation.length } })
               return reply(chatId, response)
             } catch (error) {
@@ -171,7 +260,7 @@ export async function POST(request: NextRequest) {
 
     if (adminTestAllowed && hasActiveRespondSession(fromId)) {
       try {
-        const response = await runAdminSalesAssistant(text)
+        const response = formatGrowthCopilotResult(runGrowthCopilot({ mode: 'conversation', text }))
         clearRespondSession(fromId)
         await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'AI_RESPONSE_SUCCEEDED', payload: { inputLength: text.length } })
         return reply(chatId, response)

@@ -1,4 +1,5 @@
 import { createRecord, escapeFormula, listRecords } from './airtable'
+import { hasValidContactPath, isGenericArticleLead } from './growth-copilot'
 import { createIndividualLead, type IndividualLeadInput } from './individual-growth-engine'
 
 type Fields = Record<string, any>
@@ -159,6 +160,8 @@ function looksLikeIndividualLead(result: SearchResultLead) {
   const targetAudience = ['nysc', 'corp member', 'corper', 'final year', 'final-year', 'student', 'graduate', 'internship', 'entry level', 'entry-level']
   const excluded = ['restaurant', 'hotel', 'school fees', 'admission portal', 'company profile', 'job vacancy', 'hiring now']
   if (excluded.some((term) => evidence.includes(term))) return false
+  if (isGenericArticleLead(evidence)) return false
+  if (!hasValidContactPath(result.url)) return false
   return targetAudience.some((term) => evidence.includes(term))
 }
 
