@@ -23,13 +23,19 @@ export type TelegramUpdate = {
   update_id?: number
   message?: TelegramMessage
   edited_message?: TelegramMessage
+  callback_query?: {
+    id?: string
+    from?: TelegramMessage['from']
+    message?: TelegramMessage
+    data?: string
+  }
 }
 
 export function telegramName(message: TelegramMessage) {
   return [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ').trim()
 }
 
-export async function sendTelegramMessage(chatId: string, text: string) {
+export async function sendTelegramMessage(chatId: string, text: string, options?: Record<string, unknown>) {
   const response = await fetch(`${TELEGRAM_API}/bot${botToken()}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,6 +43,7 @@ export async function sendTelegramMessage(chatId: string, text: string) {
       chat_id: chatId,
       text,
       disable_web_page_preview: true,
+      ...(options || {}),
     }),
     cache: 'no-store',
   })
@@ -48,4 +55,18 @@ export async function sendTelegramMessage(chatId: string, text: string) {
   }
 
   return data as { ok: boolean; result?: { message_id?: number } }
+}
+
+export async function answerTelegramCallback(callbackQueryId: string, text: string) {
+  if (!callbackQueryId) return
+  await fetch(`${TELEGRAM_API}/bot${botToken()}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      callback_query_id: callbackQueryId,
+      text,
+      show_alert: false,
+    }),
+    cache: 'no-store',
+  }).catch(() => undefined)
 }
