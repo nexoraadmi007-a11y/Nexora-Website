@@ -227,6 +227,9 @@ export default function AdminRecruitmentDashboard() {
   const [individualLeadBulk, setIndividualLeadBulk] = useState('')
   const [individualLeadImporting, setIndividualLeadImporting] = useState(false)
   const [individualLeadResult, setIndividualLeadResult] = useState<IndividualLeadImportResult | null>(null)
+  const [hrLoading, setHrLoading] = useState<Record<string, boolean>>({})
+  const [employmentStartDate, setEmploymentStartDate] = useState(new Date().toISOString().slice(0, 10))
+  const [employmentWorkMode, setEmploymentWorkMode] = useState('Hybrid')
 
   const visibleApplicants = useMemo(() => applicants, [applicants])
 
@@ -278,6 +281,116 @@ export default function AdminRecruitmentDashboard() {
       setMessage(error instanceof Error ? error.message : 'Action failed.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function createHrLink(applicant: Applicant) {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) {
+      setMessage('Pass the interview first so the official Growth Associate record can be created.')
+      return
+    }
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const response = await fetch(`/api/admin/associates/${associateId}/hr-onboarding-link`, {
+        method: 'POST',
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const result = (await response.json()) as { error?: string; url?: string; notification?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not create HR onboarding link.')
+      await navigator.clipboard?.writeText(result.url || '')
+      setMessage(`HR onboarding link ready and copied: ${result.url}. ${result.notification || ''}`)
+      await load({ quiet: true })
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not create HR onboarding link.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
+    }
+  }
+
+  async function revokeHrLink(applicant: Applicant) {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) return
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const response = await fetch(`/api/admin/associates/${associateId}/hr-onboarding-link/revoke`, {
+        method: 'POST',
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const result = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not revoke HR onboarding link.')
+      setMessage('HR onboarding link revoked.')
+      await load({ quiet: true })
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not revoke HR onboarding link.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
+    }
+  }
+
+  async function viewEmploymentLetter(applicant: Applicant) {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) {
+      setMessage('Pass the interview first so the official Growth Associate record can be created.')
+      return
+    }
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const params = new URLSearchParams({
+        startDate: employmentStartDate,
+        workMode: employmentWorkMode,
+      })
+      const response = await fetch(`/api/admin/associates/${associateId}/employment-letter?${params}`, {
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      const html = await response.text()
+      if (!response.ok) {
+        try {
+          const parsed = JSON.parse(html) as { error?: string }
+          throw new Error(parsed.error || 'Could not preview employment letter.')
+        } catch {
+          throw new Error('Could not preview employment letter.')
+        }
+      }
+      const blob = new Blob([html], { type: 'text/html' })
+      window.open(URL.createObjectURL(blob), '_blank', 'noopener,noreferrer')
+      setMessage('Employment letter preview opened. Use browser print to save as PDF.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not preview employment letter.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
+    }
+  }
+
+  async function saveEmploymentLetter(applicant: Applicant) {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) return
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const response = await fetch(`/api/admin/associates/${associateId}/employment-letter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ startDate: employmentStartDate, workMode: employmentWorkMode }),
+      })
+      const result = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(result.error || 'Could not save employment letter record.')
+      setMessage('Employment letter record saved in Airtable.')
+      await load({ quiet: true })
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not save employment letter record.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
     }
   }
 
@@ -694,6 +807,33 @@ export default function AdminRecruitmentDashboard() {
           Admin note for next action
           <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} className="rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-white outline-none focus:border-signal" />
         </label>
+
+        <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.025] p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">HR letter settings</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm text-steel">
+              Employment start date
+              <input
+                type="date"
+                value={employmentStartDate}
+                onChange={(event) => setEmploymentStartDate(event.target.value)}
+                className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-white outline-none focus:border-signal"
+              />
+            </label>
+            <label className="grid gap-2 text-sm text-steel">
+              Work mode
+              <select
+                value={employmentWorkMode}
+                onChange={(event) => setEmploymentWorkMode(event.target.value)}
+                className="min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-white outline-none focus:border-signal"
+              >
+                <option>Hybrid</option>
+                <option>Remote</option>
+                <option>Field</option>
+              </select>
+            </label>
+          </div>
+        </div>
 
         <div aria-live="polite" className="min-h-8 pt-5 text-sm font-semibold text-[#9ec2f7]">{message}</div>
 
@@ -1137,6 +1277,8 @@ export default function AdminRecruitmentDashboard() {
             const currentStage = value(fields, 'Recruitment Stage') || value(fields, 'Registration Status') || 'Application Received'
             const score = Number(value(fields, 'AI Score') || 0)
             const video = rawAnswer(fields, 'videoAssessmentLink')
+            const associateId = linkedRecordId(fields, 'Created Ambassador')
+            const isHrBusy = associateId ? Boolean(hrLoading[associateId]) : false
             return (
               <article key={applicant.id} className="rounded-lg border border-white/10 bg-white/[0.035] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] md:p-6">
                 <div className="grid gap-5 lg:grid-cols-[1fr_auto]">
@@ -1191,6 +1333,51 @@ export default function AdminRecruitmentDashboard() {
                     </button>
                   ))}
                 </div>
+
+                {associateId ? (
+                  <div className="mt-5 rounded-lg border border-[#5793ff]/20 bg-[#5793ff]/5 p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8fb7f3]">HR onboarding</p>
+                        <p className="mt-1 text-sm text-steel">Official associate record: {associateId}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => createHrLink(applicant)}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#5793ff]/40 bg-[#5793ff]/10 px-4 text-xs font-bold text-[#bcd6ff] disabled:opacity-60"
+                        >
+                          Send HR link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => viewEmploymentLetter(applicant)}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-xs font-bold text-white disabled:opacity-60"
+                        >
+                          Preview letter
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveEmploymentLetter(applicant)}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#7fd3a6]/40 bg-[#7fd3a6]/10 px-4 text-xs font-bold text-[#b7f0ce] disabled:opacity-60"
+                        >
+                          Save letter record
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => revokeHrLink(applicant)}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#ff9b91]/40 bg-[#ff9b91]/10 px-4 text-xs font-bold text-[#ffc5bf] disabled:opacity-60"
+                        >
+                          Revoke link
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </article>
             )
           })}
