@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Download, Save, ShieldCheck } from 'lucide-react'
+import { Download, FileUp, Save, ShieldCheck } from 'lucide-react'
 
 type Associate = {
   id: string
@@ -9,6 +9,24 @@ type Associate = {
   email: string
   hrStatus: string
   employmentLetterStatus: string
+}
+
+type SignedLetterStatus = {
+  letterGenerated: boolean
+  employmentLetterStatus: string
+  signedLetter: null | {
+    id: string
+    filename: string
+    mimeType: string
+    size: number
+    uploadedAt: string
+    status: string
+    statusLabel: string
+    reviewNote: string
+    canReplace: boolean
+  }
+  maxBytes: number
+  error?: string
 }
 
 const states = [
@@ -40,6 +58,10 @@ export default function HrOnboardingClient() {
   const [form, setForm] = useState(emptyForm)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [signedStatus, setSignedStatus] = useState<SignedLetterStatus | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -72,6 +94,7 @@ export default function HrOnboardingClient() {
           emergencyContactPhone: profile['Emergency Contact Phone'] || '',
           educationDetails: profile['Education Details'] || '',
         }))
+        await loadSignedStatus(token)
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Could not load onboarding profile.')
       } finally {
@@ -81,6 +104,14 @@ export default function HrOnboardingClient() {
     load()
     return () => { cancelled = true }
   }, [token])
+
+  async function loadSignedStatus(activeToken = token) {
+    if (!activeToken) return
+    const response = await fetch(`/api/hr-onboarding/signed-letter?token=${encodeURIComponent(activeToken)}`)
+    const result = (await response.json()) as SignedLetterStatus
+    if (!response.ok) throw new Error(result.error || 'Could not load employment document status.')
+    setSignedStatus(result)
+  }
 
   function update(key: keyof ReturnType<typeof emptyForm>, value: string) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -100,10 +131,57 @@ export default function HrOnboardingClient() {
       if (!response.ok) throw new Error(result.error || 'Could not save onboarding details.')
       setMessage(mode === 'submit' ? 'HR onboarding submitted. You can now download your employment letter for signing.' : 'Draft saved.')
       if (associate) setAssociate({ ...associate, hrStatus: mode === 'submit' ? 'Submitted' : 'In Progress' })
+      await loadSignedStatus()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not save onboarding details.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function onFileSelected(file: File | null) {
+    setUploadError('')
+    if (!file) {
+      setSelectedFile(null)
+      return
+    }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png']
+    if (!allowed.includes(file.type)) {
+      setUploadError('Upload a PDF, JPG, JPEG or PNG file.')
+      setSelectedFile(null)
+      return
+    }
+    const maxBytes = signedStatus?.maxBytes || 10 * 1024 * 1024
+    if (file.size > maxBytes) {
+      setUploadError(`File is too large. Maximum size is ${Math.round(maxBytes / (1024 * 1024))} MB.`)
+      setSelectedFile(null)
+      return
+    }
+    setSelectedFile(file)
+  }
+
+  async function uploadSignedLetter() {
+    if (!token || !selectedFile) return
+    setUploading(true)
+    setUploadError('')
+    setMessage('')
+    try {
+      const formData = new FormData()
+      formData.set('token', token)
+      formData.set('file', selectedFile)
+      const response = await fetch('/api/hr-onboarding/signed-letter', {
+        method: 'POST',
+        body: formData,
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Could not upload signed employment letter.')
+      setSelectedFile(null)
+      setMessage(result.message || 'Signed employment letter submitted.')
+      await loadSignedStatus()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Could not upload signed employment letter.')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -168,11 +246,115 @@ export default function HrOnboardingClient() {
                 <button type="button" onClick={() => submit('submit')} disabled={loading} className="button-primary min-h-12 rounded-lg px-5 text-sm font-bold disabled:opacity-60">
                   Submit HR onboarding
                 </button>
-                <a href={letterUrl} target="_blank" rel="noreferrer" className="button-secondary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 text-sm font-bold">
-                  <Download className="h-4 w-4" />
-                  View employment letter
-                </a>
               </div>
+
+              <section className="mt-8 rounded-lg border border-[#5793ff]/20 bg-[#07111f] p-5 md:p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8fb7f3]">Employment document</p>
+                <h2 className="mt-2 text-2xl font-semibold">Download, sign and upload</h2>
+                <p className="mt-2 text-sm leading-6 text-steel">
+                  Download the employment letter, sign it, then upload the complete signed copy below. PDF preferred.
+                </p>
+
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  <Step label="Step 1" body="Download employment letter" />
+                  <Step label="Step 2" body="Print or sign electronically" />
+                  <Step label="Step 3" body="Upload signed copy" />
+                </div>
+
+                <div className="mt-5 rounded-lg border border-white/10 bg-black/20 p-4">
+                  <p className="font-semibold text-white">{signedStatus?.signedLetter?.statusLabel || (signedStatus?.letterGenerated ? 'Employment letter ready' : 'Employment letter pending')}</p>
+                  <p className="mt-2 text-sm leading-6 text-steel">
+                    {signedStatus?.signedLetter?.status === 'SIGNED_COPY_APPROVED'
+                      ? 'Your signed employment letter has been approved.'
+                      : signedStatus?.signedLetter?.status === 'CORRECTION_REQUIRED'
+                        ? 'Please review the admin comment and upload a corrected signed copy.'
+                        : signedStatus?.signedLetter
+                          ? 'Your signed employment letter is awaiting verification.'
+                          : signedStatus?.letterGenerated
+                            ? 'Download the letter, sign it and upload the signed copy to continue.'
+                            : 'Admin must generate your employment letter before download is enabled.'}
+                  </p>
+                  {signedStatus?.signedLetter?.reviewNote ? <p className="mt-2 text-sm text-[#ffc5bf]">Admin note: {signedStatus.signedLetter.reviewNote}</p> : null}
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <a
+                    href={letterUrl}
+                    download
+                    className={`button-primary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 text-sm font-bold ${signedStatus?.letterGenerated ? '' : 'pointer-events-none opacity-50'}`}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download employment letter
+                  </a>
+                  <a
+                    href={`${letterUrl}&preview=1`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`button-secondary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 text-sm font-bold ${signedStatus?.letterGenerated ? '' : 'pointer-events-none opacity-50'}`}
+                  >
+                    Preview letter
+                  </a>
+                </div>
+
+                <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.025] p-4">
+                  <h3 className="text-lg font-semibold">Upload signed employment letter</h3>
+                  <p className="mt-2 text-sm leading-6 text-steel">
+                    After downloading and signing your employment letter, upload the complete signed copy here. PDF, JPG or PNG. Maximum {Math.round((signedStatus?.maxBytes || 10 * 1024 * 1024) / (1024 * 1024))} MB.
+                  </p>
+                  <ul className="mt-4 grid gap-2 text-sm text-steel">
+                    <li>1. Download the employment letter.</li>
+                    <li>2. Print and sign it, or sign it electronically using a PDF signing application.</li>
+                    <li>3. Ensure all pages are included.</li>
+                    <li>4. Upload the signed document here.</li>
+                  </ul>
+
+                  <label
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      onFileSelected(event.dataTransfer.files?.[0] || null)
+                    }}
+                    className={`mt-5 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#5793ff]/45 bg-[#5793ff]/5 px-4 text-center transition hover:bg-[#5793ff]/10 ${signedStatus?.letterGenerated && signedStatus?.signedLetter?.status !== 'SIGNED_COPY_APPROVED' ? '' : 'pointer-events-none opacity-50'}`}
+                  >
+                    <FileUp className="h-8 w-8 text-[#8fb7f3]" />
+                    <span className="mt-3 text-sm font-bold text-white">{selectedFile ? 'Replace selected file' : 'Choose file or drag it here'}</span>
+                    <span className="mt-1 text-xs text-steel">PDF, JPG, JPEG or PNG</span>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+                      className="sr-only"
+                      onChange={(event) => onFileSelected(event.target.files?.[0] || null)}
+                      disabled={!signedStatus?.letterGenerated || signedStatus?.signedLetter?.status === 'SIGNED_COPY_APPROVED'}
+                    />
+                  </label>
+
+                  {selectedFile ? (
+                    <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-steel">
+                      <p><span className="font-semibold text-white">Selected:</span> {selectedFile.name}</p>
+                      <p><span className="font-semibold text-white">Size:</span> {(selectedFile.size / 1024).toFixed(1)} KB</p>
+                      <p><span className="font-semibold text-white">Type:</span> {selectedFile.type}</p>
+                      <button type="button" onClick={() => onFileSelected(null)} className="mt-3 text-[#9ec2f7]">Replace file</button>
+                    </div>
+                  ) : null}
+
+                  {signedStatus?.signedLetter ? (
+                    <div className="mt-4 rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-steel">
+                      <p><span className="font-semibold text-white">Submitted document:</span> {signedStatus.signedLetter.filename}</p>
+                      <p><span className="font-semibold text-white">Status:</span> {signedStatus.signedLetter.statusLabel}</p>
+                    </div>
+                  ) : null}
+
+                  {uploadError ? <p className="mt-4 rounded-lg border border-[#ff9b91]/30 bg-[#ff9b91]/10 p-3 text-sm text-[#ffc5bf]">{uploadError}</p> : null}
+                  <button
+                    type="button"
+                    onClick={uploadSignedLetter}
+                    disabled={!selectedFile || uploading || !signedStatus?.letterGenerated || signedStatus?.signedLetter?.status === 'SIGNED_COPY_APPROVED'}
+                    className="button-primary mt-5 min-h-12 rounded-lg px-5 text-sm font-bold disabled:opacity-50"
+                  >
+                    {uploading ? 'Uploading...' : signedStatus?.signedLetter?.canReplace ? 'Submit replacement signed letter' : 'Submit signed employment letter'}
+                  </button>
+                </div>
+              </section>
             </>
           ) : loading ? (
             <p className="mt-6 text-sm text-steel">Loading onboarding profile...</p>
@@ -188,6 +370,15 @@ function Info({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-white/10 bg-black/20 p-4">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-steel">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-white">{value}</p>
+    </div>
+  )
+}
+
+function Step({ label, body }: { label: string; body: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8fb7f3]">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-white">{body}</p>
     </div>
   )
 }

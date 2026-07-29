@@ -394,6 +394,65 @@ export default function AdminRecruitmentDashboard() {
     }
   }
 
+  async function downloadSignedLetter(applicant: Applicant) {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) return
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const response = await fetch(`/api/admin/associates/${associateId}/signed-letter/download`, {
+        headers: { 'x-nexora-admin-secret': secret },
+      })
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({})) as { error?: string }
+        throw new Error(result.error || 'Could not download signed letter.')
+      }
+      const blob = await response.blob()
+      const disposition = response.headers.get('content-disposition') || ''
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'signed-employment-letter.pdf'
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      setMessage('Signed employment letter downloaded for review.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not download signed letter.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
+    }
+  }
+
+  async function reviewSignedLetter(applicant: Applicant, action: 'approve' | 'request-correction' | 'reject') {
+    if (!secret) return
+    const associateId = linkedRecordId(applicant.fields, 'Created Ambassador')
+    if (!associateId) return
+    setHrLoading((current) => ({ ...current, [associateId]: true }))
+    setMessage('')
+    try {
+      const response = await fetch(`/api/admin/associates/${associateId}/signed-letter/review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-nexora-admin-secret': secret,
+        },
+        body: JSON.stringify({ action, note }),
+      })
+      const result = (await response.json()) as { error?: string; status?: string }
+      if (!response.ok) throw new Error(result.error || 'Signed-letter review action failed.')
+      setMessage(`Signed-letter review updated: ${result.status}.`)
+      await load({ quiet: true })
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Signed-letter review action failed.')
+    } finally {
+      setHrLoading((current) => ({ ...current, [associateId]: false }))
+    }
+  }
+
   async function loadGrowthPerformance(options?: { persist?: boolean }) {
     if (!secret) {
       setMessage('Enter the admin secret to load growth performance.')
@@ -1373,6 +1432,43 @@ export default function AdminRecruitmentDashboard() {
                           className="min-h-10 rounded-lg border border-[#ff9b91]/40 bg-[#ff9b91]/10 px-4 text-xs font-bold text-[#ffc5bf] disabled:opacity-60"
                         >
                           Revoke link
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-4 border-t border-white/10 pt-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8fb7f3]">Signed-copy verification</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => downloadSignedLetter(applicant)}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-xs font-bold text-white disabled:opacity-60"
+                        >
+                          Download submitted copy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => reviewSignedLetter(applicant, 'approve')}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#7fd3a6]/40 bg-[#7fd3a6]/10 px-4 text-xs font-bold text-[#b7f0ce] disabled:opacity-60"
+                        >
+                          Approve signed letter
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => reviewSignedLetter(applicant, 'request-correction')}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#f2c979]/40 bg-[#f2c979]/10 px-4 text-xs font-bold text-[#f6d999] disabled:opacity-60"
+                        >
+                          Request correction
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => reviewSignedLetter(applicant, 'reject')}
+                          disabled={isHrBusy}
+                          className="min-h-10 rounded-lg border border-[#ff9b91]/40 bg-[#ff9b91]/10 px-4 text-xs font-bold text-[#ffc5bf] disabled:opacity-60"
+                        >
+                          Reject document
                         </button>
                       </div>
                     </div>
