@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAssociateSubmittedLead, formatConversationCopilotResult, formatGrowthCopilotResult, runConversationCopilot, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
+import { createAssociateSubmittedLead, formatConversationCopilotResult, formatGrowthCopilotResult, runConversationCopilotWithSession, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
 import { actionFromTelegramCommand, assignLeadsToAssociate, formatLeadCard, parseLeadCommand, recordLeadActivity, resolveGrowthTelegramRole, sendAssociateLeadDigest } from '@/lib/growth-actions'
 import { handleInboundConversation } from '@/lib/conversation-engine'
 import { adminTestHelp, adminTestStatus, beginRespondSession, clearRespondSession, handleAdminTestCallback, hasActiveRespondSession, isAllowedAdminTestUser, logTelegramTestEvent, runAdminSalesAssistant, sendAdminLeadPreview, startMessageForUnverified } from '@/lib/telegram-admin-test'
 import { answerTelegramCallback, sendTelegramMessage, telegramName, type TelegramUpdate } from '@/lib/telegram'
+import { describeSalesSession, getSalesSession, resetSalesSession } from '@/lib/sales-session'
 
 export const runtime = 'nodejs'
 
@@ -67,7 +68,7 @@ async function handleCopilotCommand(input: {
     return `Paste the ${mode === 'conversation' ? 'prospect conversation' : mode === 'followup' ? 'stalled conversation' : 'prospect details'} after ${input.command}.`
   }
   if (mode === 'conversation') {
-    const result = runConversationCopilot({ mode: 'conversation', text: input.body })
+    const result = await runConversationCopilotWithSession({ mode: 'conversation', text: input.body, telegramChatId: input.fromId })
     await logTelegramTestEvent({
       telegramUserId: input.fromId,
       eventType: 'GROWTH_COPILOT_CONVERSATION',
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
         return reply(chatId, [prefix, '', analysis].join('\n'))
       }
 
-      if (['/testhelp', '/teststatus', '/testleads', '/respond', '/cancel', '/demoobjection'].includes(command)) {
+      if (['/testhelp', '/teststatus', '/testleads', '/respond', '/newconversation', '/endconversation', '/conversationstatus', '/cancel', '/demoobjection'].includes(command)) {
         if (!adminTestAllowed) {
           await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'UNAUTHORIZED_COMMAND_ATTEMPT', payload: { command } })
           return reply(chatId, 'This feature is currently available only to authorised Nexora administrators.')
@@ -170,6 +171,16 @@ export async function POST(request: NextRequest) {
           await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'SESSION_CANCELLED' })
           return reply(chatId, 'Current test action cancelled.')
         }
+        if (command === '/newconversation' || command === '/endconversation') {
+          await resetSalesSession({ telegramChatId: chatId, prospectReference: 'admin-test' })
+          clearRespondSession(fromId)
+          await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'SALES_SESSION_RESET', payload: { command } })
+          return reply(chatId, 'Conversation context reset. Paste the next prospect message with /respond.')
+        }
+        if (command === '/conversationstatus') {
+          const session = await getSalesSession({ telegramChatId: chatId, prospectReference: 'admin-test' })
+          return reply(chatId, describeSalesSession(session))
+        }
         if (command === '/testleads') {
           const count = Number(text.split(/\s+/)[1] || 5)
           const result = await sendAdminLeadPreview({ chatId, telegramUserId: fromId, count })
@@ -179,7 +190,7 @@ export async function POST(request: NextRequest) {
           const conversation = text.replace(/^\/respond(@\w+)?/i, '').trim()
           if (conversation) {
             try {
-              const result = runConversationCopilot({ mode: 'conversation', text: conversation })
+              const result = await runConversationCopilotWithSession({ mode: 'conversation', text: conversation, telegramChatId: chatId, prospectReference: 'admin-test' })
               const response = formatConversationCopilotResult(result)
               await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'AI_RESPONSE_SUCCEEDED', payload: { inputLength: conversation.length, intent: result.detectedIntent } })
               return reply(chatId, response)
@@ -236,11 +247,13 @@ export async function POST(request: NextRequest) {
 
       if (command === '/reply' && role.associate) {
         const [, leadId = '', ...conversationParts] = text.split(/\s+/)
-        const result = runConversationCopilot({
+        const result = await runConversationCopilotWithSession({
           mode: 'conversation',
           text: conversationParts.join(' '),
           associateId: role.associate.id,
           leadId,
+          telegramChatId: chatId,
+          prospectReference: leadId,
         })
         if (leadId) {
           await recordLeadActivity({
@@ -274,7 +287,7 @@ export async function POST(request: NextRequest) {
 
     if (adminTestAllowed && hasActiveRespondSession(fromId)) {
       try {
-        const result = runConversationCopilot({ mode: 'conversation', text })
+        const result = await runConversationCopilotWithSession({ mode: 'conversation', text, telegramChatId: chatId, prospectReference: 'admin-test' })
         const response = formatConversationCopilotResult(result)
         clearRespondSession(fromId)
         await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'AI_RESPONSE_SUCCEEDED', payload: { inputLength: text.length, intent: result.detectedIntent } })

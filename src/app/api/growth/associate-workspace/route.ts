@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { escapeFormula, listRecords } from '@/lib/airtable'
-import { formatConversationCopilotResult, runConversationCopilot } from '@/lib/growth-copilot'
+import { formatConversationCopilotResult, runConversationCopilotWithSession } from '@/lib/growth-copilot'
 import { getAssociateLeads, recordLeadActivity } from '@/lib/growth-actions'
 
 export const runtime = 'nodejs'
@@ -74,11 +74,12 @@ export async function POST(request: NextRequest) {
     const mode = text(body.mode, 80)
     const leadId = text(body.leadId, 120)
     if (mode === 'sales_assistant' || mode === 'growth_copilot') {
-      const copilot = runConversationCopilot({
+      const copilot = await runConversationCopilotWithSession({
         mode: 'conversation',
         text: text(body.conversation),
         associateId: associate.id,
         leadId,
+        prospectReference: leadId,
       })
       if (leadId) {
         await recordLeadActivity({
