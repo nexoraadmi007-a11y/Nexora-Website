@@ -66,7 +66,7 @@ const fallbackPrograms: Program[] = [
     audienceType: 'Career',
     slug: 'career-accelerator',
     duration: '3 career programmes',
-    price: 10000,
+    price: 25000,
     description: 'A modular AI Career Accelerator with three independent programmes in AI content creation, AI-powered UI/UX design, and AI financial analysis.',
     curriculum: 'AI Content Creation\nCertified UI/UX Designer (AI-Powered)\nAI Financial Analyst',
     cta: 'Apply for Career Accelerator',

@@ -33,10 +33,10 @@ export type PricingRule = {
   status: 'Active' | 'Inactive'
 }
 
-export const careerTrackBasePrice = 10000
+export const careerTrackBasePrice = 25000
 
 export const careerTrackPricingRules: PricingRule[] = [
-  { name: 'Single Programme', minTracks: 1, maxTracks: 1, price: 10000, status: 'Active' },
+  { name: 'Single Programme', minTracks: 1, maxTracks: 1, price: 25000, status: 'Active' },
 ]
 
 export function calculateCareerTrackPricing(selectedSlugs: string[]) {
@@ -60,7 +60,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
     shortTitle: 'Content Creation',
     description: 'Learn how to think like a content professional, plan audience-led ideas, and use AI to research, write, design, publish, and measure content.',
     duration: '4 weeks',
-    price: 10000,
+    price: 25000,
     bestFor: 'Aspiring creators, social media managers, brand builders, freelancers, marketing assistants, and young professionals who want practical content skills.',
     profession: 'AI Content Creator / Content Operations Specialist',
     skills: ['Audience research', 'Content strategy', 'Copywriting', 'Storytelling', 'AI writing workflow', 'Visual content planning', 'Content analytics'],
@@ -97,7 +97,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
     shortTitle: 'UI/UX Designer',
     description: 'Learn user-centered design, interface thinking, prototyping, and AI-assisted design workflows while building a portfolio-ready product case study.',
     duration: '4 weeks',
-    price: 10000,
+    price: 25000,
     bestFor: 'Aspiring UI/UX designers, product-minded creatives, frontend learners, no-code builders, and digital product founders.',
     profession: 'Certified UI/UX Designer',
     skills: ['User research', 'Information architecture', 'Wireframing', 'Interface design', 'Prototyping', 'AI design prompting', 'Design handoff'],
@@ -134,7 +134,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
     shortTitle: 'Financial Analyst',
     description: 'Learn financial statement thinking, analysis, forecasting, valuation logic, and AI-assisted reporting for business and investment decisions.',
     duration: '4 weeks',
-    price: 10000,
+    price: 25000,
     bestFor: 'Finance students, accounting graduates, analysts, SME finance operators, business owners, consultants, and young professionals interested in finance.',
     profession: 'AI Financial Analyst',
     skills: ['Financial statements', 'Ratio analysis', 'Forecasting', 'Valuation logic', 'AI-assisted modelling', 'Financial reporting', 'Dashboarding'],

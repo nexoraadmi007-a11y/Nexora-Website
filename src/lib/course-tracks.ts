@@ -33,7 +33,7 @@ export const aiAcceleratorTracks: CourseTrack[] = [
     whoFor: ['Aspiring content creators', 'Social media managers', 'Brand builders', 'Freelancers', 'Marketing assistants'],
     outcomes: ['Plan a platform-aware content strategy.', 'Create copy and multimedia assets with AI.', 'Build a repeatable 30-day content system.', 'Report performance and monetisation opportunities.'],
     careers: ['AI Content Operator', 'Content Operations Specialist', 'Social Media Strategist', 'AI Copywriter', 'Creative Marketing Assistant'],
-    price: 10000,
+    price: 25000,
   },
   {
     slug: 'ui-ux-designer',
@@ -54,7 +54,7 @@ export const aiAcceleratorTracks: CourseTrack[] = [
     whoFor: ['Aspiring UI/UX designers', 'Product-minded creatives', 'Frontend learners', 'No-code builders', 'Digital product founders'],
     outcomes: ['Conduct practical user research.', 'Design usable AI-assisted product interfaces.', 'Build prototypes and handoff documentation.', 'Present a professional design case study.'],
     careers: ['AI UI/UX Designer', 'Product Designer', 'UX Research Assistant', 'Interface Designer', 'AI Product Design Operator'],
-    price: 10000,
+    price: 25000,
   },
   {
     slug: 'ai-financial-analyst',
@@ -75,7 +75,7 @@ export const aiAcceleratorTracks: CourseTrack[] = [
     whoFor: ['Finance students', 'Analysts', 'SME finance operators', 'Business owners', 'Consultants'],
     outcomes: ['Analyse financial statements and business economics.', 'Build AI-assisted models and forecasts.', 'Validate AI-generated financial outputs.', 'Create executive-ready finance reports.'],
     careers: ['AI Financial Analyst', 'Business Analyst', 'Finance Operations Analyst', 'Investment Research Assistant', 'AI Reporting Specialist'],
-    price: 10000,
+    price: 25000,
   },
 ]
 
