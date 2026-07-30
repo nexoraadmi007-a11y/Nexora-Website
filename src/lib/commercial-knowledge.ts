@@ -280,21 +280,20 @@ function extractProgrammeCount(html: string) {
 export async function fetchWebsiteProgrammeFacts(baseUrl = websiteBaseUrl): Promise<WebsiteProgrammeFacts> {
   const extractedAt = new Date().toISOString()
   try {
-    const urls = [baseUrl, `${baseUrl}/programs`, `${baseUrl}/career-accelerator`, `${baseUrl}/business-transformation`]
-    const pages = await Promise.all(urls.map(async (url) => {
+    const [home, programs, careerPage, businessPage] = await Promise.all([baseUrl, `${baseUrl}/programs`, `${baseUrl}/career-accelerator`, `${baseUrl}/business-transformation`].map(async (url) => {
       const response = await fetch(url, { cache: 'no-store' })
       if (!response.ok) throw new Error(`${url} returned ${response.status}`)
       return response.text()
     }))
-    const html = pages.join('\n')
+    const html = [home, programs, careerPage, businessPage].join('\n')
     const rawMatches = Array.from(html.matchAll(/(?:NGN|₦)\s?[0-9,]+|(?:\d+)\s+(?:career\s+)?(?:programmes?|tracks?)/gi)).map((match) => match[0])
     return {
       sourceUrl: baseUrl,
       extractedAt,
-      careerPrice: extractPriceNear(html, ['career accelerator', 'ai career accelerator']),
-      careerProgrammeCount: extractProgrammeCount(html),
-      businessPrice: extractPriceNear(html, ['business transformation', 'ai business transformation']),
-      businessDuration: html.toLowerCase().includes('4 weeks') ? '4 weeks' : undefined,
+      careerPrice: extractPriceNear(careerPage, ['career accelerator', 'ai career accelerator']) || extractPriceNear(programs, ['career accelerator', 'ai career accelerator']) || extractPriceNear(home, ['career accelerator', 'ai career accelerator']),
+      careerProgrammeCount: extractProgrammeCount(careerPage) || extractProgrammeCount(programs) || extractProgrammeCount(home),
+      businessPrice: extractPriceNear(businessPage, ['business transformation', 'ai business transformation']) || extractPriceNear(programs, ['business transformation', 'ai business transformation']) || extractPriceNear(home, ['business transformation', 'ai business transformation']),
+      businessDuration: businessPage.toLowerCase().includes('4 weeks') || programs.toLowerCase().includes('4 weeks') ? '4 weeks' : undefined,
       rawMatches,
     }
   } catch (error) {
