@@ -1,4 +1,5 @@
 import { createRecord, escapeFormula, listRecords, type AirtableRecord } from './airtable'
+import { careerAcceleratorTracks, careerTrackBasePrice } from './career-accelerator-v2'
 import { compact } from './growth-associate'
 
 type Fields = Record<string, any>
@@ -30,10 +31,75 @@ export type GrowthCopilotResult = {
   confidence: number
 }
 
+export type ConversationIntent =
+  | 'PRICE_QUERY'
+  | 'AFFORDABILITY_OBJECTION'
+  | 'VALUE_OBJECTION'
+  | 'PROGRAMME_DIFFERENTIATION'
+  | 'PROGRAMME_CONTENT'
+  | 'PROGRAMME_MATCH'
+  | 'TRUST_CONCERN'
+  | 'TIMING_CONCERN'
+  | 'DEVICE_REQUIREMENT'
+  | 'CERTIFICATE_QUERY'
+  | 'JOB_OUTCOME_QUERY'
+  | 'PAYMENT_INTENT'
+  | 'APPLICATION_INTENT'
+  | 'FOLLOW_UP_REQUEST'
+  | 'NOT_INTERESTED'
+  | 'OPT_OUT'
+  | 'GENERAL_ENQUIRY'
+  | 'UNCLEAR'
+
+export type ConversationCopilotContext = {
+  mode: 'CONVERSATION_RESPONSE'
+  prospectType: ProspectType
+  programmeContext: 'CAREER_ACCELERATOR'
+  conversationText: string
+  latestProspectMessage: string
+  associateContext?: Record<string, unknown>
+  leadContactability: null
+  leadSource: null
+  outreachStatus: null
+}
+
+export type ConversationCopilotResult = {
+  mode: 'CONVERSATION_RESPONSE'
+  detectedIntent: ConversationIntent
+  detectedObjection: string
+  conversationObjective: string
+  replyToSend: string
+  nextBestAction: string
+  responseBranches: Array<{ possibleReply: string; recommendedResponse: string }>
+  followUpInstruction: string
+  requiresAdminConfirmation: false
+  programmeSnapshot: {
+    programmeFamily: string
+    currentPriceNgn: number
+    availableProgrammes: string[]
+    approvedValuePoints: string[]
+    jobGuarantee: false
+    incomeGuarantee: false
+  }
+}
+
 const individualTerms = ['nysc', 'corper', 'corp member', 'student', 'final year', 'final-year', '500 level', 'graduate', 'internship', 'entry level', 'job', 'portfolio', 'career']
 const businessTerms = ['instagram', 'facebook', 'vendor', 'whatsapp', 'business', 'store', 'brand', 'orders', 'customers', 'skincare', 'fashion', 'wig', 'beauty', 'cake', 'delivery']
 const excludedBusinessTerms = ['university', 'government', 'hospital', 'major pharmacy', 'large corporation', 'manufacturing company', 'law firm', 'engineering firm']
 const genericArticleTerms = ['blog', 'article', 'news', 'guide', 'portal', 'wikipedia', 'newspaper', 'how to', 'latest update']
+const conversationForbiddenPhrases = [
+  'missing valid contact path',
+  'before outreach',
+  'locate a valid public contact route',
+  'locate a public contact route',
+  'lead qualification',
+  'source url',
+  'assignable lead',
+  'confirm from the official page',
+  'production action',
+  'public profile',
+  'contactability',
+]
 
 function text(value: unknown, max = 8000) {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -41,6 +107,278 @@ function text(value: unknown, max = 8000) {
 
 function lower(value: string) {
   return value.toLowerCase()
+}
+
+export function trustedCareerProgrammeSnapshot() {
+  return {
+    programmeFamily: 'Career Accelerator',
+    currentPriceNgn: careerTrackBasePrice,
+    availableProgrammes: careerAcceleratorTracks.map((track) => track.title),
+    approvedValuePoints: [
+      'structured learning path',
+      'clear weekly roadmap',
+      'practical projects',
+      'guided support',
+      'feedback',
+      'portfolio development',
+      'accountability',
+      'capstone review',
+    ],
+    jobGuarantee: false as const,
+    incomeGuarantee: false as const,
+  }
+}
+
+function latestProspectMessage(input: string) {
+  const lines = input.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const prospectLabels = ['prospect', 'customer', 'client', 'lead']
+  const associateLabels = ['associate', 'me', 'sales', 'nexora', 'admin']
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const match = lines[index].match(/^([^:]{1,30}):\s*(.+)$/)
+    if (!match) continue
+    const label = match[1].toLowerCase()
+    if (prospectLabels.some((item) => label.includes(item))) return text(match[2], 2000)
+    if (associateLabels.some((item) => label.includes(item))) continue
+  }
+  return text(lines[lines.length - 1] || input, 2000)
+}
+
+function makeConversationContext(input: GrowthCopilotInput): ConversationCopilotContext {
+  const conversationText = text(input.text, 7000)
+  if (!conversationText || conversationText.length < 4) throw new Error('Please provide enough prospect context for the Conversation Copilot.')
+  return {
+    mode: 'CONVERSATION_RESPONSE',
+    prospectType: inferProspectType(conversationText, input.prospectType),
+    programmeContext: 'CAREER_ACCELERATOR',
+    conversationText,
+    latestProspectMessage: latestProspectMessage(conversationText),
+    associateContext: {},
+    leadContactability: null,
+    leadSource: null,
+    outreachStatus: null,
+  }
+}
+
+function detectConversationIntent(message: string): ConversationIntent {
+  const raw = lower(message)
+  if (/\b(stop|unsubscribe|do not message|don't message|dont message|leave me)\b/.test(raw)) return 'OPT_OUT'
+  if (raw.includes('not interested')) return 'NOT_INTERESTED'
+  if (['youtube', 'free video', 'free course', 'online video'].some((term) => raw.includes(term))) return 'PROGRAMME_DIFFERENTIATION'
+  if (['how much', 'price', 'cost', 'fee', 'amount'].some((term) => raw.includes(term))) return 'PRICE_QUERY'
+  if (['no money', 'enough money', 'money now', 'cannot afford', "can't afford", 'cant afford', 'expensive', 'broke'].some((term) => raw.includes(term))) return 'AFFORDABILITY_OBJECTION'
+  if (['worth', 'value', 'benefit', 'why should i', 'why pay'].some((term) => raw.includes(term))) return 'VALUE_OBJECTION'
+  if (['what will i learn', 'what do i learn', 'curriculum', 'content', 'modules'].some((term) => raw.includes(term))) return 'PROGRAMME_CONTENT'
+  if (['which one', 'which programme', 'which program', 'best for me', 'interested in'].some((term) => raw.includes(term))) return 'PROGRAMME_MATCH'
+  if (['scam', 'legit', 'real', 'trust', 'proof'].some((term) => raw.includes(term))) return 'TRUST_CONCERN'
+  if (['when', 'start', 'busy', 'time', 'schedule', 'later', 'next week', 'next month'].some((term) => raw.includes(term))) return 'TIMING_CONCERN'
+  if (['phone', 'laptop', 'computer', 'device'].some((term) => raw.includes(term))) return 'DEVICE_REQUIREMENT'
+  if (['certificate', 'certification'].some((term) => raw.includes(term))) return 'CERTIFICATE_QUERY'
+  if (['job', 'work', 'employment', 'opportunity', 'opportunities', 'income', 'earn'].some((term) => raw.includes(term))) return 'JOB_OUTCOME_QUERY'
+  if (['payment link', 'pay', 'paid', 'paystack', 'transfer'].some((term) => raw.includes(term))) return 'PAYMENT_INTENT'
+  if (['apply', 'register', 'enroll', 'enrol'].some((term) => raw.includes(term))) return 'APPLICATION_INTENT'
+  if (['follow up', 'remind me', 'get back'].some((term) => raw.includes(term))) return 'FOLLOW_UP_REQUEST'
+  if (['what', 'how', 'details', 'explain'].some((term) => raw.includes(term))) return 'GENERAL_ENQUIRY'
+  return 'UNCLEAR'
+}
+
+function inferTrackInterest(message: string) {
+  const raw = lower(message)
+  if (['ui', 'ux', 'design', 'figma', 'product design'].some((term) => raw.includes(term))) return 'Certified UI/UX Designer'
+  if (['finance', 'financial', 'accounting', 'banking', 'analysis', 'analyst'].some((term) => raw.includes(term))) return 'AI Financial Analyst'
+  if (['content', 'creator', 'social media', 'marketing', 'copywriting'].some((term) => raw.includes(term))) return 'AI Content Creation'
+  return ''
+}
+
+function conversationObjective(intent: ConversationIntent) {
+  const map: Record<ConversationIntent, string> = {
+    PRICE_QUERY: 'CONFIRM_PROGRAMME_INTEREST',
+    AFFORDABILITY_OBJECTION: 'UNDERSTAND_OBJECTION',
+    VALUE_OBJECTION: 'UNDERSTAND_OBJECTION',
+    PROGRAMME_DIFFERENTIATION: 'CONFIRM_PROGRAMME_INTEREST',
+    PROGRAMME_CONTENT: 'SEND_PROGRAMME_OVERVIEW',
+    PROGRAMME_MATCH: 'CONFIRM_PROGRAMME_INTEREST',
+    TRUST_CONCERN: 'SEND_PROGRAMME_OVERVIEW',
+    TIMING_CONCERN: 'SCHEDULE_FOLLOW_UP',
+    DEVICE_REQUIREMENT: 'CONFIRM_PROGRAMME_INTEREST',
+    CERTIFICATE_QUERY: 'SEND_PROGRAMME_OVERVIEW',
+    JOB_OUTCOME_QUERY: 'SEND_PROGRAMME_OVERVIEW',
+    PAYMENT_INTENT: 'SEND_PAYMENT_LINK',
+    APPLICATION_INTENT: 'SEND_APPLICATION_LINK',
+    FOLLOW_UP_REQUEST: 'SCHEDULE_FOLLOW_UP',
+    NOT_INTERESTED: 'RESPECT_OPT_OUT',
+    OPT_OUT: 'RESPECT_OPT_OUT',
+    GENERAL_ENQUIRY: 'CONFIRM_PROGRAMME_INTEREST',
+    UNCLEAR: 'CONFIRM_PROGRAMME_INTEREST',
+  }
+  return map[intent]
+}
+
+function conversationReply(intent: ConversationIntent, context: ConversationCopilotContext) {
+  const snapshot = trustedCareerProgrammeSnapshot()
+  const price = `NGN ${snapshot.currentPriceNgn.toLocaleString('en-NG')}`
+  const programmes = snapshot.availableProgrammes.join(', ')
+  const track = inferTrackInterest(context.latestProspectMessage)
+  switch (intent) {
+    case 'AFFORDABILITY_OBJECTION':
+      return {
+        reply: `I understand. Is the main issue that the ${price} is not available right now, or that you are still deciding whether the programme is worth it?`,
+        action: 'Wait for their answer. If it is timing, agree on a realistic follow-up date. If it is value, explain the practical projects and support.',
+      }
+    case 'PROGRAMME_DIFFERENTIATION':
+      return {
+        reply: 'YouTube can give useful information, but it is usually scattered and you have to figure out the learning path yourself. Nexora gives you a structured programme, practical projects, guidance, feedback and accountability, so you do not just watch lessons, you build work you can show. Which career path are you most interested in?',
+        action: 'Identify the programme they are interested in, then explain the specific projects and outcome.',
+      }
+    case 'PRICE_QUERY':
+      return {
+        reply: `The Career Accelerator currently costs ${price}. The available programmes are ${programmes}. Which one are you interested in so I can share the exact details?`,
+        action: 'Confirm the specific programme interest, then send the relevant breakdown and enrollment link.',
+      }
+    case 'PROGRAMME_CONTENT':
+      return {
+        reply: track
+          ? `In ${track}, you learn through a structured roadmap, practical tasks, guided support, and a capstone you can show. I can send the module breakdown if you want to see the exact weekly plan.`
+          : `You learn through a structured roadmap, practical tasks, guided support, and a capstone you can show. The three options are ${programmes}. Which one do you want the breakdown for?`,
+        action: 'Send the programme-specific modules after they choose a path.',
+      }
+    case 'DEVICE_REQUIREMENT':
+      return {
+        reply: 'You can use your phone for some learning, communication, research and assignments, but a laptop is better for serious project work, especially UI/UX design, finance analysis, spreadsheets, dashboards and portfolio work. Which path are you considering?',
+        action: 'Confirm the programme first, then explain the realistic device requirement for that path.',
+      }
+    case 'CERTIFICATE_QUERY':
+      return {
+        reply: 'Yes, certificate is included after you complete the required assignments and capstone review. The stronger value is that the certificate is backed by practical work you can show. Which programme are you looking at?',
+        action: 'Confirm their programme interest and explain the capstone/certificate requirement.',
+      }
+    case 'JOB_OUTCOME_QUERY':
+      return {
+        reply: 'Knowing AI can open opportunities in content, design, finance analysis, business operations and productivity support, but it is not a job guarantee. The goal is to build practical skills and portfolio evidence that make you more useful. Which direction interests you most?',
+        action: 'Match the prospect to one career path and avoid promising jobs, income or clients.',
+      }
+    case 'TRUST_CONCERN':
+      return {
+        reply: 'That is fair. You should verify before paying. You can check Nexora through the official website, programme page and payment process. I can send the official link so you confirm the details yourself.',
+        action: 'Send only the official Nexora link and answer their specific trust concern calmly.',
+      }
+    case 'TIMING_CONCERN':
+      return {
+        reply: 'No problem. Would you prefer I send the details now so you can review them, then I follow up at a time that works for you?',
+        action: 'Ask for a specific follow-up day or time instead of defaulting to 24 hours.',
+      }
+    case 'PAYMENT_INTENT':
+      return {
+        reply: 'Great. I can send the official payment link so your enrollment is tracked properly. Which programme are you paying for?',
+        action: 'Confirm programme choice before sending the payment link.',
+      }
+    case 'APPLICATION_INTENT':
+      return {
+        reply: 'Great. I can send the registration link. Before I do, which Career Accelerator programme do you want: AI Content Creation, Certified UI/UX Designer, or AI Financial Analyst?',
+        action: 'Confirm the programme choice, then send the correct application/enrollment link.',
+      }
+    case 'NOT_INTERESTED':
+      return {
+        reply: 'No problem, thank you for letting me know. Would you like me to stop here, or should I only send future updates if there is something very relevant?',
+        action: 'Respect the decision. Do not keep following up unless they give permission.',
+      }
+    case 'OPT_OUT':
+      return {
+        reply: 'Understood. I will not continue the conversation. Thank you for your time.',
+        action: 'Stop follow-up and mark the conversation as opted out where applicable.',
+      }
+    case 'VALUE_OBJECTION':
+      return {
+        reply: `That is a fair question. The value is not just lessons; it is structure, practical projects, feedback, accountability and a capstone you can show. What result matters most to you: learning the skill, building a portfolio, or improving your career options?`,
+        action: 'Find the value concern before sending a longer pitch.',
+      }
+    default:
+      return {
+        reply: `Nexora Career Accelerator has three practical paths: ${programmes}. Each one is structured around projects, feedback and a capstone. Which path are you most interested in?`,
+        action: 'Confirm programme interest before sending detailed information.',
+      }
+  }
+}
+
+function responseBranches(intent: ConversationIntent, price: string) {
+  if (intent === 'AFFORDABILITY_OBJECTION') {
+    return [
+      { possibleReply: 'I just do not have the money.', recommendedResponse: 'No problem. When do you realistically think you may be able to enrol?' },
+      { possibleReply: 'I am not sure it is worth it.', recommendedResponse: 'That is fair. Which result matters most to you: learning the skill, building a portfolio, or improving your career options?' },
+    ]
+  }
+  if (intent === 'PROGRAMME_DIFFERENTIATION') {
+    return [
+      { possibleReply: 'Which projects will I do?', recommendedResponse: 'That depends on the path you choose. Content, UI/UX and Financial Analysis each have different practical projects and capstones.' },
+      { possibleReply: 'Can I still learn from YouTube?', recommendedResponse: 'Yes, YouTube can support you. Nexora gives the structure, guidance, tasks and feedback so you know what to do next.' },
+    ]
+  }
+  if (intent === 'PRICE_QUERY') {
+    return [
+      { possibleReply: 'Is there a discount?', recommendedResponse: `The current approved price is ${price}. Let me first confirm the programme you want so I send the correct details.` },
+    ]
+  }
+  return []
+}
+
+function validateConversationResult(result: ConversationCopilotResult) {
+  if (result.mode !== 'CONVERSATION_RESPONSE') return 'Invalid conversation mode.'
+  if (!result.replyToSend) return 'Missing reply_to_send.'
+  if (!result.nextBestAction) return 'Missing next_best_action.'
+  const body = `${result.replyToSend}\n${result.nextBestAction}`.toLowerCase()
+  const forbidden = conversationForbiddenPhrases.find((phrase) => body.includes(phrase))
+  if (forbidden) return `Conversation reply contains forbidden lead-analysis phrase: ${forbidden}.`
+  if (/\b[A-Z]{3,}_[A-Z_]+\b/.test(`${result.replyToSend}\n${result.nextBestAction}`)) return 'Conversation reply exposes internal enum formatting.'
+  const words = `${result.replyToSend} ${result.nextBestAction}`.split(/\s+/).filter(Boolean)
+  if (words.length > 150) return 'Conversation reply is too long for default Telegram mode.'
+  return ''
+}
+
+export function runConversationCopilot(input: GrowthCopilotInput): ConversationCopilotResult {
+  const context = makeConversationContext({ ...input, mode: 'conversation' })
+  const snapshot = trustedCareerProgrammeSnapshot()
+  const intent = detectConversationIntent(context.latestProspectMessage)
+  const generated = conversationReply(intent, context)
+  const result: ConversationCopilotResult = {
+    mode: 'CONVERSATION_RESPONSE',
+    detectedIntent: intent,
+    detectedObjection: intent.includes('OBJECTION') ? intent : '',
+    conversationObjective: conversationObjective(intent),
+    replyToSend: generated.reply,
+    nextBestAction: generated.action,
+    responseBranches: responseBranches(intent, `NGN ${snapshot.currentPriceNgn.toLocaleString('en-NG')}`),
+    followUpInstruction: generated.action,
+    requiresAdminConfirmation: false,
+    programmeSnapshot: snapshot,
+  }
+  const error = validateConversationResult(result)
+  if (error) throw new Error(error)
+  return result
+}
+
+export function formatConversationCopilotResult(result: ConversationCopilotResult, detailed = false) {
+  const base = [
+    'NEXORA GROWTH COPILOT',
+    '',
+    'Reply to Send',
+    '',
+    `"${result.replyToSend}"`,
+    '',
+    'Next Best Action',
+    '',
+    result.nextBestAction,
+  ]
+  if (!detailed) return base.join('\n')
+  const branches = result.responseBranches.slice(0, 3).flatMap((branch) => [
+    '',
+    `If they say: "${branch.possibleReply}"`,
+    `Reply: "${branch.recommendedResponse}"`,
+  ])
+  return [
+    ...base,
+    '',
+    `Detected Concern: ${result.detectedIntent.replaceAll('_', ' ').toLowerCase()}`,
+    ...branches,
+  ].join('\n')
 }
 
 function includesAny(value: string, terms: string[]) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { escapeFormula, listRecords } from '@/lib/airtable'
-import { formatGrowthCopilotResult, runGrowthCopilot } from '@/lib/growth-copilot'
-import { generateSalesAssistant, getAssociateLeads, recordLeadActivity } from '@/lib/growth-actions'
+import { formatConversationCopilotResult, runConversationCopilot } from '@/lib/growth-copilot'
+import { getAssociateLeads, recordLeadActivity } from '@/lib/growth-actions'
 
 export const runtime = 'nodejs'
 
@@ -74,19 +74,31 @@ export async function POST(request: NextRequest) {
     const mode = text(body.mode, 80)
     const leadId = text(body.leadId, 120)
     if (mode === 'sales_assistant' || mode === 'growth_copilot') {
-      const copilot = runGrowthCopilot({
-        mode: mode === 'growth_copilot' ? 'conversation' : 'conversation',
+      const copilot = runConversationCopilot({
+        mode: 'conversation',
         text: text(body.conversation),
         associateId: associate.id,
         leadId,
       })
-      const result = await generateSalesAssistant({
-        conversation: text(body.conversation),
-        leadId,
-        associateId: associate.id,
-        programme: text(body.programme, 160),
+      if (leadId) {
+        await recordLeadActivity({
+          leadId,
+          associateId: associate.id,
+          action: 'sales_assistant_used',
+          channel: 'Website',
+          verificationType: 'SYSTEM_VERIFIED',
+          note: `Conversation Copilot used.\nIntent: ${copilot.detectedIntent}\nSuggested reply: ${copilot.replyToSend}`,
+        }).catch(() => undefined)
+      }
+      return NextResponse.json({
+        ok: true,
+        salesStage: copilot.conversationObjective,
+        objection: copilot.detectedObjection || copilot.detectedIntent,
+        recommendedReply: copilot.replyToSend,
+        nextAction: copilot.nextBestAction,
+        copilot,
+        formatted: formatConversationCopilotResult(copilot),
       })
-      return NextResponse.json({ ok: true, ...result, copilot, formatted: formatGrowthCopilotResult(copilot) })
     }
 
     const result = await recordLeadActivity({

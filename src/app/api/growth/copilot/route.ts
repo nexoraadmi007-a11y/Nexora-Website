@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAssociateSubmittedLead, formatGrowthCopilotResult, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
+import { createAssociateSubmittedLead, formatConversationCopilotResult, formatGrowthCopilotResult, runConversationCopilot, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
 import { findAssociateByTelegramUserId } from '@/lib/growth-actions'
 
 export const runtime = 'nodejs'
@@ -45,8 +45,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, ...created, formatted: formatGrowthCopilotResult(created.analysis) })
     }
 
+    const mode = validMode(text(body.mode, 40))
+    if (mode === 'conversation') {
+      const result = runConversationCopilot({
+        mode: 'conversation',
+        text: text(body.text || body.conversation || body.description),
+        prospectType: validProspectType(text(body.prospectType, 40)),
+        associateId,
+        leadId: text(body.leadId, 120),
+      })
+      return NextResponse.json({ ok: true, ...result, formatted: formatConversationCopilotResult(result) })
+    }
+
     const result = runGrowthCopilot({
-      mode: validMode(text(body.mode, 40)),
+      mode,
       text: text(body.text || body.conversation || body.description),
       prospectType: validProspectType(text(body.prospectType, 40)),
       associateId,

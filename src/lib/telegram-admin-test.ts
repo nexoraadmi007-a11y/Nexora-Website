@@ -1,5 +1,6 @@
 import { createRecord, escapeFormula, listRecords, type AirtableRecord } from './airtable'
-import { findGrowthLead, generateSalesAssistant } from './growth-actions'
+import { findGrowthLead } from './growth-actions'
+import { formatConversationCopilotResult, runConversationCopilot } from './growth-copilot'
 import { sendTelegramMessage, type TelegramMessage } from './telegram'
 
 type Fields = Record<string, any>
@@ -324,29 +325,8 @@ export function hasActiveRespondSession(telegramUserId: string) {
 export async function runAdminSalesAssistant(conversation: string) {
   const input = text(conversation, 7000)
   if (input.length < 25) throw new Error('Please paste enough of the conversation for the assistant to understand the prospect concern.')
-  const result = await generateSalesAssistant({ conversation: input })
-  const shortReply = result.recommendedReply.length > 180
-    ? `${result.recommendedReply.slice(0, 177).trim()}...`
-    : result.recommendedReply
-  return [
-    'NEXORA SALES ASSISTANT',
-    '',
-    `Prospect Summary:\nThe conversation suggests the prospect is at ${result.salesStage.toLowerCase().replaceAll('_', ' ')} stage.`,
-    '',
-    `Current Sales Stage:\n${result.salesStage}`,
-    '',
-    `Main Objection:\n${result.objection}`,
-    '',
-    `Recommended Reply:\n${result.recommendedReply}`,
-    '',
-    `Shorter Reply:\n${shortReply}`,
-    '',
-    `Why This Works:\n${result.reasoning}`,
-    '',
-    `Recommended Next Action:\n${result.nextAction}`,
-    '',
-    `Suggested Follow-Up:\n${result.suggestedFollowUpAt}`,
-  ].join('\n')
+  const result = runConversationCopilot({ mode: 'conversation', text: input })
+  return formatConversationCopilotResult(result)
 }
 
 export async function handleAdminTestCallback(input: { action: string; leadId: string; telegramUserId: string; chatId: string }) {
