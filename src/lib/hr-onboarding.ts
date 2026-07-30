@@ -109,10 +109,10 @@ export async function sendHrOnboardingEmail(associate: AirtableRecord<Fields>, u
 }
 
 export async function upsertHrProfile(associate: AirtableRecord<Fields>, data: Fields, submitted = false) {
-  const existing = await listRecords<Fields>('Associate HR Profiles', {
-    formula: `FIND('${escapeFormula(associate.id)}',ARRAYJOIN({Associate}))`,
-    maxRecords: 1,
-  }).catch(() => [])
+  const existing = await findRecordsLinkedToAssociate('Associate HR Profiles', associate.id, {
+    sortField: 'Updated At',
+    direction: 'desc',
+  })
   const now = new Date().toISOString()
   const fields = compact({
     Associate: [associate.id],
@@ -142,10 +142,7 @@ export async function upsertHrProfile(associate: AirtableRecord<Fields>, data: F
 
 export async function upsertPayrollDetails(associate: AirtableRecord<Fields>, data: Fields) {
   const accountNumber = text(data.accountNumber, 20).replace(/\D/g, '')
-  const existing = await listRecords<Fields>('Payroll Details', {
-    formula: `FIND('${escapeFormula(associate.id)}',ARRAYJOIN({Associate}))`,
-    maxRecords: 1,
-  }).catch(() => [])
+  const existing = await findRecordsLinkedToAssociate('Payroll Details', associate.id)
   const fields = compact({
     Associate: [associate.id],
     'Bank Name': text(data.bankName, 160),
@@ -205,22 +202,38 @@ function formatDate(value: string) {
 }
 
 export async function getLatestHrProfile(associateId: string) {
-  const records = await listRecords<Fields>('Associate HR Profiles', {
-    formula: `FIND('${escapeFormula(associateId)}',ARRAYJOIN({Associate}))`,
-    maxRecords: 1,
+  const records = await findRecordsLinkedToAssociate('Associate HR Profiles', associateId, {
     sortField: 'Updated At',
     direction: 'desc',
-  }).catch(() => [])
+  })
   return records[0] || null
 }
 
+async function findRecordsLinkedToAssociate(
+  table: string,
+  associateId: string,
+  options: {
+    sortField?: string
+    direction?: 'asc' | 'desc'
+    filter?: (record: AirtableRecord<Fields>) => boolean
+  } = {},
+) {
+  const records = await listRecords<Fields>(table, {
+    maxRecords: 100,
+    sortField: options.sortField,
+    direction: options.direction,
+  }).catch(() => [])
+  return records.filter((record) => {
+    const linked = record.fields.Associate
+    return Array.isArray(linked) && linked.includes(associateId) && (!options.filter || options.filter(record))
+  })
+}
+
 export async function getLatestEmploymentAgreement(associateId: string) {
-  const records = await listRecords<Fields>('Employment Agreements', {
-    formula: `FIND('${escapeFormula(associateId)}',ARRAYJOIN({Associate}))`,
-    maxRecords: 1,
+  const records = await findRecordsLinkedToAssociate('Employment Agreements', associateId, {
     sortField: 'Created At',
     direction: 'desc',
-  }).catch(() => [])
+  })
   return records[0] || null
 }
 
@@ -301,12 +314,11 @@ export async function ensureEmploymentAgreement(
 }
 
 export async function getLatestSignedLetterDocument(associateId: string) {
-  const records = await listRecords<Fields>('Associate Documents', {
-    formula: `AND(FIND('${escapeFormula(associateId)}',ARRAYJOIN({Associate})),{Document Type}='Signed Employment Letter')`,
-    maxRecords: 1,
+  const records = await findRecordsLinkedToAssociate('Associate Documents', associateId, {
     sortField: 'Created At',
     direction: 'desc',
-  }).catch(() => [])
+    filter: (record) => record.fields['Document Type'] === 'Signed Employment Letter',
+  })
   return records[0] || null
 }
 

@@ -51,9 +51,7 @@ async function list(table, params = {}) {
 }
 
 async function latestAgreement(associateId) {
-  const records = await list('Employment Agreements', {
-    formula: `FIND('${escapeFormula(associateId)}',ARRAYJOIN({Associate}))`,
-  })
+  const records = (await list('Employment Agreements')).filter((record) => Array.isArray(record.fields.Associate) && record.fields.Associate.includes(associateId))
   return records[0] || null
 }
 
