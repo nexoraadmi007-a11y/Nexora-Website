@@ -185,9 +185,13 @@ export function logoDataUri() {
 }
 
 export function signatureDataUri() {
+  const cleanSignature = join(process.cwd(), 'public', 'hr-assets', 'zephaniah-signature-clean.png')
+  try {
+    return imageDataUri(cleanSignature, 'image/png')
+  } catch {}
   if (process.env.NEXORA_SIGNATURE_DATA_URI) return process.env.NEXORA_SIGNATURE_DATA_URI
   const configured = process.env.NEXORA_SIGNATURE_PATH
-  return imageDataUri(configured || join(process.cwd(), 'private', 'hr-assets', 'zephaniah-signature.jpeg'), 'image/jpeg')
+  return imageDataUri(configured || join(process.cwd(), 'private', 'hr-assets', 'zephaniah-signature-clean.png'), 'image/png')
 }
 
 function money(amount: number) {
@@ -478,7 +482,7 @@ export async function employmentLetterPdf(input: {
     y -= 14
   }
 
-  page.drawImage(signatureImage, { x: 70, y: 98, width: 92, height: 92 })
+  page.drawImage(signatureImage, { x: 58, y: 101, width: 105, height: 48 })
   page.drawLine({ start: { x: 52, y: 95 }, end: { x: 240, y: 95 }, thickness: 0.8, color: navy })
   page.drawText(hrConfig.signatoryName, { x: 52, y: 78, size: 9, font: bold, color: navy })
   page.drawText(`${hrConfig.signatoryTitle}, ${hrConfig.companyName}`, { x: 52, y: 64, size: 8, font: regular, color: steel })
