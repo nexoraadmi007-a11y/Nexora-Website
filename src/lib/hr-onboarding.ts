@@ -168,8 +168,10 @@ export async function upsertPayrollDetails(associate: AirtableRecord<Fields>, da
 }
 
 export async function markHrSubmitted(associate: AirtableRecord<Fields>) {
+  await ensureEmploymentAgreement(associate)
   await updateRecord('Ambassadors', associate.id, {
     'HR Onboarding Status': 'Submitted',
+    'Employment Letter Status': 'LETTER_READY',
     'Updated At': new Date().toISOString(),
   })
 }
@@ -220,6 +222,82 @@ export async function getLatestEmploymentAgreement(associateId: string) {
     direction: 'desc',
   }).catch(() => [])
   return records[0] || null
+}
+
+export async function ensureEmploymentAgreement(
+  associate: AirtableRecord<Fields>,
+  input: { startDate?: string; workMode?: string; actor?: string } = {},
+) {
+  const existing = await getLatestEmploymentAgreement(associate.id)
+  const now = new Date().toISOString()
+  const startDate = text(input.startDate || associate.fields['Employment Start Date'], 40) || now.slice(0, 10)
+  const workMode = text(input.workMode || associate.fields['Work Mode'], 80) || 'Hybrid'
+  if (existing) {
+    await updateRecord('Employment Agreements', existing.id, {
+      'Start Date': startDate,
+      'Work Mode': workMode,
+      'Verification Status': text(existing.fields['Verification Status'], 80) || 'LETTER_READY',
+      'Completion Status': text(existing.fields['Completion Status'], 80) || 'Awaiting Signature',
+      'Updated At': now,
+    }).catch(() => undefined)
+    return existing
+  }
+
+  await updateRecord('Ambassadors', associate.id, {
+    'Employment Letter Status': 'LETTER_GENERATING',
+    'Updated At': now,
+  }).catch(() => undefined)
+  try {
+    const created = await createRecord<AirtableRecord<Fields>>('Employment Agreements', compact({
+      'Agreement ID': `EMP-${Date.now()}`,
+      Associate: [associate.id],
+      'Template Version': hrConfig.templateVersion,
+      'Document Version': 1,
+      'Employment Title': hrConfig.roleTitle,
+      'Role Title': hrConfig.roleTitle,
+      Salary: hrConfig.salary,
+      'Monthly Target': hrConfig.monthlyTarget,
+      'Issue Date': now.slice(0, 10),
+      'Start Date': startDate,
+      'Work Mode': workMode,
+      'Employer Signatory': hrConfig.signatoryName,
+      'Signatory Title': hrConfig.signatoryTitle,
+      'Verification Status': 'LETTER_READY',
+      'Completion Status': 'Awaiting Signature',
+      'Created At': now,
+      'Updated At': now,
+    }))
+    await updateRecord('Ambassadors', associate.id, {
+      'Employment Letter Status': 'LETTER_READY',
+      'Employment Start Date': startDate,
+      'Work Mode': workMode,
+      'Updated At': now,
+    }).catch(() => undefined)
+    await logHrAudit({
+      actor: input.actor || 'system',
+      action: 'EMPLOYMENT_LETTER_READY',
+      associateId: associate.id,
+      documentReference: created.id,
+      documentVersion: 1,
+      statusBefore: text(associate.fields['Employment Letter Status'], 80),
+      statusAfter: 'LETTER_READY',
+    })
+    return created
+  } catch (error) {
+    await updateRecord('Ambassadors', associate.id, {
+      'Employment Letter Status': 'LETTER_GENERATION_FAILED',
+      'Updated At': new Date().toISOString(),
+    }).catch(() => undefined)
+    await logHrAudit({
+      actor: input.actor || 'system',
+      action: 'EMPLOYMENT_LETTER_GENERATION_FAILED',
+      associateId: associate.id,
+      statusBefore: text(associate.fields['Employment Letter Status'], 80),
+      statusAfter: 'LETTER_GENERATION_FAILED',
+      reason: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
 }
 
 export async function getLatestSignedLetterDocument(associateId: string) {

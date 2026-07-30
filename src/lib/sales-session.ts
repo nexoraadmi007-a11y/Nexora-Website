@@ -10,6 +10,16 @@ export type SalesSession = {
   programmeContext: string
   selectedProgramme: string
   selectedTrack: string
+  programmesUnderConsideration: string[]
+  decisionStatus: string
+  primaryGoal: string
+  secondaryGoal: string
+  careerGoal: string
+  businessGoal: string
+  recommendedProgramme: string
+  recommendationReason: string
+  recommendationConfidence: number
+  selectionConfirmed: boolean
   knownBusinessType: string
   knownBusinessGap: string
   currentObjective: string
@@ -51,6 +61,16 @@ function blankSession(input: { associateId?: string; telegramChatId?: string; pr
     programmeContext: '',
     selectedProgramme: '',
     selectedTrack: '',
+    programmesUnderConsideration: [],
+    decisionStatus: '',
+    primaryGoal: '',
+    secondaryGoal: '',
+    careerGoal: '',
+    businessGoal: '',
+    recommendedProgramme: '',
+    recommendationReason: '',
+    recommendationConfidence: 0,
+    selectionConfirmed: false,
     knownBusinessType: '',
     knownBusinessGap: '',
     currentObjective: '',
@@ -78,6 +98,16 @@ function fromFields(id: string, fields: SessionFields): SalesSession {
     programmeContext: fields['Programme Context'] || '',
     selectedProgramme: fields['Selected Programme'] || '',
     selectedTrack: fields['Selected Track'] || '',
+    programmesUnderConsideration: String(fields['Programmes Under Consideration'] || '').split('\n').filter(Boolean),
+    decisionStatus: fields['Decision Status'] || '',
+    primaryGoal: fields['Primary Goal'] || '',
+    secondaryGoal: fields['Secondary Goal'] || '',
+    careerGoal: fields['Career Goal'] || '',
+    businessGoal: fields['Business Goal'] || '',
+    recommendedProgramme: fields['Recommended Programme'] || '',
+    recommendationReason: fields['Recommendation Reason'] || '',
+    recommendationConfidence: Number(fields['Recommendation Confidence'] || 0),
+    selectionConfirmed: Boolean(fields['Selection Confirmed']),
     knownBusinessType: fields['Known Business Type'] || '',
     knownBusinessGap: fields['Known Business Gap'] || '',
     currentObjective: fields['Current Objective'] || '',
@@ -104,6 +134,16 @@ function toFields(session: SalesSession): SessionFields {
     'Programme Context': session.programmeContext,
     'Selected Programme': session.selectedProgramme,
     'Selected Track': session.selectedTrack,
+    'Programmes Under Consideration': session.programmesUnderConsideration.join('\n'),
+    'Decision Status': session.decisionStatus,
+    'Primary Goal': session.primaryGoal,
+    'Secondary Goal': session.secondaryGoal,
+    'Career Goal': session.careerGoal,
+    'Business Goal': session.businessGoal,
+    'Recommended Programme': session.recommendedProgramme,
+    'Recommendation Reason': session.recommendationReason,
+    'Recommendation Confidence': session.recommendationConfidence,
+    'Selection Confirmed': session.selectionConfirmed,
     'Known Business Type': session.knownBusinessType,
     'Known Business Gap': session.knownBusinessGap,
     'Current Objective': session.currentObjective,
@@ -173,6 +213,9 @@ export function describeSalesSession(session: SalesSession) {
     `Programme Context: ${session.programmeContext || 'Not selected'}`,
     `Selected Programme: ${session.selectedProgramme || 'Not selected'}`,
     `Selected Track: ${session.selectedTrack || 'Not selected'}`,
+    `Decision Status: ${session.decisionStatus || 'Not active'}`,
+    `Under Consideration: ${session.programmesUnderConsideration.join(', ') || 'None'}`,
+    `Recommended Programme: ${session.recommendedProgramme || 'None yet'}`,
     `Business Type: ${session.knownBusinessType || 'Not captured'}`,
     `Business Gap: ${session.knownBusinessGap || 'Not captured'}`,
     `Current Stage: ${session.currentSalesStage}`,

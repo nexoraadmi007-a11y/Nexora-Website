@@ -62,6 +62,8 @@ export default function HrOnboardingClient() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -185,6 +187,37 @@ export default function HrOnboardingClient() {
     }
   }
 
+  async function downloadEmploymentLetter() {
+    if (!letterUrl || !signedStatus?.letterGenerated) return
+    setDownloading(true)
+    setDownloadError('')
+    try {
+      const response = await fetch(letterUrl, { cache: 'no-store' })
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}))
+        throw new Error(result.error || 'Could not download employment letter.')
+      }
+      const blob = await response.blob()
+      if (blob.type && blob.type !== 'application/pdf') throw new Error('The employment letter download was not returned as a PDF.')
+      const disposition = response.headers.get('Content-Disposition') || ''
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `Nexora_Employment_Letter_${associate?.name?.replace(/[^a-z0-9]+/gi, '_') || 'Growth_Associate'}.pdf`
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(objectUrl)
+      setMessage('Employment letter downloaded. Sign it, then upload the signed copy below.')
+      await loadSignedStatus()
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Could not download employment letter.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#030914] px-4 py-24 text-white md:px-8">
       <section className="mx-auto max-w-5xl">
@@ -278,14 +311,15 @@ export default function HrOnboardingClient() {
                 </div>
 
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a
-                    href={letterUrl}
-                    download
-                    className={`button-primary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 text-sm font-bold ${signedStatus?.letterGenerated ? '' : 'pointer-events-none opacity-50'}`}
+                  <button
+                    type="button"
+                    onClick={downloadEmploymentLetter}
+                    disabled={!signedStatus?.letterGenerated || downloading}
+                    className="button-primary inline-flex min-h-12 items-center gap-2 rounded-lg px-5 text-sm font-bold disabled:opacity-50"
                   >
                     <Download className="h-4 w-4" />
-                    Download employment letter
-                  </a>
+                    {downloading ? 'Downloading...' : 'Download employment letter'}
+                  </button>
                   <a
                     href={`${letterUrl}&preview=1`}
                     target="_blank"
@@ -295,6 +329,7 @@ export default function HrOnboardingClient() {
                     Preview letter
                   </a>
                 </div>
+                {downloadError ? <p className="mt-4 rounded-lg border border-[#ff9b91]/30 bg-[#ff9b91]/10 p-3 text-sm text-[#ffc5bf]">{downloadError}</p> : null}
 
                 <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.025] p-4">
                   <h3 className="text-lg font-semibold">Upload signed employment letter</h3>

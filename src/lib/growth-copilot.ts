@@ -34,6 +34,12 @@ export type GrowthCopilotResult = {
 }
 
 export type ConversationIntent =
+  | 'PROGRAMME_COMPARISON'
+  | 'NEEDS_RECOMMENDATION'
+  | 'DUAL_INTEREST'
+  | 'CAREER_AND_BUSINESS_INTEREST'
+  | 'PRIORITY_DECISION'
+  | 'COMBINATION_ENQUIRY'
   | 'PRICE_QUERY'
   | 'AFFORDABILITY_OBJECTION'
   | 'VALUE_OBJECTION'
@@ -157,6 +163,10 @@ function detectConversationIntent(message: string): ConversationIntent {
   const raw = lower(message)
   if (/\b(stop|unsubscribe|do not message|don't message|dont message|leave me)\b/.test(raw)) return 'OPT_OUT'
   if (raw.includes('not interested')) return 'NOT_INTERESTED'
+  if (['can i do both', 'can i take both', 'do both', 'combine both', 'both programmes', 'both programs'].some((term) => raw.includes(term))) return 'COMBINATION_ENQUIRY'
+  if (['between', 'which of the two', 'which one should i choose', 'which should i choose', 'which is better for me', 'which would you recommend', 'which would you suggest', 'which fits me', 'i am confused between', 'what would you advise'].some((term) => raw.includes(term))) return 'PROGRAMME_COMPARISON'
+  if (['which should i start with', 'which one first', 'which should come first', 'start with'].some((term) => raw.includes(term))) return 'PRIORITY_DECISION'
+  if (['business owner but', 'own a business but', 'run a business but'].some((term) => raw.includes(term)) || /\b(own|run)\b.+\bbusiness\b.+\bbut\b/.test(raw)) return 'CAREER_AND_BUSINESS_INTEREST'
   if (['youtube', 'free video', 'free course', 'online video'].some((term) => raw.includes(term))) return 'PROGRAMME_DIFFERENTIATION'
   if (['how much', 'price', 'cost', 'fee', 'amount'].some((term) => raw.includes(term))) return 'PRICE_QUERY'
   if (['no money', 'enough money', 'money now', 'cannot afford', "can't afford", 'cant afford', 'expensive', 'broke'].some((term) => raw.includes(term))) return 'AFFORDABILITY_OBJECTION'
@@ -185,6 +195,12 @@ function inferTrackInterest(message: string) {
 
 function conversationObjective(intent: ConversationIntent) {
   const map: Record<ConversationIntent, string> = {
+    PROGRAMME_COMPARISON: 'CLARIFY_DECISION_PRIORITY',
+    NEEDS_RECOMMENDATION: 'CLARIFY_DECISION_PRIORITY',
+    DUAL_INTEREST: 'CLARIFY_DECISION_PRIORITY',
+    CAREER_AND_BUSINESS_INTEREST: 'CLARIFY_DECISION_PRIORITY',
+    PRIORITY_DECISION: 'RECOMMEND_FIRST_PROGRAMME',
+    COMBINATION_ENQUIRY: 'ADVISE_PROGRAMME_SEQUENCE',
     PRICE_QUERY: 'CONFIRM_PROGRAMME_INTEREST',
     AFFORDABILITY_OBJECTION: 'UNDERSTAND_OBJECTION',
     VALUE_OBJECTION: 'UNDERSTAND_OBJECTION',
@@ -407,6 +423,26 @@ function routeProgrammeContext(input: string, explicit?: ProspectType, session?:
   return 'UNKNOWN'
 }
 
+function isDecisionIntent(intent: ConversationIntent) {
+  return ['PROGRAMME_COMPARISON', 'NEEDS_RECOMMENDATION', 'DUAL_INTEREST', 'CAREER_AND_BUSINESS_INTEREST', 'PRIORITY_DECISION', 'COMBINATION_ENQUIRY'].includes(intent)
+}
+
+function selectionConfirmedByLanguage(input: string) {
+  const raw = lower(input)
+  return ['i want', 'i have chosen', 'i have decided', 'send me', 'registration link', 'i will go for', 'i choose', 'i want to register for', 'i am going with'].some((term) => raw.includes(term))
+}
+
+function programmesUnderConsideration(input: string) {
+  const options: string[] = []
+  if (inferTrackFromText(input)) options.push(inferTrackFromText(input)?.name || '')
+  const routed = explicitProgrammeFromMessage(input)
+  if (routed === 'CAREER_ACCELERATOR' && !options.includes('AI Career Accelerator')) options.push('AI Career Accelerator')
+  if (routed === 'BUSINESS_TRANSFORMATION') options.push('AI Business Transformation Programme')
+  const raw = lower(input)
+  if (raw.includes('business transformation') || raw.includes('business programme') || raw.includes('business program')) options.push('AI Business Transformation Programme')
+  return Array.from(new Set(options.filter(Boolean)))
+}
+
 function classifyCommercialProspect(input: string, explicit?: ProspectType, session?: SalesSession): ProspectSegment {
   const programmeContext = routeProgrammeContext(input, explicit, session)
   if (programmeContext === 'CAREER_ACCELERATOR') return 'INDIVIDUAL_CAREER'
@@ -433,7 +469,8 @@ function selectedProgrammeFromContext(segment: ProspectSegment, input: string, s
   return undefined
 }
 
-function selectedTrackFromContext(input: string, session?: SalesSession) {
+function selectedTrackFromContext(input: string, session?: SalesSession, intent?: ConversationIntent) {
+  if (intent && isDecisionIntent(intent) && !selectionConfirmedByLanguage(input)) return undefined
   return inferTrackFromText(input) || (programmeFromSession(session) === 'CAREER_ACCELERATOR' && session?.selectedTrack ? inferTrackFromText(session.selectedTrack) : undefined)
 }
 
@@ -468,6 +505,11 @@ function commercialObjective(input: {
   session?: SalesSession
 }) {
   if (input.intent === 'OPT_OUT' || input.intent === 'NOT_INTERESTED') return 'RESPECT_OPT_OUT'
+  if (isDecisionIntent(input.intent)) {
+    if (input.intent === 'COMBINATION_ENQUIRY') return 'ADVISE_PROGRAMME_SEQUENCE'
+    if (input.intent === 'PRIORITY_DECISION') return 'RECOMMEND_FIRST_PROGRAMME'
+    return 'CLARIFY_DECISION_PRIORITY'
+  }
   if (input.segment === 'UNKNOWN') return 'CLARIFY_PROSPECT_TYPE'
   if (input.segment === 'BUSINESS_OWNER') {
     if (input.intent === 'PRICE_QUERY') return 'EXPLAIN_BUSINESS_PROGRAMME'
@@ -489,6 +531,88 @@ function trackSpecificSummary(track: CommercialTrack) {
   return `${track.name} covers ${modules}. You will work toward ${project.toLowerCase()} and a reviewed capstone.`
 }
 
+function decisionSignals(input: string, session?: SalesSession) {
+  const raw = lower(`${input}\n${session?.lastProspectMessage || ''}\n${session?.careerGoal || ''}\n${session?.businessGoal || ''}`)
+  return {
+    activeBusiness: ['active business', 'my business', 'run a business', 'own a business', 'main income', 'customers', 'orders', 'sales system', 'customer', 'weak customer', 'business has'].some((term) => raw.includes(term)),
+    businessGap: ['weak customer', 'sales system', 'orders', 'follow up', 'marketing', 'customers', 'operations', 'business growth'].some((term) => raw.includes(term)),
+    financeCareer: ['financial analyst', 'finance role', 'entry-level finance', 'finance career', 'analysis skills', 'financial analysis'].some((term) => raw.includes(term)),
+    careerPrimary: ['career', 'job', 'role', 'employment', 'portfolio', 'personal skill'].some((term) => raw.includes(term)),
+  }
+}
+
+function decisionAdviceReply(input: {
+  intent: ConversationIntent
+  message: string
+  session?: SalesSession
+  underConsideration: string[]
+}) {
+  const signals = decisionSignals(input.message, input.session)
+  if (input.intent === 'COMBINATION_ENQUIRY') {
+    return {
+      reply: 'You can take both, but I would advise doing them one after the other so you can apply each properly. Which result do you need first: improving your current business or building financial-analysis skills?',
+      action: 'Help them choose a sequence. Ask which outcome is needed first before recommending the first programme.',
+      recommendedProgramme: '',
+      reason: 'Prospect asked about combining programmes.',
+      confidence: 0.62,
+    }
+  }
+  if (input.intent === 'PRIORITY_DECISION' && signals.activeBusiness && signals.businessGap) {
+    return {
+      reply: 'Based on what you have shared, I would start with Business Transformation first because you can apply it directly to the business that is already active. Once the customer, sales and follow-up systems are stronger, you can take AI Financial Analyst as a personal finance specialisation.',
+      action: 'Recommend Business Transformation first, then send the business programme breakdown if they agree.',
+      recommendedProgramme: 'AI Business Transformation Programme',
+      reason: 'Active business with weak customer or sales systems is the immediate priority.',
+      confidence: 0.78,
+    }
+  }
+  if (input.intent === 'PRIORITY_DECISION' && signals.financeCareer && !signals.businessGap) {
+    return {
+      reply: 'If your main goal is an entry-level finance role, I would start with AI Financial Analyst first. Business Transformation makes more sense when the immediate priority is improving a business you are actively running.',
+      action: 'Confirm that the finance career goal is primary, then send the AI Financial Analyst breakdown.',
+      recommendedProgramme: 'AI Financial Analyst',
+      reason: 'Prospect has a finance-career priority and no urgent business gap in context.',
+      confidence: 0.74,
+    }
+  }
+  if (input.intent === 'CAREER_AND_BUSINESS_INTEREST') {
+    return {
+      reply: 'Both goals make sense, but they solve different problems. AI Financial Analyst helps you build personal finance and analysis skills, while Business Transformation helps you improve the systems, sales and customer management of a business you already run. Which one needs attention first right now: your business or your finance career?',
+      action: 'Ask which outcome is more urgent. Use the answer to recommend one programme first.',
+      recommendedProgramme: '',
+      reason: 'Prospect has both career and business interests.',
+      confidence: 0.66,
+    }
+  }
+  return {
+    reply: 'Both can help you, but they solve different problems. AI Financial Analyst is for building your personal finance and analysis skills, while Business Transformation is for improving the systems, sales and customer management of a business you already run. Which is more urgent for you right now: growing your business or building a career as a financial analyst?',
+    action: 'Use the answer to recommend one programme first, then send its full breakdown.',
+    recommendedProgramme: '',
+    reason: `Prospect is comparing ${input.underConsideration.join(' and ') || 'two Nexora programmes'}.`,
+    confidence: 0.68,
+  }
+}
+
+function decisionGoalUpdates(input: string, recommendedProgramme = '') {
+  const signals = decisionSignals(input)
+  const careerGoal = signals.financeCareer || lower(input).includes('financial analyst')
+    ? 'Build finance and analysis career skills'
+    : signals.careerPrimary
+      ? 'Build a career-ready digital skill'
+      : ''
+  const businessGoal = signals.activeBusiness || lower(input).includes('business')
+    ? 'Improve business systems, sales and customer management'
+    : ''
+  const recommendsBusiness = lower(recommendedProgramme).includes('business')
+  const recommendsCareer = lower(recommendedProgramme).includes('financial') || lower(recommendedProgramme).includes('career')
+  return {
+    careerGoal,
+    businessGoal,
+    primaryGoal: recommendsBusiness ? businessGoal : recommendsCareer ? careerGoal : '',
+    secondaryGoal: recommendsBusiness ? careerGoal : recommendsCareer ? businessGoal : '',
+  }
+}
+
 function knowledgeGroundedReply(input: {
   message: string
   segment: ProspectSegment
@@ -506,6 +630,13 @@ function knowledgeGroundedReply(input: {
   const trackNames = career?.tracks.map((track) => track.name).join(', ') || ''
   const programme = input.programme
   const price = formatPrice(input.track || programme)
+
+  if (isDecisionIntent(input.intent)) return decisionAdviceReply({
+    intent: input.intent,
+    message: input.message,
+    session: input.session,
+    underConsideration: programmesUnderConsideration(input.message),
+  })
 
   if (input.intent === 'OPT_OUT') return { reply: 'Understood. I will not continue the conversation. Thank you for your time.', action: 'End the sales conversation and do not follow up.' }
   if (input.intent === 'NOT_INTERESTED') return { reply: 'No problem, thank you for letting me know. Should I stop here, or would you only like future updates if something directly relevant comes up?', action: 'Respect their answer. Do not continue unless they give permission.' }
@@ -577,6 +708,7 @@ function qualityGate(result: ConversationCopilotResult) {
   const baseError = validateConversationResult(result)
   if (baseError) return baseError
   const body = `${result.replyToSend}\n${result.nextBestAction}`.toLowerCase()
+  if (isDecisionIntent(result.detectedIntent)) return ''
   if (body.includes('guaranteed job') || body.includes('guaranteed income') || body.includes('guaranteed sales')) return 'Unsupported guarantee detected.'
   if (body.includes('source url') || body.includes('contact path')) return 'Lead-analysis wording leaked into conversation response.'
   if (result.programmeSnapshot.programmeFamily.toLowerCase().includes('career')) {
@@ -606,14 +738,15 @@ function materiallyDifferentMessage(current = '', previous = '') {
   return lower(current).replace(/\W+/g, ' ').trim() !== lower(previous).replace(/\W+/g, ' ').trim()
 }
 
-function buildConversationResult(input: GrowthCopilotInput, session?: SalesSession): ConversationCopilotResult & { prospectSegment: ProspectSegment; programmeContext: ProgrammeContext; selectedProgramme: string; selectedTrack: string; knowledgeVersion: string; fieldsUsed: string[] } {
+function buildConversationResult(input: GrowthCopilotInput, session?: SalesSession): ConversationCopilotResult & { prospectSegment: ProspectSegment; programmeContext: ProgrammeContext; selectedProgramme: string; selectedTrack: string; knowledgeVersion: string; fieldsUsed: string[]; recommendedProgramme?: string; recommendationReason?: string; recommendationConfidence?: number } {
   const context = makeConversationContext({ ...input, mode: 'conversation' })
   const snapshot = getApprovedKnowledgeSnapshot()
   const intent = detectConversationIntent(context.latestProspectMessage)
   const routedProgramme = routeProgrammeContext(context.conversationText, input.prospectType, session)
   const segment = classifyCommercialProspect(context.conversationText, input.prospectType, session)
-  const programme = selectedProgrammeFromContext(segment, context.conversationText, session, routedProgramme)
-  const track = selectedTrackFromContext(context.conversationText, session)
+  const decisionMode = isDecisionIntent(intent)
+  const programme = decisionMode ? undefined : selectedProgrammeFromContext(segment, context.conversationText, session, routedProgramme)
+  const track = selectedTrackFromContext(context.conversationText, session, intent)
   const businessGap = businessGapFromText(context.conversationText, session)
   const businessType = businessTypeFromText(context.conversationText, session)
   const objective = commercialObjective({ segment, intent, programme, track, session })
@@ -630,8 +763,8 @@ function buildConversationResult(input: GrowthCopilotInput, session?: SalesSessi
     followUpInstruction: generated.action,
     requiresAdminConfirmation: false as const,
     programmeSnapshot: {
-      programmeFamily: programme?.name || (routedProgramme === 'UNKNOWN' ? 'UNKNOWN' : career?.name || 'Nexora approved programme'),
-      currentPriceNgn: programme?.currentPrice || career?.currentPrice || 0,
+      programmeFamily: decisionMode ? 'DECISION_ADVISER' : programme?.name || (routedProgramme === 'UNKNOWN' ? 'UNKNOWN' : career?.name || 'Nexora approved programme'),
+      currentPriceNgn: decisionMode ? 0 : programme?.currentPrice || career?.currentPrice || 0,
       availableProgrammes: programme?.tracks.length ? programme.tracks.map((item) => item.name) : snapshot.programmes.filter((item) => item.active).map((item) => item.name),
       approvedValuePoints: programme?.approvedValuePoints || career?.approvedValuePoints || [],
       jobGuarantee: false as const,
@@ -642,6 +775,9 @@ function buildConversationResult(input: GrowthCopilotInput, session?: SalesSessi
     selectedProgramme: programme?.name || '',
     selectedTrack: track?.name || '',
     knowledgeVersion: snapshot.version,
+    recommendedProgramme: (generated as any).recommendedProgramme || '',
+    recommendationReason: (generated as any).reason || '',
+    recommendationConfidence: (generated as any).confidence || 0,
     fieldsUsed: [
       'programmeFamily',
       'currentPrice',
@@ -677,9 +813,25 @@ export async function runConversationCopilotWithSession(input: GrowthCopilotInpu
   const result = buildConversationResult(input, session)
   session.prospectType = result.prospectSegment
   session.programmeContext = result.programmeContext
-  session.selectedProgramme = result.selectedProgramme || session.selectedProgramme
-  session.selectedTrack = result.programmeContext === 'CAREER_ACCELERATOR' ? result.selectedTrack || session.selectedTrack : ''
-  if (result.programmeContext === 'CAREER_ACCELERATOR') {
+  const decisionMode = isDecisionIntent(result.detectedIntent)
+  if (decisionMode) {
+    const goals = decisionGoalUpdates(input.text, result.recommendedProgramme)
+    session.programmesUnderConsideration = programmesUnderConsideration(input.text)
+    session.decisionStatus = 'NEEDS_RECOMMENDATION'
+    session.primaryGoal = goals.primaryGoal || session.primaryGoal
+    session.secondaryGoal = goals.secondaryGoal || session.secondaryGoal
+    session.careerGoal = goals.careerGoal || session.careerGoal
+    session.businessGoal = goals.businessGoal || session.businessGoal
+    session.selectionConfirmed = false
+    session.recommendedProgramme = result.recommendedProgramme || session.recommendedProgramme
+    session.recommendationReason = result.recommendationReason || session.recommendationReason
+    session.recommendationConfidence = result.recommendationConfidence || session.recommendationConfidence
+  } else {
+    session.selectedProgramme = result.selectedProgramme || session.selectedProgramme
+    session.selectedTrack = result.programmeContext === 'CAREER_ACCELERATOR' ? result.selectedTrack || session.selectedTrack : ''
+    session.selectionConfirmed = selectionConfirmedByLanguage(input.text) || session.selectionConfirmed
+  }
+  if (result.programmeContext === 'CAREER_ACCELERATOR' && !decisionMode) {
     session.knownBusinessGap = ''
     session.knownBusinessType = ''
   }

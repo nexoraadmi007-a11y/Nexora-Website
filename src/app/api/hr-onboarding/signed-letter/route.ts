@@ -13,6 +13,11 @@ function statusLabel(status: string) {
   return 'Signed copy required'
 }
 
+function hasReadyEmploymentLetter(status: unknown, agreement: unknown) {
+  const value = text(status, 80)
+  return Boolean(agreement) || ['LETTER_READY', 'Generated', 'Sent', 'Downloaded', 'Signed Uploaded', 'Approved'].includes(value)
+}
+
 export async function GET(request: NextRequest) {
   const token = text(new URL(request.url).searchParams.get('token') || '', 300)
   const associate = token ? await findAssociateByToken(token) : null
@@ -22,8 +27,9 @@ export async function GET(request: NextRequest) {
     getLatestSignedLetterDocument(associate.id),
   ])
   const signedStatus = text(document?.fields['Signed Letter Status'] || document?.fields['Verification Status'], 80)
+  const letterGenerated = hasReadyEmploymentLetter(associate.fields['Employment Letter Status'], agreement)
   return NextResponse.json({
-    letterGenerated: Boolean(agreement),
+    letterGenerated,
     employmentLetterStatus: associate.fields['Employment Letter Status'] || '',
     signedLetter: document ? {
       id: document.id,

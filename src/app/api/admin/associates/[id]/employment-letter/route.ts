@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRecord, updateRecord } from '@/lib/airtable'
-import { compact, text } from '@/lib/growth-associate'
-import { employmentLetterHtml, findAssociateById, getLatestHrProfile, hrConfig } from '@/lib/hr-onboarding'
+import { updateRecord } from '@/lib/airtable'
+import { text } from '@/lib/growth-associate'
+import { employmentLetterHtml, findAssociateById, getLatestHrProfile, ensureEmploymentAgreement } from '@/lib/hr-onboarding'
 
 export const runtime = 'nodejs'
 
@@ -26,32 +26,14 @@ async function render(request: NextRequest, id: string, save = false) {
   const profile = await getLatestHrProfile(id)
 
   if (save) {
-    await createRecord('Employment Agreements', compact({
-      'Agreement ID': `EMP-${Date.now()}`,
-      Associate: [id],
-      'Template Version': hrConfig.templateVersion,
-      'Document Version': 1,
-      'Employment Title': hrConfig.roleTitle,
-      'Role Title': hrConfig.roleTitle,
-      Salary: hrConfig.salary,
-      'Monthly Target': hrConfig.monthlyTarget,
-      'Issue Date': new Date().toISOString().slice(0, 10),
-      'Start Date': startDate || new Date().toISOString().slice(0, 10),
-      'Work Mode': workMode || 'Hybrid',
-      'Employer Signatory': hrConfig.signatoryName,
-      'Signatory Title': hrConfig.signatoryTitle,
-      'Verification Status': 'Generated',
-      'Completion Status': 'Awaiting Signature',
-      'Created At': new Date().toISOString(),
-      'Updated At': new Date().toISOString(),
-    }))
+    const agreement = await ensureEmploymentAgreement(associate, { startDate, workMode, actor: 'admin' })
     await updateRecord('Ambassadors', id, {
-      'Employment Letter Status': 'Generated',
+      'Employment Letter Status': 'LETTER_READY',
       'Employment Start Date': startDate || new Date().toISOString().slice(0, 10),
       'Work Mode': workMode || 'Hybrid',
       'Updated At': new Date().toISOString(),
     })
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, agreementId: agreement.id, status: 'LETTER_READY' })
   }
 
   return new NextResponse(employmentLetterHtml({ associate, profile, startDate, workMode }), {

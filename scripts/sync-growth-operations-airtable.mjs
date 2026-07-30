@@ -263,7 +263,7 @@ const ambassadorFields = [
   { name: 'Onboarding Status', ...singleSelect(['Pending', 'Invited', 'Active', 'Paused', 'Completed']) },
   { name: 'Referral Status', ...singleSelect(['Active', 'Paused', 'Suspended']) },
   { name: 'HR Onboarding Status', ...singleSelect(['Not Started', 'Link Sent', 'In Progress', 'Submitted', 'Approved', 'Signed Copy Under Review', 'Correction Required', 'Needs Correction', 'Completed', 'Rejected', 'Revoked']) },
-  { name: 'Employment Letter Status', ...singleSelect(['Not Generated', 'Generated', 'Sent', 'Downloaded', 'Signed Uploaded', 'Correction Required', 'Approved', 'Rejected']) },
+  { name: 'Employment Letter Status', ...singleSelect(['Not Generated', 'LETTER_GENERATION_PENDING', 'LETTER_GENERATING', 'LETTER_GENERATION_FAILED', 'LETTER_READY', 'Generated', 'Sent', 'Downloaded', 'Signed Uploaded', 'Correction Required', 'Approved', 'Rejected']) },
   { name: 'HR Onboarding Token Hash', type: 'singleLineText' },
   { name: 'HR Onboarding Token Expires At', type: 'dateTime', options: { dateFormat: { name: 'iso' }, timeFormat: { name: '24hour' }, timeZone: 'Africa/Lagos' } },
   { name: 'HR Onboarding Link Revoked', type: 'checkbox', options: { icon: 'check', color: 'redBright' } },

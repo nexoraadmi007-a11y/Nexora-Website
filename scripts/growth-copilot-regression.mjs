@@ -16,7 +16,55 @@ const forbidden = [
   'confirm from the official page',
 ]
 
+const runId = Date.now()
+
 const cases = [
+  {
+    name: 'Comparison A - Direct comparison',
+    body: { mode: 'conversation', text: 'Which would you suggest for me between AI Financial Analyst and Business Transformation?', prospectReference: `compare-a-${runId}` },
+    expectIntent: 'PROGRAMME_COMPARISON',
+    mustInclude: ['different problems', 'financial analyst', 'business transformation', 'which is more urgent'],
+    mustNotInclude: ['Great choice', 'currently costs NGN 10,000', 'registration link'],
+    expectSelectedTrack: '',
+  },
+  {
+    name: 'Comparison B - Mixed identity',
+    body: { mode: 'conversation', text: 'I own a fashion business, but I also want to become a financial analyst.', prospectReference: `compare-b-${runId}` },
+    expectIntent: 'CAREER_AND_BUSINESS_INTEREST',
+    mustInclude: ['both goals', 'different problems', 'business', 'finance career'],
+    mustNotInclude: ['Great choice', 'registration link'],
+  },
+  {
+    name: 'Comparison C - Immediate business priority',
+    sequence: [
+      { mode: 'conversation', text: 'I own an active business. My main income currently comes from the business. The business has weak customer and sales systems.', prospectReference: `compare-c-${runId}` },
+      { mode: 'conversation', text: 'Which should I start with?', prospectReference: `compare-c-${runId}` },
+    ],
+    expectIntent: 'PRIORITY_DECISION',
+    mustInclude: ['Business Transformation first', 'active', 'sales'],
+  },
+  {
+    name: 'Comparison D - Immediate career priority',
+    sequence: [
+      { mode: 'conversation', text: 'I want an entry-level finance role. The business idea is secondary and not actively operating.', prospectReference: `compare-d-${runId}` },
+      { mode: 'conversation', text: 'Which should I start with?', prospectReference: `compare-d-${runId}` },
+    ],
+    expectIntent: 'PRIORITY_DECISION',
+    mustInclude: ['AI Financial Analyst first', 'finance role'],
+  },
+  {
+    name: 'Comparison E - Can I do both',
+    body: { mode: 'conversation', text: 'Can I do both?', prospectReference: `compare-e-${runId}` },
+    expectIntent: 'COMBINATION_ENQUIRY',
+    mustInclude: ['take both', 'one after the other', 'which result do you need first'],
+    mustNotInclude: ['simultaneous'],
+  },
+  {
+    name: 'Comparison F - Confirmed selection',
+    body: { mode: 'conversation', text: 'I have decided to go with AI Financial Analyst.', prospectReference: `compare-f-${runId}` },
+    mustInclude: ['AI Financial Analyst', 'NGN 10,000'],
+    expectSelectedTrack: 'AI Financial Analyst',
+  },
   {
     name: 'Test A - Career Accelerator enquiry',
     body: { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-a-career-enquiry' },
@@ -65,7 +113,7 @@ const cases = [
   },
   {
     name: 'Test G - Ambiguous price question without session',
-    body: { mode: 'conversation', text: 'how much does it cost?', prospectReference: `test-g-ambiguous-${Date.now()}` },
+    body: { mode: 'conversation', text: 'how much does it cost?', prospectReference: `test-g-ambiguous-${runId}` },
     expectIntent: 'PRICE_QUERY',
     mustInclude: ['Career Accelerator', 'Business Transformation'],
     mustNotInclude: ['NGN 10,000', 'NGN 35,000'],
@@ -150,6 +198,7 @@ for (const test of cases) {
     const output = `${data.formatted || ''} ${data.replyToSend || ''} ${data.nextBestAction || ''}`.toLowerCase()
     assertCase(!forbidden.some((term) => output.includes(term)), 'Forbidden lead-analysis wording appeared.')
     if (test.expectIntent) assertCase(data.detectedIntent === test.expectIntent, `Expected ${test.expectIntent}, got ${data.detectedIntent}`)
+    if ('expectSelectedTrack' in test) assertCase((data.selectedTrack || '') === test.expectSelectedTrack, `Expected selectedTrack "${test.expectSelectedTrack}", got "${data.selectedTrack || ''}"`)
     for (const item of test.mustInclude || []) assertCase(output.includes(item.toLowerCase()), `Missing expected text: ${item}`)
     for (const item of test.mustNotInclude || []) assertCase(!output.includes(item.toLowerCase()), `Unexpected text present: ${item}`)
     results.push({ name: test.name, ok: true })
