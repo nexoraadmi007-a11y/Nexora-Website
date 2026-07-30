@@ -7,6 +7,7 @@ type Fields = Record<string, any>
 
 export type CopilotMode = 'conversation' | 'analyze' | 'outreach' | 'followup' | 'opportunity'
 export type ProspectType = 'INDIVIDUAL' | 'BUSINESS'
+type ProgrammeContext = 'CAREER_ACCELERATOR' | 'BUSINESS_TRANSFORMATION' | 'UNKNOWN'
 
 export type GrowthCopilotInput = {
   mode: CopilotMode
@@ -331,8 +332,85 @@ function formatPrice(programme?: CommercialProgramme | CommercialTrack) {
   return `NGN ${programme.currentPrice.toLocaleString('en-NG')}`
 }
 
+const careerProgrammeSignals = [
+  'ai career accelerator',
+  'career accelerator',
+  'career programme',
+  'career program',
+  'ai content creation',
+  'content creation',
+  'ui/ux',
+  'ui ux',
+  'certified ui/ux designer',
+  'certified ui ux designer',
+  'ai financial analyst',
+  'financial analyst',
+  'student',
+  'nysc',
+  'undergraduate',
+  'graduate',
+  'career skill',
+  'course',
+  'training track',
+]
+
+const businessProgrammeSignals = [
+  'ai business transformation',
+  'business transformation',
+  'business programme',
+  'business program',
+  'my business',
+  'my store',
+  'customers',
+  'orders',
+  'website',
+  'instagram business',
+  'facebook vendor',
+  'whatsapp orders',
+  'business automation',
+  'sales system',
+  'customer database',
+]
+
+function explicitProgrammeFromMessage(input: string): ProgrammeContext {
+  const raw = lower(input)
+  const careerScore = careerProgrammeSignals.filter((term) => raw.includes(term)).length
+  const businessScore = businessProgrammeSignals.filter((term) => raw.includes(term)).length
+  if (careerScore > businessScore) return 'CAREER_ACCELERATOR'
+  if (businessScore > careerScore) return 'BUSINESS_TRANSFORMATION'
+  return 'UNKNOWN'
+}
+
+function programmeFromSession(session?: SalesSession): ProgrammeContext {
+  const raw = lower(`${session?.programmeContext || ''} ${session?.selectedProgramme || ''}`)
+  if (raw.includes('career')) return 'CAREER_ACCELERATOR'
+  if (raw.includes('business')) return 'BUSINESS_TRANSFORMATION'
+  return 'UNKNOWN'
+}
+
+function messageAnswersLastProgrammeQuestion(input: string, session?: SalesSession): ProgrammeContext {
+  const lastQuestion = lower(session?.lastQuestionAsked || '')
+  if (!lastQuestion || !['which path', 'which programme', 'which program', 'career accelerator or the business transformation'].some((term) => lastQuestion.includes(term))) return 'UNKNOWN'
+  const explicit = explicitProgrammeFromMessage(input)
+  return explicit
+}
+
+function routeProgrammeContext(input: string, explicit?: ProspectType, session?: SalesSession): ProgrammeContext {
+  const current = explicitProgrammeFromMessage(input)
+  if (current !== 'UNKNOWN') return current
+  const answer = messageAnswersLastProgrammeQuestion(input, session)
+  if (answer !== 'UNKNOWN') return answer
+  if (explicit === 'INDIVIDUAL') return 'CAREER_ACCELERATOR'
+  if (explicit === 'BUSINESS') return 'BUSINESS_TRANSFORMATION'
+  const prior = programmeFromSession(session)
+  if (prior !== 'UNKNOWN') return prior
+  return 'UNKNOWN'
+}
+
 function classifyCommercialProspect(input: string, explicit?: ProspectType, session?: SalesSession): ProspectSegment {
-  if (session?.prospectType && session.prospectType !== 'UNKNOWN') return session.prospectType
+  const programmeContext = routeProgrammeContext(input, explicit, session)
+  if (programmeContext === 'CAREER_ACCELERATOR') return 'INDIVIDUAL_CAREER'
+  if (programmeContext === 'BUSINESS_TRANSFORMATION') return 'BUSINESS_OWNER'
   if (explicit === 'BUSINESS') return 'BUSINESS_OWNER'
   if (explicit === 'INDIVIDUAL') return 'INDIVIDUAL_CAREER'
   const raw = lower(input)
@@ -344,41 +422,41 @@ function classifyCommercialProspect(input: string, explicit?: ProspectType, sess
   if (corporateSignals.some((term) => raw.includes(term))) return 'CORPORATE'
   if (businessScore > careerScore) return 'BUSINESS_OWNER'
   if (careerScore > businessScore) return 'INDIVIDUAL_CAREER'
+  if (session?.prospectType && session.prospectType !== 'UNKNOWN') return session.prospectType
   return 'UNKNOWN'
 }
 
-function selectedProgrammeFromContext(segment: ProspectSegment, input: string, session?: SalesSession) {
-  const raw = lower(`${session?.selectedProgramme || ''} ${input}`)
-  if (segment === 'BUSINESS_OWNER' || raw.includes('business transformation') || raw.includes('business programme') || raw.includes('business program')) return findProgrammeByFamily('BUSINESS_TRANSFORMATION')
-  if (segment === 'INDIVIDUAL_CAREER' || raw.includes('career accelerator') || raw.includes('career programme') || raw.includes('career program')) return findProgrammeByFamily('CAREER_ACCELERATOR')
+function selectedProgrammeFromContext(segment: ProspectSegment, input: string, session?: SalesSession, routed?: ProgrammeContext) {
+  const programmeContext = routed || routeProgrammeContext(input, undefined, session)
+  if (programmeContext === 'BUSINESS_TRANSFORMATION' || segment === 'BUSINESS_OWNER') return findProgrammeByFamily('BUSINESS_TRANSFORMATION')
+  if (programmeContext === 'CAREER_ACCELERATOR' || segment === 'INDIVIDUAL_CAREER') return findProgrammeByFamily('CAREER_ACCELERATOR')
   return undefined
 }
 
 function selectedTrackFromContext(input: string, session?: SalesSession) {
-  if (session?.selectedTrack) return inferTrackFromText(session.selectedTrack) || inferTrackFromText(input)
-  return inferTrackFromText(input)
+  return inferTrackFromText(input) || (programmeFromSession(session) === 'CAREER_ACCELERATOR' && session?.selectedTrack ? inferTrackFromText(session.selectedTrack) : undefined)
 }
 
 function businessGapFromText(input: string, session?: SalesSession) {
   const raw = lower(input)
-  if (session?.knownBusinessGap) return session.knownBusinessGap
   if (['whatsapp', 'orders', 'dm', 'follow up'].some((term) => raw.includes(term))) return 'orders and customer follow-up'
   if (['website', 'landing page', 'online presence'].some((term) => raw.includes(term))) return 'online presence and lead capture'
   if (['marketing', 'content', 'sales'].some((term) => raw.includes(term))) return 'marketing and sales system'
   if (['database', 'crm', 'customers'].some((term) => raw.includes(term))) return 'customer database and CRM'
   if (['dashboard', 'report', 'tracking'].some((term) => raw.includes(term))) return 'business dashboard and reporting'
+  if (programmeFromSession(session) === 'BUSINESS_TRANSFORMATION' && session?.knownBusinessGap) return session.knownBusinessGap
   return ''
 }
 
 function businessTypeFromText(input: string, session?: SalesSession) {
   const raw = lower(input)
-  if (session?.knownBusinessType) return session.knownBusinessType
   if (raw.includes('skincare')) return 'skincare business'
   if (raw.includes('fashion') || raw.includes('clothes')) return 'fashion business'
   if (raw.includes('restaurant') || raw.includes('food')) return 'restaurant'
   if (raw.includes('school')) return 'school'
   if (raw.includes('instagram')) return 'Instagram vendor'
   if (raw.includes('whatsapp')) return 'WhatsApp business'
+  if (programmeFromSession(session) === 'BUSINESS_TRANSFORMATION' && session?.knownBusinessType) return session.knownBusinessType
   return ''
 }
 
@@ -414,6 +492,7 @@ function trackSpecificSummary(track: CommercialTrack) {
 function knowledgeGroundedReply(input: {
   message: string
   segment: ProspectSegment
+  routedProgramme: ProgrammeContext
   intent: ConversationIntent
   programme?: CommercialProgramme
   track?: CommercialTrack
@@ -430,11 +509,15 @@ function knowledgeGroundedReply(input: {
 
   if (input.intent === 'OPT_OUT') return { reply: 'Understood. I will not continue the conversation. Thank you for your time.', action: 'End the sales conversation and do not follow up.' }
   if (input.intent === 'NOT_INTERESTED') return { reply: 'No problem, thank you for letting me know. Should I stop here, or would you only like future updates if something directly relevant comes up?', action: 'Respect their answer. Do not continue unless they give permission.' }
-  if (input.segment === 'UNKNOWN') return { reply: 'Are you asking about developing a career skill or improving your business?', action: 'Wait for the clarification, then continue under the correct programme family.' }
+  if (input.segment === 'UNKNOWN') return { reply: 'Are you asking about the AI Career Accelerator or the Business Transformation Programme?', action: 'Clarify the correct offer before giving programme details or price.' }
 
   if (input.segment === 'BUSINESS_OWNER') {
     if (!business) return { reply: "This detail is not currently confirmed in Nexora's approved programme information.", action: 'Do not invent business programme information. Ask admin to review the knowledge base.' }
     const businessPrice = formatPrice(business)
+    if (input.routedProgramme === 'BUSINESS_TRANSFORMATION' && input.intent !== 'PRICE_QUERY') return {
+      reply: `The AI Business Transformation Programme is a ${business.duration} programme for business owners who want to improve branding, customer management, marketing, sales and automation${input.businessType ? ` for a ${input.businessType}` : ''}. It costs ${businessPrice}. What part of the business is giving you the biggest challenge, and would you be open to a short assessment?`,
+      action: 'Identify the business’s most important operational gap before recommending the first solution or booking an assessment.',
+    }
     if (input.intent === 'PRICE_QUERY') return {
       reply: `The AI Business Transformation Programme currently costs ${businessPrice} and runs for ${business.duration}. It is designed to help business owners improve customer management, marketing, sales and operations. Would you prefer the full breakdown or a short assessment for your business?`,
       action: 'Send the business overview or book an assessment based on their response.',
@@ -447,17 +530,17 @@ function knowledgeGroundedReply(input: {
       reply: `Great. Before payment, let us confirm your business need so the programme is properly matched to you. Is your biggest need branding, website, customer follow-up, marketing, sales process, or operations dashboard?`,
       action: 'Confirm the business gap before sending the payment path.',
     }
-    const gap = input.businessGap || 'customer management and business growth systems'
+    const gap = input.businessGap || 'customer management and business growth'
     const businessType = input.businessType ? ` for your ${input.businessType}` : ''
     return {
-      reply: `From what you described${businessType}, the first thing to understand is ${gap}. The Business Transformation Programme can help you build practical systems such as a website, customer database, marketing engine, sales workflow, automation and dashboards. Would you be open to a short assessment so we can show what the first system should look like for your business?`,
+      reply: `For this enquiry${businessType}, the first step is to understand ${gap}. The Business Transformation Programme can help with practical systems such as online presence, customer records, marketing, sales follow-up, automation and dashboards. Would you be open to a short assessment so we can identify the first system to build?`,
       action: 'Ask one diagnostic question or book the assessment. Do not pitch every deliverable at once.',
     }
   }
 
   if (!career) return { reply: "This detail is not currently confirmed in Nexora's approved programme information.", action: 'Ask admin to review the approved knowledge snapshot.' }
   if (input.intent === 'PRICE_QUERY') {
-    if (!programme && !input.track && !input.session?.selectedProgramme) return {
+    if (input.routedProgramme === 'UNKNOWN') return {
       reply: 'Are you asking about the Career Accelerator or the Business Transformation Programme?',
       action: 'Clarify the correct offer before giving a price.',
     }
@@ -469,7 +552,7 @@ function knowledgeGroundedReply(input: {
     }
   }
   if (input.track) return {
-    reply: `Great choice. ${trackSpecificSummary(input.track)} Would you prefer the full programme breakdown or the application link?`,
+    reply: `Great choice. ${trackSpecificSummary(input.track)} The programme costs ${formatPrice(input.track)}. Would you prefer the full breakdown or the registration link?`,
     action: 'Send the selected track information. If the prospect is satisfied, move to application.',
   }
   if (input.intent === 'PROGRAMME_DIFFERENTIATION') return {
@@ -485,7 +568,7 @@ function knowledgeGroundedReply(input: {
     action: 'Confirm the selected track, then send the application link.',
   }
   return {
-    reply: `The Career Accelerator has these active paths: ${trackNames}. Which one matches what you want to build next?`,
+    reply: `The AI Career Accelerator is a practical training programme for students, NYSC members and young graduates who want to build career-ready digital skills. You can choose from ${trackNames}. The fee is ${formatPrice(career)}. Which path would you like me to explain?`,
     action: 'Match the prospect to one track before explaining details or sending application/payment.',
   }
 }
@@ -496,20 +579,45 @@ function qualityGate(result: ConversationCopilotResult) {
   const body = `${result.replyToSend}\n${result.nextBestAction}`.toLowerCase()
   if (body.includes('guaranteed job') || body.includes('guaranteed income') || body.includes('guaranteed sales')) return 'Unsupported guarantee detected.'
   if (body.includes('source url') || body.includes('contact path')) return 'Lead-analysis wording leaked into conversation response.'
+  if (result.programmeSnapshot.programmeFamily.toLowerCase().includes('career')) {
+    const businessLeak = ['customer database', 'business assessment', 'your business', 'marketing engine', 'sales workflow', 'business systems', 'website for your business'].find((term) => body.includes(term))
+    if (businessLeak) return `Business-only phrase leaked into Career Accelerator response: ${businessLeak}.`
+  }
+  if (result.programmeSnapshot.programmeFamily.toLowerCase().includes('business')) {
+    const careerLeak = ['ai content creation', 'ui/ux', 'financial analyst'].find((term) => body.includes(term))
+    if (careerLeak) return `Career track leaked into Business Transformation response: ${careerLeak}.`
+  }
+  if (result.detectedIntent === 'AFFORDABILITY_OBJECTION' && !['money', 'fee', 'available right now', 'worth it'].some((term) => body.includes(term))) return 'Affordability reply did not acknowledge money concern.'
   return ''
 }
 
-function buildConversationResult(input: GrowthCopilotInput, session?: SalesSession): ConversationCopilotResult & { prospectSegment: ProspectSegment; selectedProgramme: string; selectedTrack: string; knowledgeVersion: string; fieldsUsed: string[] } {
+function similarResponse(a = '', b = '') {
+  const left = new Set(lower(a).split(/\W+/).filter((word) => word.length > 4))
+  const right = lower(b).split(/\W+/).filter((word) => word.length > 4)
+  if (!left.size || !right.length) return false
+  const overlap = right.filter((word) => left.has(word)).length
+  return overlap / Math.max(left.size, right.length) > 0.75
+}
+
+function materiallyDifferentMessage(current = '', previous = '') {
+  const currentProgramme = explicitProgrammeFromMessage(current)
+  const previousProgramme = explicitProgrammeFromMessage(previous)
+  if (currentProgramme !== 'UNKNOWN' && previousProgramme !== 'UNKNOWN' && currentProgramme !== previousProgramme) return true
+  return lower(current).replace(/\W+/g, ' ').trim() !== lower(previous).replace(/\W+/g, ' ').trim()
+}
+
+function buildConversationResult(input: GrowthCopilotInput, session?: SalesSession): ConversationCopilotResult & { prospectSegment: ProspectSegment; programmeContext: ProgrammeContext; selectedProgramme: string; selectedTrack: string; knowledgeVersion: string; fieldsUsed: string[] } {
   const context = makeConversationContext({ ...input, mode: 'conversation' })
   const snapshot = getApprovedKnowledgeSnapshot()
   const intent = detectConversationIntent(context.latestProspectMessage)
+  const routedProgramme = routeProgrammeContext(context.conversationText, input.prospectType, session)
   const segment = classifyCommercialProspect(context.conversationText, input.prospectType, session)
-  const programme = selectedProgrammeFromContext(segment, context.conversationText, session)
+  const programme = selectedProgrammeFromContext(segment, context.conversationText, session, routedProgramme)
   const track = selectedTrackFromContext(context.conversationText, session)
   const businessGap = businessGapFromText(context.conversationText, session)
   const businessType = businessTypeFromText(context.conversationText, session)
   const objective = commercialObjective({ segment, intent, programme, track, session })
-  const generated = knowledgeGroundedReply({ message: context.latestProspectMessage, segment, intent, programme, track, businessGap, businessType, objective, session })
+  const generated = knowledgeGroundedReply({ message: context.latestProspectMessage, segment, routedProgramme, intent, programme, track, businessGap, businessType, objective, session })
   const career = findProgrammeByFamily('CAREER_ACCELERATOR')
   const result = {
     mode: 'CONVERSATION_RESPONSE' as const,
@@ -522,7 +630,7 @@ function buildConversationResult(input: GrowthCopilotInput, session?: SalesSessi
     followUpInstruction: generated.action,
     requiresAdminConfirmation: false as const,
     programmeSnapshot: {
-      programmeFamily: programme?.name || career?.name || 'Nexora approved programme',
+      programmeFamily: programme?.name || (routedProgramme === 'UNKNOWN' ? 'UNKNOWN' : career?.name || 'Nexora approved programme'),
       currentPriceNgn: programme?.currentPrice || career?.currentPrice || 0,
       availableProgrammes: programme?.tracks.length ? programme.tracks.map((item) => item.name) : snapshot.programmes.filter((item) => item.active).map((item) => item.name),
       approvedValuePoints: programme?.approvedValuePoints || career?.approvedValuePoints || [],
@@ -530,6 +638,7 @@ function buildConversationResult(input: GrowthCopilotInput, session?: SalesSessi
       incomeGuarantee: false as const,
     },
     prospectSegment: segment,
+    programmeContext: routedProgramme,
     selectedProgramme: programme?.name || '',
     selectedTrack: track?.name || '',
     knowledgeVersion: snapshot.version,
@@ -545,6 +654,12 @@ function buildConversationResult(input: GrowthCopilotInput, session?: SalesSessi
   }
   const error = qualityGate(result)
   if (error) throw new Error(error)
+  if (session?.lastCopilotReply && similarResponse(result.replyToSend, session.lastCopilotReply) && materiallyDifferentMessage(context.latestProspectMessage, session.lastProspectMessage)) {
+    const currentProgramme = explicitProgrammeFromMessage(context.conversationText)
+    if (currentProgramme !== 'UNKNOWN' && currentProgramme !== programmeFromSession(session)) {
+      throw new Error('Response rejected because it repeated stale programme context from a previous session.')
+    }
+  }
   return result
 }
 
@@ -561,8 +676,13 @@ export async function runConversationCopilotWithSession(input: GrowthCopilotInpu
   })
   const result = buildConversationResult(input, session)
   session.prospectType = result.prospectSegment
+  session.programmeContext = result.programmeContext
   session.selectedProgramme = result.selectedProgramme || session.selectedProgramme
-  session.selectedTrack = result.selectedTrack || session.selectedTrack
+  session.selectedTrack = result.programmeContext === 'CAREER_ACCELERATOR' ? result.selectedTrack || session.selectedTrack : ''
+  if (result.programmeContext === 'CAREER_ACCELERATOR') {
+    session.knownBusinessGap = ''
+    session.knownBusinessType = ''
+  }
   session.currentObjective = result.conversationObjective
   session.currentSalesStage = result.conversationObjective
   session.lastProspectMessage = latestProspectMessage(input.text)
@@ -570,21 +690,23 @@ export async function runConversationCopilotWithSession(input: GrowthCopilotInpu
   session.lastQuestionAsked = result.replyToSend.endsWith('?') ? result.replyToSend : session.lastQuestionAsked
   session.applicationSent = session.applicationSent || result.conversationObjective === 'SEND_APPLICATION'
   session.paymentLinkSent = session.paymentLinkSent || result.conversationObjective === 'SEND_PAYMENT'
-  session.knownBusinessGap = businessGapFromText(input.text, session)
-  session.knownBusinessType = businessTypeFromText(input.text, session)
+  if (result.programmeContext === 'BUSINESS_TRANSFORMATION') {
+    session.knownBusinessGap = businessGapFromText(input.text, session)
+    session.knownBusinessType = businessTypeFromText(input.text, session)
+  }
   await saveSalesSession({ session })
   return result
 }
 
 export function formatConversationCopilotResult(result: ConversationCopilotResult, detailed = false) {
   const base = [
-    'NEXORA GROWTH COPILOT',
+    '🧠 NEXORA GROWTH COPILOT',
     '',
-    'Reply to Send',
+    '💬 Reply to Send',
     '',
     `"${result.replyToSend}"`,
     '',
-    'Next Best Action',
+    '✅ Next Best Action',
     '',
     result.nextBestAction,
   ]

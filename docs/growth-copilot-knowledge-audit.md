@@ -29,9 +29,9 @@ Observed live website content during audit:
 - `src/lib/site-data.ts`
 - `src/lib/business-transformation-program.ts`
 
-Observed local approved values after the latest pricing correction:
+Observed local approved values after the critical pricing correction:
 
-- Career Accelerator base price: `NGN 25,000` per programme.
+- Career Accelerator base price: `NGN 10,000` per programme.
 - Career tracks:
   - AI Content Creation
   - Certified UI/UX Designer (AI-Powered)
@@ -59,7 +59,7 @@ Risk: Copilot previously did not retrieve a structured approved programme snapsh
 - `src/app/api/paystack/initialize/route.ts`
 - Career Accelerator amount is calculated from selected track pricing.
 - BATP falls back to `35000`.
-- Generic non-BATP fallback uses `25000`.
+- Generic non-BATP fallback uses `10000`.
 
 ### Existing Copilot and Telegram Prompts
 
@@ -83,10 +83,10 @@ Previous issues:
 
 - Field: `CAREER_ACCELERATOR.current_price`
 - Website value: `NGN 10,000`
-- Database/local approved value: `NGN 25,000`
-- Existing hard-coded value before correction: `NGN 10,000`
-- Recommended resolution: Keep the approved snapshot value until admin confirms whether public website cache/content must be updated or local approved pricing must be changed.
-- Admin approval status: `PENDING_ADMIN_APPROVAL`
+- Database/local approved value: `NGN 10,000`
+- Existing hard-coded value before critical correction: `NGN 25,000`
+- Recommended resolution: Critical correction completed; use `NGN 10,000` as the approved canonical Career Accelerator price.
+- Admin approval status: `APPROVED`
 
 ### Conflict 2
 

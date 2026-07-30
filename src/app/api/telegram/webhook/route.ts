@@ -5,6 +5,7 @@ import { handleInboundConversation } from '@/lib/conversation-engine'
 import { adminTestHelp, adminTestStatus, beginRespondSession, clearRespondSession, handleAdminTestCallback, hasActiveRespondSession, isAllowedAdminTestUser, logTelegramTestEvent, runAdminSalesAssistant, sendAdminLeadPreview, startMessageForUnverified } from '@/lib/telegram-admin-test'
 import { answerTelegramCallback, sendTelegramMessage, telegramName, type TelegramUpdate } from '@/lib/telegram'
 import { describeSalesSession, getSalesSession, resetSalesSession } from '@/lib/sales-session'
+import { getApprovedKnowledgeSnapshot } from '@/lib/commercial-knowledge'
 
 export const runtime = 'nodejs'
 
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
         return reply(chatId, [prefix, '', analysis].join('\n'))
       }
 
-      if (['/testhelp', '/teststatus', '/testleads', '/respond', '/newconversation', '/endconversation', '/conversationstatus', '/cancel', '/demoobjection'].includes(command)) {
+      if (['/testhelp', '/teststatus', '/testleads', '/respond', '/newconversation', '/endconversation', '/conversationstatus', '/syncknowledge', '/cancel', '/demoobjection'].includes(command)) {
         if (!adminTestAllowed) {
           await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'UNAUTHORIZED_COMMAND_ATTEMPT', payload: { command } })
           return reply(chatId, 'This feature is currently available only to authorised Nexora administrators.')
@@ -180,6 +181,21 @@ export async function POST(request: NextRequest) {
         if (command === '/conversationstatus') {
           const session = await getSalesSession({ telegramChatId: chatId, prospectReference: 'admin-test' })
           return reply(chatId, describeSalesSession(session))
+        }
+        if (command === '/syncknowledge') {
+          await resetSalesSession({ telegramChatId: chatId, prospectReference: 'admin-test' })
+          const snapshot = getApprovedKnowledgeSnapshot()
+          const career = snapshot.programmes.find((programme) => programme.programmeFamily === 'CAREER_ACCELERATOR')
+          const business = snapshot.programmes.find((programme) => programme.programmeFamily === 'BUSINESS_TRANSFORMATION')
+          const summary = [
+            'NEXORA Programme Knowledge Synchronised',
+            '',
+            `AI Career Accelerator: NGN ${Number(career?.currentPrice || 0).toLocaleString('en-NG')}`,
+            `AI Business Transformation Programme: NGN ${Number(business?.currentPrice || 0).toLocaleString('en-NG')}`,
+            `Last synchronised: ${new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}`,
+          ].join('\n')
+          await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'KNOWLEDGE_SYNCED', payload: { version: snapshot.version } })
+          return reply(chatId, summary)
         }
         if (command === '/testleads') {
           const count = Number(text.split(/\s+/)[1] || 5)

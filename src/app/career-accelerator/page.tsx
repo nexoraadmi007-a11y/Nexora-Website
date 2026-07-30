@@ -34,7 +34,7 @@ export default function CareerAcceleratorPage() {
               Choose one AI-powered career programme and build practical proof of skill.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">
-              The Career Accelerator now focuses on three clear professional paths: content creation, UI/UX design, and financial analysis. Each programme costs NGN 25,000 and leads to a capstone portfolio.
+              The Career Accelerator now focuses on three clear professional paths: content creation, UI/UX design, and financial analysis. Each programme costs NGN 10,000 and leads to a capstone portfolio.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#programmes" className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold">
@@ -51,7 +51,7 @@ export default function CareerAcceleratorPage() {
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-frost">Programme Snapshot</p>
             <div className="mt-6 grid gap-4">
               <Metric label="Programmes" value="3 focused options" />
-              <Metric label="Price" value="NGN 25,000 each" />
+              <Metric label="Price" value="NGN 10,000 each" />
               <Metric label="Structure" value="Modules, assignments, capstone, certificate" />
             </div>
           </div>

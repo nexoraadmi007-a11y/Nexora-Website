@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     const careerPricing = programCode === 'NGTP'
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
-    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 25000))
+    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 10000))
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Programmes (${selectedTrackNames.length})` : selectedTrackNames[0] || 'Career Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120)

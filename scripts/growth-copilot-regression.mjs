@@ -18,15 +18,74 @@ const forbidden = [
 
 const cases = [
   {
-    name: 'Career price from approved knowledge',
-    body: { mode: 'conversation', text: 'How much is the Career Accelerator?', prospectReference: 'test-career-price' },
-    expectIntent: 'PRICE_QUERY',
-    mustInclude: ['NGN 25,000'],
-    mustNotInclude: ['NGN 10,000'],
+    name: 'Test A - Career Accelerator enquiry',
+    body: { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-a-career-enquiry' },
+    mustInclude: ['Career Accelerator', 'AI Content Creation', 'UI/UX', 'Financial Analyst', 'NGN 10,000'],
+    mustNotInclude: ['Business Transformation', 'business assessment', 'customer database', 'business systems'],
   },
   {
-    name: 'Business price from approved knowledge',
-    body: { mode: 'conversation', text: 'How much is the business programme?', prospectReference: 'test-business-price' },
+    name: 'Test B - AI Content Creation selection',
+    body: { mode: 'conversation', text: 'I am interested in AI Content Creation', prospectReference: 'test-b-content-track' },
+    mustInclude: ['AI Content Creation', 'NGN 10,000'],
+    mustNotInclude: ['Business Transformation', 'business assessment', 'customer database'],
+  },
+  {
+    name: 'Test C - Career affordability objection',
+    sequence: [
+      { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-c-career-affordability' },
+      { mode: 'conversation', text: "I don't have money now", prospectReference: 'test-c-career-affordability' },
+    ],
+    expectIntent: 'AFFORDABILITY_OBJECTION',
+    mustInclude: ['NGN 10,000', 'available right now', 'worth it'],
+    mustNotInclude: ['Business Transformation', 'business assessment', 'customer management', 'website', 'NGN 35,000'],
+  },
+  {
+    name: 'Test D - Business Transformation enquiry',
+    body: { mode: 'conversation', text: 'tell me more about Business Transformation program', prospectReference: 'test-d-business-enquiry' },
+    mustInclude: ['Business Transformation', 'NGN 35,000', '4 weeks', 'business owners'],
+    mustNotInclude: ['AI Content Creation', 'UI/UX', 'Financial Analyst'],
+  },
+  {
+    name: 'Test E - Switch from business to career',
+    sequence: [
+      { mode: 'conversation', text: 'tell me more about Business Transformation program', prospectReference: 'test-e-switch' },
+      { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-e-switch' },
+    ],
+    mustInclude: ['Career Accelerator', 'NGN 10,000', 'AI Content Creation'],
+    mustNotInclude: ['Business Transformation Programme can help', 'business assessment', 'customer database'],
+  },
+  {
+    name: 'Test F - Switch from career to business',
+    sequence: [
+      { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-f-switch' },
+      { mode: 'conversation', text: 'I run a skincare business and want to know about the business programme', prospectReference: 'test-f-switch' },
+    ],
+    mustInclude: ['business', 'skincare', 'assessment'],
+    mustNotInclude: ['AI Content Creation', 'Financial Analyst'],
+  },
+  {
+    name: 'Test G - Ambiguous price question without session',
+    body: { mode: 'conversation', text: 'how much does it cost?', prospectReference: `test-g-ambiguous-${Date.now()}` },
+    expectIntent: 'PRICE_QUERY',
+    mustInclude: ['Career Accelerator', 'Business Transformation'],
+    mustNotInclude: ['NGN 10,000', 'NGN 35,000'],
+  },
+  {
+    name: 'Test H - Career price question with context',
+    sequence: [
+      { mode: 'conversation', text: 'tell me more about AI Career Accelerator program', prospectReference: 'test-h-career-price' },
+      { mode: 'conversation', text: 'how much does it cost?', prospectReference: 'test-h-career-price' },
+    ],
+    expectIntent: 'PRICE_QUERY',
+    mustInclude: ['NGN 10,000'],
+    mustNotInclude: ['NGN 25,000'],
+  },
+  {
+    name: 'Test I - Business price question with context',
+    sequence: [
+      { mode: 'conversation', text: 'tell me more about Business Transformation program', prospectReference: 'test-i-business-price' },
+      { mode: 'conversation', text: 'how much does it cost?', prospectReference: 'test-i-business-price' },
+    ],
     expectIntent: 'PRICE_QUERY',
     mustInclude: ['NGN 35,000', '4 weeks'],
     mustNotInclude: ['Career Accelerator'],
@@ -40,7 +99,7 @@ const cases = [
   {
     name: 'Ambiguous enquiry asks clarifying question',
     body: { mode: 'conversation', text: 'I want to know more', prospectReference: 'test-ambiguous' },
-    mustInclude: ['career skill', 'business'],
+    mustInclude: ['Career Accelerator', 'Business Transformation'],
   },
   {
     name: 'Selected track persists in session',
@@ -49,7 +108,7 @@ const cases = [
       { mode: 'conversation', text: 'AI Content Creation', prospectReference: 'test-session-track' },
       { mode: 'conversation', text: 'How much is it?', prospectReference: 'test-session-track' },
     ],
-    mustInclude: ['AI Content Creation', 'NGN 25,000'],
+    mustInclude: ['AI Content Creation', 'NGN 10,000'],
     mustNotInclude: ['Which path'],
   },
   {

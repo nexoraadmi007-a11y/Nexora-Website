@@ -7,6 +7,7 @@ export type SalesSession = {
   telegramChatId: string
   prospectReference: string
   prospectType: ProspectSegment
+  programmeContext: string
   selectedProgramme: string
   selectedTrack: string
   knownBusinessType: string
@@ -47,6 +48,7 @@ function blankSession(input: { associateId?: string; telegramChatId?: string; pr
     telegramChatId: input.telegramChatId || '',
     prospectReference: input.prospectReference || input.leadId || '',
     prospectType: 'UNKNOWN',
+    programmeContext: '',
     selectedProgramme: '',
     selectedTrack: '',
     knownBusinessType: '',
@@ -73,6 +75,7 @@ function fromFields(id: string, fields: SessionFields): SalesSession {
     telegramChatId: fields['Telegram Chat ID'] || '',
     prospectReference: fields['Prospect Reference'] || '',
     prospectType: fields['Prospect Type'] || 'UNKNOWN',
+    programmeContext: fields['Programme Context'] || '',
     selectedProgramme: fields['Selected Programme'] || '',
     selectedTrack: fields['Selected Track'] || '',
     knownBusinessType: fields['Known Business Type'] || '',
@@ -98,6 +101,7 @@ function toFields(session: SalesSession): SessionFields {
     'Telegram Chat ID': session.telegramChatId,
     'Prospect Reference': session.prospectReference,
     'Prospect Type': session.prospectType,
+    'Programme Context': session.programmeContext,
     'Selected Programme': session.selectedProgramme,
     'Selected Track': session.selectedTrack,
     'Known Business Type': session.knownBusinessType,
@@ -166,6 +170,7 @@ export function describeSalesSession(session: SalesSession) {
     'NEXORA Conversation Status',
     '',
     `Prospect Type: ${session.prospectType}`,
+    `Programme Context: ${session.programmeContext || 'Not selected'}`,
     `Selected Programme: ${session.selectedProgramme || 'Not selected'}`,
     `Selected Track: ${session.selectedTrack || 'Not selected'}`,
     `Business Type: ${session.knownBusinessType || 'Not captured'}`,

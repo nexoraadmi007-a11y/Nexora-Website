@@ -217,7 +217,7 @@ function approvedProgrammes() {
 
 export function getApprovedKnowledgeSnapshot(conflicts: KnowledgeConflict[] = []): CommercialKnowledgeSnapshot {
   return {
-    version: 'commercial-knowledge-v2026-07-30.2',
+    version: 'commercial-knowledge-v2026-07-30.3',
     status: 'APPROVED',
     generatedAt: new Date().toISOString(),
     approvedAt: now,
