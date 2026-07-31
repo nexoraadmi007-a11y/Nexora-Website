@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { text } from '@/lib/growth-associate'
-import { getLatestSignedLetterDocument, logHrAudit, safeOriginalFilename } from '@/lib/hr-onboarding'
+import { getLatestSignedLetterDocument, logHrAudit, safeOriginalFilename, signedLetterFileData } from '@/lib/hr-onboarding'
 
 export const runtime = 'nodejs'
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   const { id } = await context.params
   const document = await getLatestSignedLetterDocument(id)
   if (!document) return NextResponse.json({ error: 'No signed letter found for this associate.' }, { status: 404 })
-  const data = text(document.fields['Private File Data'], 20_000_000)
+  const data = await signedLetterFileData(id, document)
   if (!data) return NextResponse.json({ error: 'Signed letter file data is missing.' }, { status: 404 })
   await logHrAudit({
     actor: 'admin',

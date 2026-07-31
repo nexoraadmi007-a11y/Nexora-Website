@@ -43,8 +43,8 @@ function uploadError(error: unknown, id: string) {
   if (/Airtable/i.test(message)) {
     return jsonResponse({
       success: false,
-      error: 'AIRTABLE_SYNC_FAILED',
-      message: 'Your file was received, but the record could not be completed. The HR team has been notified.',
+      error: 'DOCUMENT_UPLOAD_FAILED',
+      message: 'We could not save your document. Please try again.',
     }, 502, id)
   }
   return jsonResponse({
@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
       document: {
         id: document.id,
         status: 'SIGNED_COPY_UNDER_REVIEW',
+        airtable_sync_status: 'SYNCED',
         file_name: file.name,
         uploaded_at: document.fields['Uploaded At'] || new Date().toISOString(),
       },

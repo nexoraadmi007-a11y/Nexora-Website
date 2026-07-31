@@ -326,6 +326,27 @@ export async function getLatestSignedLetterDocument(associateId: string) {
   return records[0] || null
 }
 
+export async function getSignedLetterChunks(associateId: string, documentId: string) {
+  const marker = `SIGNED_LETTER_CHUNK:${documentId}:`
+  const records = await findRecordsLinkedToAssociate('Associate Documents', associateId, {
+    sortField: 'Created At',
+    direction: 'asc',
+    filter: (record) => record.fields['Document Type'] === 'Other' && text(record.fields.Notes, 240).startsWith(marker),
+  })
+  return records.sort((left, right) => {
+    const leftIndex = Number(text(left.fields.Notes, 240).split(':')[2] || 0)
+    const rightIndex = Number(text(right.fields.Notes, 240).split(':')[2] || 0)
+    return leftIndex - rightIndex
+  })
+}
+
+export async function signedLetterFileData(associateId: string, document: AirtableRecord<Fields>) {
+  const direct = text(document.fields['Private File Data'], 20_000_000)
+  if (direct && !direct.startsWith('CHUNKED:')) return direct
+  const chunks = await getSignedLetterChunks(associateId, document.id)
+  return chunks.map((chunk) => text(chunk.fields['Private File Data'], 100_000)).join('')
+}
+
 export async function logHrAudit(input: {
   actor: string
   action: string
@@ -531,9 +552,11 @@ export async function storeSignedLetter(input: {
     throw new Error('This signed letter has already been approved. Admin must reopen onboarding before a replacement can be uploaded.')
   }
   const fileData = input.file.bytes.toString('base64')
+  const fileChecksum = createHash('sha256').update(input.file.bytes).digest('hex')
+  const currentFileData = current ? await signedLetterFileData(input.associate.id, current) : ''
   if (
     current &&
-    text(current.fields['Private File Data'], 20_000_000) === fileData &&
+    currentFileData === fileData &&
     text(current.fields['Original Filename'], 160) === safeOriginalFilename(input.file.name) &&
     Number(current.fields['File Size'] || 0) === input.file.size
   ) {
@@ -551,12 +574,14 @@ export async function storeSignedLetter(input: {
   const now = new Date().toISOString()
   const version = Number(input.agreement.fields['Document Version'] || 1)
   const reference = `https://private.nexora.local/associates/${input.associate.id}/employment/signed/${version}/${Date.now()}-${safeOriginalFilename(input.file.name)}`
+  const chunkSize = 80_000
+  const chunks = fileData.match(new RegExp(`.{1,${chunkSize}}`, 'g')) || []
   const fields = compact({
     Associate: [input.associate.id],
     'Employment Agreement': [input.agreement.id],
     'Document Type': 'Signed Employment Letter',
     'File Reference': reference,
-    'Private File Data': fileData,
+    'Private File Data': chunks.length <= 1 ? fileData : `CHUNKED:${chunks.length}:${fileChecksum}`,
     'Original Filename': safeOriginalFilename(input.file.name),
     'Mime Type': input.file.type,
     'File Size': input.file.size,
@@ -567,6 +592,7 @@ export async function storeSignedLetter(input: {
     'Employment Letter Reference': input.agreement.id,
     'Employment Letter Version': version,
     'Verification Status': 'Pending Review',
+    Notes: `Airtable Sync Status: SYNCED\nChecksum: ${fileChecksum}`,
     'Updated At': now,
   })
   const created = await createRecord<{ id: string; fields: Fields }>('Associate Documents', {
@@ -574,17 +600,44 @@ export async function storeSignedLetter(input: {
     ...fields,
     'Created At': now,
   })
+  if (chunks.length > 1) {
+    for (const [index, chunk] of chunks.entries()) {
+      await createRecord('Associate Documents', compact({
+        'Document ID': `DOC-CHUNK-${Date.now()}-${index + 1}`,
+        Associate: [input.associate.id],
+        'Employment Agreement': [input.agreement.id],
+        'Document Type': 'Other',
+        'Private File Data': chunk,
+        'Original Filename': `${safeOriginalFilename(input.file.name)}.part-${String(index + 1).padStart(3, '0')}`,
+        'Mime Type': 'text/plain',
+        'File Size': chunk.length,
+        'Uploaded By': input.actor,
+        'Upload Status': 'Uploaded',
+        'Uploaded At': now,
+        'Employment Letter Reference': input.agreement.id,
+        'Employment Letter Version': version,
+        'Verification Status': 'Pending Review',
+        Notes: `SIGNED_LETTER_CHUNK:${created.id}:${index + 1}:${chunks.length}:${fileChecksum}`,
+        'Created At': now,
+        'Updated At': now,
+      }))
+    }
+  }
   await updateRecord('Employment Agreements', input.agreement.id, {
     'Signed File Reference': created.id,
     'Signed Uploaded At': now,
     'Verification Status': 'Signed Uploaded',
     'Completion Status': 'Under Review',
     'Updated At': now,
+  }).catch((error) => {
+    console.error('Employment agreement signed-letter status sync failed', error instanceof Error ? error.message : error)
   })
   await updateRecord('Ambassadors', input.associate.id, {
     'Employment Letter Status': 'Signed Uploaded',
     'HR Onboarding Status': 'Signed Copy Under Review',
     'Updated At': now,
+  }).catch((error) => {
+    console.error('Associate signed-letter status sync failed', error instanceof Error ? error.message : error)
   })
   await logHrAudit({
     actor: input.actor,
