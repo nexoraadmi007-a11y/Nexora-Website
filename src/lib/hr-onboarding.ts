@@ -530,6 +530,24 @@ export async function storeSignedLetter(input: {
   if (currentStatus === 'SIGNED_COPY_APPROVED' || currentStatus === 'Approved') {
     throw new Error('This signed letter has already been approved. Admin must reopen onboarding before a replacement can be uploaded.')
   }
+  const fileData = input.file.bytes.toString('base64')
+  if (
+    current &&
+    text(current.fields['Private File Data'], 20_000_000) === fileData &&
+    text(current.fields['Original Filename'], 160) === safeOriginalFilename(input.file.name) &&
+    Number(current.fields['File Size'] || 0) === input.file.size
+  ) {
+    await logHrAudit({
+      actor: input.actor,
+      action: 'SIGNED_LETTER_DUPLICATE_UPLOAD_SKIPPED',
+      associateId: input.associate.id,
+      documentReference: current.id,
+      documentVersion: current.fields['Employment Letter Version'] || input.agreement.fields['Document Version'] || 1,
+      statusBefore: currentStatus || 'NONE',
+      statusAfter: currentStatus || 'SIGNED_COPY_UNDER_REVIEW',
+    })
+    return current
+  }
   const now = new Date().toISOString()
   const version = Number(input.agreement.fields['Document Version'] || 1)
   const reference = `https://private.nexora.local/associates/${input.associate.id}/employment/signed/${version}/${Date.now()}-${safeOriginalFilename(input.file.name)}`
@@ -538,7 +556,7 @@ export async function storeSignedLetter(input: {
     'Employment Agreement': [input.agreement.id],
     'Document Type': 'Signed Employment Letter',
     'File Reference': reference,
-    'Private File Data': input.file.bytes.toString('base64'),
+    'Private File Data': fileData,
     'Original Filename': safeOriginalFilename(input.file.name),
     'Mime Type': input.file.type,
     'File Size': input.file.size,

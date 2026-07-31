@@ -29,6 +29,19 @@ type SignedLetterStatus = {
   error?: string
 }
 
+type ApiPayload = {
+  success?: boolean
+  ok?: boolean
+  message?: string
+  error?: string
+  request_id?: string
+  document?: {
+    status?: string
+    file_name?: string
+    uploaded_at?: string
+  }
+}
+
 const states = [
   'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta',
   'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi',
@@ -115,6 +128,32 @@ export default function HrOnboardingClient() {
     setSignedStatus(result)
   }
 
+  async function parseApiResponse(response: Response): Promise<ApiPayload> {
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      return await response.json().catch(() => ({
+        success: false,
+        error: 'INVALID_JSON_RESPONSE',
+        message: 'We could not read the server response. Please try again.',
+      }))
+    }
+    const body = await response.text().catch(() => '')
+    return {
+      success: false,
+      error: response.status === 401 ? 'UNAUTHORISED' : 'NON_JSON_RESPONSE',
+      message: body ? body.slice(0, 240) : `Upload failed with status ${response.status}`,
+    }
+  }
+
+  function friendlyUploadError(result: ApiPayload, status: number) {
+    if (result.error === 'UNAUTHORISED' || status === 401) return 'Your session has expired. Please open your HR onboarding link again and retry the upload.'
+    if (result.error === 'INVALID_FILE_TYPE' || result.error === 'MISSING_FILE') return result.message || 'Please select a valid PDF, JPG or PNG file.'
+    if (result.error === 'FILE_TOO_LARGE' || status === 413) return result.message || 'The selected file is larger than 10 MB.'
+    if (result.error === 'STORAGE_UPLOAD_FAILED' || result.error === 'AIRTABLE_SYNC_FAILED') return result.message || 'The document could not be saved. The HR team has been notified.'
+    if (result.message && !/unexpected end of json|syntaxerror|typeerror|internal server error/i.test(result.message)) return result.message
+    return 'We could not upload your document right now. Please try again.'
+  }
+
   function update(key: keyof ReturnType<typeof emptyForm>, value: string) {
     setForm((current) => ({ ...current, [key]: value }))
   }
@@ -170,15 +209,17 @@ export default function HrOnboardingClient() {
     try {
       const formData = new FormData()
       formData.set('token', token)
-      formData.set('file', selectedFile)
+      formData.set('signed_letter', selectedFile)
+      formData.set('document_type', 'SIGNED_EMPLOYMENT_LETTER')
       const response = await fetch('/api/hr-onboarding/signed-letter', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Could not upload signed employment letter.')
+      const result = await parseApiResponse(response)
+      if (!response.ok || result.success === false) throw new Error(friendlyUploadError(result, response.status))
       setSelectedFile(null)
-      setMessage(result.message || 'Signed employment letter submitted.')
+      setMessage(result.message || 'Signed employment letter submitted successfully. Status: Awaiting HR verification.')
       await loadSignedStatus()
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Could not upload signed employment letter.')
