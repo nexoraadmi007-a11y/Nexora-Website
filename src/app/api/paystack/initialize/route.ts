@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 10000))
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Programmes (${selectedTrackNames.length})` : selectedTrackNames[0] || 'Career Accelerator')
     const sourcePage = text(body.sourcePage, 200)
-    const referralCode = text(body.referralCode, 120)
+    const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
     const visitorId = text(body.visitorId, 160)
     const sessionId = text(body.sessionId, 160)
     const ambassador = await findAmbassador(referralCode)
@@ -215,7 +215,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Online payment is not configured yet. Nexora has received your ${programCode} application interest.` }, { status: 503 })
     }
 
-    const slug = programCode === 'COMPLETE' ? 'complete-ai-accelerator' : programCode === 'BATP' ? 'business-transformation' : 'career-accelerator'
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
@@ -227,7 +226,7 @@ export async function POST(request: NextRequest) {
         amount: Math.round(amount * 100),
         currency: 'NGN',
         reference,
-        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'}/${slug}?payment=complete&reference=${reference}`,
+        callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'}/payment/success?reference=${reference}`,
         metadata: {
           full_name: fullName,
           phone: phone(body.phone),

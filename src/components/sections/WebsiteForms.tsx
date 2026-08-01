@@ -176,6 +176,7 @@ export default function WebsiteForm({
       const response = await fetch(payAfterSubmit ? '/api/paystack/initialize' : '/api/website/forms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(payload),
       })
       const data = await response.json()

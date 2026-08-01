@@ -65,6 +65,14 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.nexoragroup.ink
+      - key: CAREER_GROUP_AI_CONTENT_CREATION_URL
+        value: https://chat.whatsapp.com/DapD6KbAZwOIiBSABvwVA3?s=cl&p=a&ilr=4&amv=2
+      - key: CAREER_GROUP_UI_UX_DESIGNER_URL
+        value: https://chat.whatsapp.com/IgzwgLpx0afCloe9pX45Sh?s=cl&p=a&ilr=4&amv=2
+      - key: CAREER_GROUP_AI_FINANCIAL_ANALYST_URL
+        value: https://chat.whatsapp.com/I1OzIy04WQsJAiQ6NzMaWE?s=cl&p=a&ilr=4&amv=2
+      - key: BATP_GROUP_URL
+        value: https://chat.whatsapp.com/GFihizHReFx27VhmqK9Wai?s=cl&p=a&ilr=4&amv=2
 
   - type: cron
     name: nexora-growth-daily-automation

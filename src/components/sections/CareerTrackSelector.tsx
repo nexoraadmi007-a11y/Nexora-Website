@@ -80,6 +80,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
       const response = await fetch('/api/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(payload),
       })
       const data = await response.json()
