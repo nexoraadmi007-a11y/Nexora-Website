@@ -22,8 +22,18 @@ function value(fields: Fields, name: string) {
   return typeof raw === 'string' ? raw.trim() : ''
 }
 
-function linkedTo(recordId: string) {
-  return `FIND('${escapeFormula(recordId)}',ARRAYJOIN({Associate}))`
+function hasLinkedRecord(fields: Fields, field: string, recordId: string) {
+  const linked = fields[field]
+  return Array.isArray(linked) && linked.includes(recordId)
+}
+
+async function listForAssociate(table: string, field: string, associateId: string, sortField: string) {
+  const records = await listRecords<Fields>(table, {
+    maxRecords: 100,
+    sortField,
+    direction: 'desc',
+  })
+  return records.filter((record) => hasLinkedRecord(record.fields, field, associateId))
 }
 
 function monthKey(date = new Date()) {
@@ -63,27 +73,12 @@ export async function GET(request: NextRequest) {
     if (!associate) return NextResponse.json({ error: 'Referral code was not found.' }, { status: 404 })
 
     const [attributions, referrals, events] = await Promise.all([
-      listRecords<Fields>('Conversion Attribution', {
-        formula: linkedTo(associate.id),
-        maxRecords: 100,
-        sortField: 'Updated At',
-        direction: 'desc',
-      }).catch(() => []),
-      listRecords<Fields>('Ambassador Referrals', {
-        formula: `FIND('${escapeFormula(associate.id)}',ARRAYJOIN({Ambassador}))`,
-        maxRecords: 100,
-        sortField: 'Referral Date',
-        direction: 'desc',
-      }).catch(() => []),
-      listRecords<Fields>('Referral Events', {
-        formula: linkedTo(associate.id),
-        maxRecords: 100,
-        sortField: 'Occurred At',
-        direction: 'desc',
-      }).catch(() => []),
+      listForAssociate('Conversion Attribution', 'Associate', associate.id, 'Updated At').catch(() => []),
+      listForAssociate('Ambassador Referrals', 'Ambassador', associate.id, 'Referral Date').catch(() => []),
+      listForAssociate('Referral Events', 'Associate', associate.id, 'Occurred At').catch(() => []),
     ])
 
-    const approved = attributions.filter((record) => value(record.fields, 'Attribution Status') === 'APPROVED')
+    const approved = attributions.filter((record) => ['APPROVED', 'REPAIRED'].includes(value(record.fields, 'Attribution Status')))
     const conflicts = attributions.filter((record) => ['CONFLICT', 'PENDING'].includes(value(record.fields, 'Attribution Status')))
     const monthApproved = approved.filter((record) => withinCurrentMonth(record.fields['Created At'] || record.fields['Updated At']))
     const target = number(associate.fields['Monthly Intake Target']) || 30
