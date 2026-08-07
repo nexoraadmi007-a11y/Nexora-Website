@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAssociateSubmittedLead, formatConversationCopilotResult, formatGrowthCopilotResult, runConversationCopilotWithSession, runGrowthCopilot, type CopilotMode, type ProspectType } from '@/lib/growth-copilot'
 import { actionFromTelegramCommand, assignLeadsToAssociate, formatLeadCard, parseLeadCommand, recordLeadActivity, resolveGrowthTelegramRole, sendAssociateLeadDigest } from '@/lib/growth-actions'
 import { handleInboundConversation } from '@/lib/conversation-engine'
-import { adminTestHelp, adminTestStatus, beginRespondSession, clearRespondSession, handleAdminTestCallback, hasActiveRespondSession, isAllowedAdminTestUser, logTelegramTestEvent, runAdminSalesAssistant, sendAdminLeadPreview, startMessageForUnverified } from '@/lib/telegram-admin-test'
+import { adminTestHelp, adminTestStatus, beginRespondSession, clearRespondSession, handleAdminTestCallback, hasActiveRespondSession, isAllowedAdminTestUser, logTelegramTestEvent, runAdminSalesAssistant, sendAdminBusinessLeadPreview, sendAdminLeadPreview, startMessageForUnverified } from '@/lib/telegram-admin-test'
 import { answerTelegramCallback, sendTelegramMessage, telegramName, type TelegramUpdate } from '@/lib/telegram'
 import { describeSalesSession, getSalesSession, resetSalesSession } from '@/lib/sales-session'
 import { getApprovedKnowledgeSnapshot } from '@/lib/commercial-knowledge'
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         return reply(chatId, [prefix, '', analysis].join('\n'))
       }
 
-      if (['/testhelp', '/teststatus', '/testleads', '/respond', '/newconversation', '/endconversation', '/conversationstatus', '/syncknowledge', '/cancel', '/demoobjection'].includes(command)) {
+      if (['/testhelp', '/teststatus', '/testleads', '/testbusinessleads', '/runbusinessdiscovery', '/respond', '/newconversation', '/endconversation', '/conversationstatus', '/syncknowledge', '/cancel', '/demoobjection'].includes(command)) {
         if (!adminTestAllowed) {
           await logTelegramTestEvent({ telegramUserId: fromId, eventType: 'UNAUTHORIZED_COMMAND_ATTEMPT', payload: { command } })
           return reply(chatId, 'This feature is currently available only to authorised Nexora administrators.')
@@ -201,6 +201,11 @@ export async function POST(request: NextRequest) {
           const count = Number(text.split(/\s+/)[1] || 5)
           const result = await sendAdminLeadPreview({ chatId, telegramUserId: fromId, count })
           return NextResponse.json({ ok: true, role: 'ADMIN', sent: result.sent })
+        }
+        if (command === '/testbusinessleads' || command === '/runbusinessdiscovery') {
+          const count = command === '/runbusinessdiscovery' ? 5 : Number(text.split(/\s+/)[1] || 5)
+          const result = await sendAdminBusinessLeadPreview({ chatId, telegramUserId: fromId, count })
+          return NextResponse.json({ ok: true, role: 'ADMIN', sent: result.sent, mode: 'ADMIN_TEST_ONLY' })
         }
         if (command === '/respond') {
           const conversation = text.replace(/^\/respond(@\w+)?/i, '').trim()

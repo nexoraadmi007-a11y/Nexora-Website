@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const dryRun = Boolean(body.dryRun)
     const skipImport = Boolean(body.skipImport)
-    const skipAssignment = Boolean(body.skipAssignment)
+    const skipAssignment = Boolean(body.skipAssignment) || !growthConfig.enableAutomaticLeadAllocation
     const sectors = csv(body.sectors || process.env.GROWTH_AUTOMATION_SECTORS, ['NYSC members', 'final-year students', 'recent graduates'])
     const locations = csv(body.locations || process.env.GROWTH_AUTOMATION_LOCATIONS, ['Nigeria'])
     const importLimit = number(body.importLimit || process.env.GROWTH_AUTOMATION_IMPORT_LIMIT, 10, 1, 50)
-    const countPerAssociate = number(body.countPerAssociate || process.env.GROWTH_AUTOMATION_ASSIGN_COUNT, 5, 1, 25)
+    const countPerAssociate = skipAssignment ? 0 : number(body.countPerAssociate || process.env.GROWTH_AUTOMATION_ASSIGN_COUNT, 5, 1, 25)
     const importPlan = locations.flatMap((location) => sectors.map((sectorName) => ({ sector: sectorName, location })))
 
     const availableBeforeImport = await getAvailableIndividualLeads(500)
@@ -110,6 +110,18 @@ export async function POST(request: NextRequest) {
               imported: 0,
               skipped: 0,
               error: 'Business/SME/corporate discovery is disabled in Individual Growth Engine Version 1.',
+            })
+            continue
+          }
+          if (!businessRequested && !growthConfig.enableIndividualGrowthEngine) {
+            imports.push({
+              ...item,
+              received: 0,
+              normalized: 0,
+              imported: 0,
+              skipped: 0,
+              failed: 0,
+              error: 'Individual discovery is disabled.',
             })
             continue
           }

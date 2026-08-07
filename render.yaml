@@ -15,8 +15,10 @@ services:
         sync: false
       - key: APIFY_LEAD_TASK_ID
         sync: false
+      - key: APIFY_BUSINESS_LEAD_ACTOR_ID
+        value: apify/google-search-scraper
       - key: GROWTH_AUTOMATION_SECTORS
-        value: NYSC members,final-year students,recent graduates
+        value: Instagram fashion vendor Lagos,Instagram skincare vendor Abuja,Facebook shoe seller Ibadan,Instagram wig seller Nigeria,WhatsApp business fashion Lagos
       - key: GROWTH_AUTOMATION_LOCATIONS
         value: Nigeria
       - key: GROWTH_AUTOMATION_IMPORT_LIMIT
@@ -24,13 +26,21 @@ services:
       - key: GROWTH_AUTOMATION_ASSIGN_COUNT
         value: "10"
       - key: ENABLE_INDIVIDUAL_GROWTH_ENGINE
+        value: "false"
+      - key: ENABLE_BUSINESS_LEAD_DISCOVERY
+        value: "true"
+      - key: ENABLE_INDIVIDUAL_LEAD_DISCOVERY
+        value: "false"
+      - key: ENABLE_ASSOCIATE_LEAD_DELIVERY
+        value: "false"
+      - key: ENABLE_ADMIN_LEAD_TEST_DELIVERY
         value: "true"
       - key: ENABLE_SME_GROWTH_ENGINE
-        value: "false"
+        value: "true"
       - key: ENABLE_CORPORATE_GROWTH_ENGINE
         value: "false"
       - key: ENABLE_AUTOMATIC_LEAD_ALLOCATION
-        value: "true"
+        value: "false"
       - key: ENABLE_REFERRAL_REPAIR
         value: "true"
       - key: DEFAULT_DAILY_INDIVIDUAL_LEAD_QUOTA
@@ -38,7 +48,7 @@ services:
       - key: INDIVIDUAL_BATCH_PROCESSED_THRESHOLD
         value: "8"
       - key: GROWTH_ALLOCATION_MODE
-        value: HYBRID
+        value: MANUAL_ADMIN
       - key: CRON_SECRET
         sync: false
       - key: PAYSTACK_SECRET_KEY
@@ -88,7 +98,15 @@ services:
       - key: GROWTH_AUTOMATION_IMPORT_LIMIT
         value: "10"
       - key: GROWTH_AUTOMATION_ASSIGN_COUNT
-        value: "5"
+        value: "0"
+      - key: ENABLE_BUSINESS_LEAD_DISCOVERY
+        value: "true"
+      - key: ENABLE_INDIVIDUAL_LEAD_DISCOVERY
+        value: "false"
+      - key: ENABLE_ASSOCIATE_LEAD_DELIVERY
+        value: "false"
+      - key: ENABLE_ADMIN_LEAD_TEST_DELIVERY
+        value: "true"
       - key: TELEGRAM_QUEUE_SECRET
         sync: false
       - key: CRON_SECRET

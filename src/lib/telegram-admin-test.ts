@@ -1,4 +1,5 @@
 import { createRecord, escapeFormula, listRecords, type AirtableRecord } from './airtable'
+import { sendAdminBusinessLeadTest } from './business-lead-discovery'
 import { findGrowthLead } from './growth-actions'
 import { formatConversationCopilotResult, runConversationCopilot } from './growth-copilot'
 import { sendTelegramMessage, type TelegramMessage } from './telegram'
@@ -64,6 +65,10 @@ export function adminTelegramTestConfig() {
     aiResponseEnabled: bool('ENABLE_TELEGRAM_AI_RESPONSE_TEST', true),
     adminOnly: bool('TELEGRAM_TEST_ADMIN_ONLY', true),
     associateDeliveryEnabled: bool('ENABLE_ASSOCIATE_TELEGRAM_LEAD_DELIVERY', false),
+    businessLeadDiscoveryEnabled: bool('ENABLE_BUSINESS_LEAD_DISCOVERY', true),
+    individualLeadDiscoveryEnabled: bool('ENABLE_INDIVIDUAL_LEAD_DISCOVERY', false),
+    associateLeadDeliveryEnabled: bool('ENABLE_ASSOCIATE_LEAD_DELIVERY', false),
+    adminLeadTestDeliveryEnabled: bool('ENABLE_ADMIN_LEAD_TEST_DELIVERY', true),
     allowLiveLeadTest: bool('ALLOW_ADMIN_LIVE_LEAD_TEST', false),
     maxPreviewCount: int('TELEGRAM_TEST_MAX_LEADS', 10, 1, 10),
     defaultPreviewCount: int('TELEGRAM_TEST_DEFAULT_LEADS', 5, 1, 10),
@@ -273,6 +278,12 @@ export function adminTestHelp() {
     '/testleads 10',
     'Preview ten existing individual leads.',
     '',
+    '/runbusinessdiscovery',
+    'Discover and preview five qualified business leads for admin testing only.',
+    '',
+    '/testbusinessleads 5',
+    'Run a business-only lead test. Maximum ten leads.',
+    '',
     '/respond',
     'Paste a prospect conversation and receive a recommended reply.',
     '',
@@ -295,10 +306,55 @@ export async function adminTestStatus(telegramUserId: string, telegramChatId: st
     `Telegram Chat ID: ${identity.telegramChatId ? 'Verified' : 'Unverified'}`,
     `Role: ${identity.verificationStatus === 'VERIFIED' ? 'Super Admin' : 'Unverified'}`,
     `Lead preview: ${config.leadPreviewEnabled ? 'Enabled' : 'Disabled'}`,
+    `Business discovery: ${config.businessLeadDiscoveryEnabled ? 'Enabled' : 'Disabled'}`,
+    `Individual discovery: ${config.individualLeadDiscoveryEnabled ? 'Enabled' : 'Disabled'}`,
     `AI response testing: ${config.aiResponseEnabled ? 'Enabled' : 'Disabled'}`,
-    `Production associate delivery: ${config.associateDeliveryEnabled ? 'Enabled' : 'Disabled'}`,
+    `Production associate delivery: ${config.associateDeliveryEnabled || config.associateLeadDeliveryEnabled ? 'Enabled' : 'Disabled'}`,
+    `Admin lead test delivery: ${config.adminLeadTestDeliveryEnabled ? 'Enabled' : 'Disabled'}`,
     `Test mode: ${config.enabled ? 'Active' : 'Disabled'}`,
   ].join('\n')
+}
+
+export async function sendAdminBusinessLeadPreview(input: { chatId: string; telegramUserId: string; count?: number }) {
+  const config = adminTelegramTestConfig()
+  if (!config.businessLeadDiscoveryEnabled) {
+    await sendTelegramMessage(input.chatId, 'Business lead discovery is currently disabled.')
+    return { sent: 0 }
+  }
+  if (!config.adminLeadTestDeliveryEnabled) {
+    await sendTelegramMessage(input.chatId, 'Admin business lead test delivery is currently disabled.')
+    return { sent: 0 }
+  }
+  if (config.associateLeadDeliveryEnabled || config.associateDeliveryEnabled) {
+    await sendTelegramMessage(input.chatId, 'Business lead test blocked because associate lead delivery is enabled. Disable associate delivery before testing.')
+    return { sent: 0 }
+  }
+  await logTelegramTestEvent({
+    telegramUserId: input.telegramUserId,
+    eventType: 'BUSINESS_LEAD_TEST_REQUESTED',
+    payload: { requestedCount: input.count || config.defaultPreviewCount },
+  })
+  try {
+    const result = await sendAdminBusinessLeadTest(input)
+    await logTelegramTestEvent({
+      telegramUserId: input.telegramUserId,
+      eventType: 'BUSINESS_LEAD_TEST_COMPLETED',
+      payload: {
+        sent: result.sent,
+        rawBusinessesDiscovered: result.result.rawBusinessesDiscovered,
+        qualifiedAboveThreshold: result.result.qualifiedAboveThreshold,
+        mode: result.result.mode,
+      },
+    })
+    return { sent: result.sent }
+  } catch (error) {
+    await logTelegramTestEvent({
+      telegramUserId: input.telegramUserId,
+      eventType: 'BUSINESS_LEAD_TEST_FAILED',
+      payload: { error: error instanceof Error ? error.message : 'unknown' },
+    })
+    throw error
+  }
 }
 
 export function beginRespondSession(telegramUserId: string) {
