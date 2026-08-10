@@ -10,6 +10,21 @@
   --text: #e6eefc;
   --muted: #8ea6c4;
   --signal: #4f8cff;
+  --brand-primary: #4f8cff;
+  --brand-secondary: #86a6c9;
+  --brand-accent: #d9e8ff;
+  --background-primary: #030712;
+  --background-secondary: #050b16;
+  --surface: rgba(11, 22, 39, 0.72);
+  --surface-elevated: rgba(18, 32, 55, 0.86);
+  --text-primary: #e6eefc;
+  --text-secondary: #b8ccec;
+  --text-muted: #8ea6c4;
+  --success: #53d18c;
+  --warning: #f8c35b;
+  --danger: #ff8b8b;
+  --border: rgba(148, 185, 227, 0.14);
+  --focus: #7fb0ff;
 }
 
 * { box-sizing: border-box; }

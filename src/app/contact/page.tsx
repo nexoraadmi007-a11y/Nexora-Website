@@ -4,7 +4,7 @@ import PremiumCard from '@/components/ui/PremiumCard'
 
 export const metadata: Metadata = {
   title: 'Contact Nexora Institute',
-  description: 'Contact NEXORA Institute for AI training programs, company training, and general inquiries.',
+  description: 'Contact Nexura Institute for AI skills programmes, business transformation, talent opportunities, and general inquiries.',
 }
 
 export default function ContactPage() {
@@ -15,8 +15,8 @@ export default function ContactPage() {
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.9fr_1fr]">
           <div>
             <span className="eyebrow mb-7">Contact</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Talk to NEXORA Institute.</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">Ask about a program, company training, enrollment, payment, or the best AI learning path for your goals.</p>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Talk to Nexura Institute.</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">Ask about learning tracks, business transformation, talent opportunities, enrollment, payment, or the best AI pathway for your goals.</p>
             <div className="mt-8 grid gap-4">
               <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Email</p><p className="mt-1 text-sm text-steel">admin@nexoragroup.ink</p></PremiumCard>
               <PremiumCard className="p-5 md:p-5"><p className="text-sm font-semibold text-white">Phone / WhatsApp</p><p className="mt-1 text-sm text-steel">0701002613 | 08103200200</p></PremiumCard>

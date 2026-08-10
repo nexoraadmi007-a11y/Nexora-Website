@@ -3,21 +3,21 @@ import { BookOpenCheck, Globe2, GraduationCap, Target } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
 
 export const metadata: Metadata = {
-  title: 'About NEXORA Institute',
-  description: 'NEXORA Institute equips young professionals and business owners with practical AI skills for careers, businesses, and productivity.',
+  title: 'About Nexura Institute',
+  description: 'Nexura Institute is building Africa\'s skills-to-income infrastructure for the AI economy.',
 }
 
 const principles = [
-  ['Practical before theoretical', 'We focus on usable AI skills that help people work, build, communicate, analyze, and execute better.'],
-  ['Outcome-driven learning', 'Every program is structured around practical deliverables, not passive content consumption.'],
-  ['Africa as context', 'NEXORA teaches with Nigerian and African work realities in mind while maintaining a global standard.'],
-  ['Systems that support growth', 'Our CRM, payments, applications, and follow-up systems keep the learner experience organized from interest to enrollment.'],
+  ['Skills before slogans', 'We focus on practical AI capability that helps people work, build, communicate, analyse and execute better.'],
+  ['Proof of work', 'Every programme is structured around projects, portfolio assets and reviewed deliverables.'],
+  ['Africa as context', 'Nexura Institute teaches with Nigerian and African work realities in mind while maintaining a global standard.'],
+  ['Opportunity readiness', 'Learning connects to professional positioning, income readiness and future access to work opportunities.'],
 ]
 
 const timeline = [
-  ['Mission', 'Equip young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.'],
-  ['Vision', 'Build one of Africa\'s most trusted practical AI training institutes for work and business transformation.'],
-  ['Founder Standard', 'NEXORA is designed for serious learners, business operators, and companies that want AI to become useful in real daily work.'],
+  ['Mission', 'Help young Africans learn practical AI-powered skills, build real projects and prepare for income and work opportunities.'],
+  ['Vision', 'Build Africa\'s skills-to-income infrastructure for the AI economy.'],
+  ['Founder Standard', 'Nexura Institute is designed for serious learners, business operators and institutions that want AI to become useful in real daily work.'],
 ]
 
 export default function AboutPage() {
@@ -27,10 +27,10 @@ export default function AboutPage() {
         <div className="grid-field absolute inset-0 opacity-40" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_.9fr] lg:items-end">
           <div>
-            <span className="eyebrow mb-6">About NEXORA</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">A practical AI training institute for careers and businesses.</h1>
+            <span className="eyebrow mb-6">About Nexura Institute</span>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Africa's skills-to-income infrastructure for the AI economy.</h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-steel md:text-lg">
-              NEXORA Institute helps students, graduates, young professionals, entrepreneurs, and business owners turn AI from abstract conversation into practical capability.
+              Nexura Institute helps students, graduates, young professionals, entrepreneurs and business owners turn AI from abstract conversation into practical capability, proof of work and opportunity readiness.
             </p>
           </div>
           <PremiumCard className="rounded-2xl">
@@ -44,7 +44,7 @@ export default function AboutPage() {
       <section className="border-t border-white/10 px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-7xl">
           <span className="eyebrow mb-5">Principles</span>
-          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">How NEXORA thinks about AI education.</h2>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">How Nexura Institute thinks about AI education.</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {principles.map(([title, copy]) => (
               <PremiumCard key={title} className="rounded-2xl">
@@ -79,7 +79,7 @@ export default function AboutPage() {
 
       <section className="px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
-          <PremiumCard className="rounded-2xl"><Target className="h-8 w-8 text-signal" /><h3 className="mt-7 text-2xl font-semibold text-white">Careers</h3><p className="mt-4 text-sm leading-7 text-steel">AI skills, portfolio assets, job readiness, freelancing, and professional confidence.</p></PremiumCard>
+          <PremiumCard className="rounded-2xl"><Target className="h-8 w-8 text-signal" /><h3 className="mt-7 text-2xl font-semibold text-white">Learners</h3><p className="mt-4 text-sm leading-7 text-steel">AI skills, portfolio assets, income readiness, freelancing, and professional confidence.</p></PremiumCard>
           <PremiumCard className="rounded-2xl"><Globe2 className="h-8 w-8 text-signal" /><h3 className="mt-7 text-2xl font-semibold text-white">Businesses</h3><p className="mt-4 text-sm leading-7 text-steel">AI marketing, customer support, sales automation, CRM, content, and operations.</p></PremiumCard>
           <PremiumCard className="rounded-2xl"><GraduationCap className="h-8 w-8 text-signal" /><h3 className="mt-7 text-2xl font-semibold text-white">Companies</h3><p className="mt-4 text-sm leading-7 text-steel">Corporate AI training, employee upskilling, productivity workshops, and leadership awareness.</p></PremiumCard>
         </div>

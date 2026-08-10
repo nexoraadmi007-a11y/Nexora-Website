@@ -82,7 +82,7 @@ async function createApplication(body: Record<string, unknown>, contactId: strin
   const isBusiness = programCode === 'BATP'
   const isComplete = programCode === 'COMPLETE'
   const selectedTrackNames = stringArray(body.selectedTrackNames)
-  const selectedTrackLabel = selectedTrackNames.length > 1 ? `Career Programmes: ${selectedTrackNames.join(', ')}` : selectedTrackNames[0] || (isComplete ? 'Complete' : isBusiness ? 'Business' : 'Career')
+    const selectedTrackLabel = selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks: ${selectedTrackNames.join(', ')}` : selectedTrackNames[0] || (isComplete ? 'Complete' : isBusiness ? 'Business' : 'AI Income')
   return createRecord('NGTP Applications', compact({
     'Application ID': `APP-${Date.now()}`,
     Applicant: [contactId],
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
     const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 10000))
-    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Program' : selectedTrackNames.length > 1 ? `Career Accelerator Programmes (${selectedTrackNames.length})` : selectedTrackNames[0] || 'Career Accelerator')
+    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Programme' : selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks (${selectedTrackNames.length})` : selectedTrackNames[0] || 'AI Income Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
     const visitorId = text(body.visitorId, 160)
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Full name and email are required.' }, { status: 400 })
     }
     if (programCode === 'NGTP' && !validCareerTracks.length) {
-      return NextResponse.json({ error: 'Select a valid Career Accelerator programme.' }, { status: 400 })
+      return NextResponse.json({ error: 'Select a valid AI Income Accelerator track.' }, { status: 400 })
     }
     if (!amount || amount < 1) {
       return NextResponse.json({ error: 'A valid payment amount is required.' }, { status: 400 })
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       platform: 'Website',
       programCode,
       programApplied: programCode,
-      interestAreas: programCode === 'COMPLETE' ? ['Complete AI Accelerator', 'NGTP', 'BATP'] : programCode === 'BATP' ? ['BATP', 'Business AI Transformation'] : ['NGTP', 'Career Accelerator', ...selectedTrackNames],
+      interestAreas: programCode === 'COMPLETE' ? ['Complete AI Accelerator', 'NGTP', 'BATP'] : programCode === 'BATP' ? ['BATP', 'Business AI Transformation'] : ['NGTP', 'AI Income Accelerator', ...selectedTrackNames],
       currentStatus: text(body.customerCategory, 80),
       primaryGoal: text(body.primaryGoal || body.learningGoals || body.growthGoals),
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),

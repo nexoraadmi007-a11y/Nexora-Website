@@ -39,6 +39,18 @@ export const careerTrackPricingRules: PricingRule[] = [
   { name: 'Single Programme', minTracks: 1, maxTracks: 1, price: 10000, status: 'Active' },
 ]
 
+export const skillToIncomeModule = {
+  title: 'From Skill to Income',
+  lessons: [
+    'Choosing a market and positioning your skill',
+    'Packaging a clear service offer',
+    'Portfolio, CV and LinkedIn optimisation',
+    'Finding clients through Instagram, Facebook, LinkedIn, Upwork and direct outreach',
+    'Writing proposals, pricing, handling objections and closing',
+    'Client onboarding, delivery, testimonials, retainers and referral growth',
+  ],
+}
+
 export function calculateCareerTrackPricing(selectedSlugs: string[]) {
   const selectedCount = new Set(selectedSlugs).size
   const subtotal = selectedCount * careerTrackBasePrice
@@ -77,6 +89,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
       { title: 'AI-Powered Writing Workflow', lessons: ['Prompting with role, context, constraints, and examples', 'AI for research, ideation, outlining, and drafts', 'Maintaining brand voice', 'Fact-checking and avoiding AI hallucination'] },
       { title: 'AI Visual and Multimedia Production', lessons: ['Design basics for non-designers', 'AI images for posts and thumbnails', 'Video scripting, captions, voiceover, and editing workflows', 'Quality control before publishing'] },
       { title: 'Distribution, Analytics, and Monetisation', lessons: ['What to measure and what to ignore', 'Hook rate, retention, CTR, and engagement', 'Improving content from performance data', 'Services, sponsorships, products, and affiliates'] },
+      { title: skillToIncomeModule.title, lessons: skillToIncomeModule.lessons },
     ],
     assignments: ['Build a 14-day content calendar.', 'Write 10 AI-assisted content pieces in two formats.', 'Create a simple content performance report.'],
     projects: ['Brand content strategy', 'AI-assisted campaign content pack', 'Content analytics report'],
@@ -114,6 +127,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
       { title: 'Interface Patterns and Systems', lessons: ['Buttons, forms, navigation, cards, and modals', 'Components and design systems', 'Mobile, web, and dashboard conventions', 'Feedback states and micro-interactions'] },
       { title: 'AI as a Design Tool', lessons: ['Prompting for wireframes and UI ideas', 'Using AI for UX critique and research synthesis', 'Generating design alternatives', 'Evaluating AI output with design principles'] },
       { title: 'Prototyping, Handoff, and Case Study', lessons: ['Clickable prototypes', 'Annotations and developer handoff', 'Presenting design decisions', 'Writing a portfolio case study'] },
+      { title: skillToIncomeModule.title, lessons: skillToIncomeModule.lessons },
     ],
     assignments: ['Create a user persona and user flow.', 'Design wireframes and high-fidelity screens.', 'Build a clickable prototype and case study outline.'],
     projects: ['Mobile app redesign', 'Landing page interface', 'Clickable product prototype'],
@@ -151,6 +165,7 @@ export const careerAcceleratorTracks: CareerTrack[] = [
       { title: 'Financial Modelling and Forecasting', lessons: ['Assumptions, logic, and outputs', 'Driver-based forecasting', 'Scenario and sensitivity analysis', 'Valuation basics: DCF, multiples, and comparables'] },
       { title: 'AI-Powered Analysis Workflow', lessons: ['Using AI to read reports and statements', 'Building spreadsheet models with AI assistance', 'Extracting and cleaning data', 'Prompting for better financial questions', 'Validating AI output'] },
       { title: 'Reporting and Decision Support', lessons: ['Turning analysis into insight', 'Dashboards and visualizations', 'Investment memos and executive summaries', 'Presenting numbers to non-financial audiences', 'Accuracy, ethics, and AI limitations'] },
+      { title: skillToIncomeModule.title, lessons: skillToIncomeModule.lessons },
     ],
     assignments: ['Analyse a simple income statement.', 'Build a forecast from clear assumptions.', 'Write a one-page executive finance memo.'],
     projects: ['Ratio analysis workbook', 'Forecast model', 'Financial dashboard', 'Executive report'],
@@ -162,6 +177,43 @@ export const careerAcceleratorTracks: CareerTrack[] = [
       { question: 'Do I need an accounting background?', answer: 'It helps, but it is not required. The programme starts with financial statement foundations.' },
       { question: 'Will this give financial advice certification?', answer: 'No. It builds practical analysis and reporting capability, not regulated financial advisory licensing.' },
       { question: 'Can business owners take it?', answer: 'Yes. It is useful for owners who want to understand pricing, profit, cash flow, and growth decisions.' },
+    ],
+  },
+  {
+    slug: 'ai-automation-no-code',
+    code: 'NGTP-AUTO',
+    title: 'AI Automation & No-Code Solutions',
+    shortTitle: 'AI Automation',
+    description: 'Learn how to design simple business workflows, build no-code automations, and use AI tools to reduce manual work for teams, creators, and small businesses.',
+    duration: '4 weeks',
+    price: 10000,
+    bestFor: 'Problem-solvers, operations-minded learners, business support staff, freelancers, and young professionals who want to build practical automation solutions.',
+    profession: 'AI Automation & No-Code Solutions Operator',
+    skills: ['Workflow mapping', 'No-code automation', 'AI assistants', 'Forms and databases', 'CRM workflows', 'Reporting', 'Client delivery'],
+    opportunities: ['AI Automation Assistant', 'No-Code Solutions Builder', 'Operations Automation Operator', 'CRM Support Assistant', 'AI Productivity Specialist'],
+    tools: ['ChatGPT', 'Airtable', 'Google Forms', 'Notion', 'Zapier or Make', 'Tally or Typeform'],
+    goal: 'Produce an operator who can understand repeated manual work, map the workflow, and build simple AI/no-code systems that save time and improve follow-up.',
+    overview: 'This programme helps learners turn everyday operational problems into simple systems: forms, databases, automations, dashboards, reminders, AI prompts, and client-ready workflows.',
+    whyCompaniesHire: ['Businesses need people who can organise data and reduce manual work.', 'Teams want faster follow-up, reporting, and admin workflows.', 'Small businesses need lightweight systems before they can hire full technical teams.', 'Companies value operators who can connect tools and document processes clearly.'],
+    outcomes: ['Map a repeated workflow and identify automation opportunities.', 'Build forms, databases, and basic CRM workflows.', 'Use AI to create repeatable prompts, responses, and documentation.', 'Deliver a simple automation project with clear documentation.'],
+    modules: [
+      { title: 'Automation Thinking', lessons: ['What automation is and is not', 'Identifying repeated manual work', 'Inputs, actions, decisions and outputs', 'When humans must stay in the loop'] },
+      { title: 'Workflow Mapping and Data Capture', lessons: ['Mapping current processes', 'Designing forms and intake flows', 'Structuring simple databases', 'Naming, statuses and ownership'] },
+      { title: 'AI Assistants and Prompt Systems', lessons: ['Reusable prompts', 'AI for summaries, replies and classification', 'Quality checks and escalation rules', 'Documenting AI workflows'] },
+      { title: 'No-Code Automations', lessons: ['Triggers and actions', 'Connecting forms, sheets, CRMs and messages', 'Testing automations safely', 'Handling errors and edge cases'] },
+      { title: 'Dashboards and Reporting', lessons: ['Choosing useful metrics', 'Building simple dashboards', 'Weekly reporting workflows', 'Turning data into decisions'] },
+      { title: skillToIncomeModule.title, lessons: skillToIncomeModule.lessons },
+    ],
+    assignments: ['Map one manual workflow.', 'Build a form-to-database workflow.', 'Create one tested automation and a simple dashboard.'],
+    projects: ['Lead capture workflow', 'Customer follow-up tracker', 'Simple automation dashboard'],
+    portfolio: ['Workflow map', 'Automation build notes', 'Screenshots or demo link', 'Dashboard sample', 'Client handover checklist'],
+    applications: ['Small business CRM', 'Follow-up automation', 'Reporting systems', 'Admin operations', 'Client onboarding workflows'],
+    capstone: 'Build a complete mini operating workflow for a real or simulated business: intake form, database, automation, dashboard, and handover documentation.',
+    certificate: 'Certificate is issued after assignments, automation test evidence, documentation, and final capstone review.',
+    faqs: [
+      { question: 'Do I need to code?', answer: 'No. The track focuses on no-code and AI-assisted systems, with clear process thinking first.' },
+      { question: 'Can I use this for freelance work?', answer: 'Yes. The shared From Skill to Income module helps you package automation services responsibly.' },
+      { question: 'Will I build a real workflow?', answer: 'Yes. The capstone requires a working workflow with documentation.' },
     ],
   },
 ]

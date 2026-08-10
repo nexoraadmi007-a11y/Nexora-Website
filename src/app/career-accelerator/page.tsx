@@ -1,19 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle2, FileText, Palette, Wallet, type LucideIcon } from 'lucide-react'
+import { ArrowRight, Bot, CheckCircle2, FileText, Palette, Wallet, type LucideIcon } from 'lucide-react'
 import CareerTrackSelector from '@/components/sections/CareerTrackSelector'
 import PremiumCard from '@/components/ui/PremiumCard'
 import { careerAcceleratorTracks } from '@/lib/career-accelerator-v2'
 
 export const metadata: Metadata = {
-  title: 'Career Accelerator Programmes | NEXORA Institute',
-  description: 'Choose one of three practical AI Career Accelerator programmes: AI Content Creation, Certified UI/UX Designer, or AI Financial Analyst.',
+  title: 'AI Income Accelerator | Nexura Institute',
+  description: 'Choose one of four AI Income Accelerator specialisations and build practical skills, projects, portfolio assets, and income readiness.',
 }
 
 const icons: Record<string, LucideIcon> = {
   'ai-content-creation': FileText,
   'ui-ux-designer': Palette,
   'ai-financial-analyst': Wallet,
+  'ai-automation-no-code': Bot,
 }
 
 const philosophy = [
@@ -29,12 +30,12 @@ export default function CareerAcceleratorPage() {
         <div className="grid-field absolute inset-0 opacity-45" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">Career Accelerator V3</span>
+            <span className="eyebrow mb-7">AI Income Accelerator</span>
             <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">
-              Choose one AI-powered career programme and build practical proof of skill.
+              From skill to income in the AI economy.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">
-              The Career Accelerator now focuses on three clear professional paths: content creation, UI/UX design, and financial analysis. Each programme costs NGN 10,000 and leads to a capstone portfolio.
+              Choose one AI-powered specialisation, complete real projects, build proof of work, and learn how to package your skill for freelance, client and future work opportunities. Each specialisation costs NGN 10,000.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#programmes" className="button-primary inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold">
@@ -50,9 +51,9 @@ export default function CareerAcceleratorPage() {
           <div className="glass rounded-lg p-5 md:p-7">
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-frost">Programme Snapshot</p>
             <div className="mt-6 grid gap-4">
-              <Metric label="Programmes" value="3 focused options" />
+              <Metric label="Specialisations" value="4 focused options" />
               <Metric label="Price" value="NGN 10,000 each" />
-              <Metric label="Structure" value="Modules, assignments, capstone, certificate" />
+              <Metric label="Structure" value="Skills, projects, portfolio, income readiness" />
             </div>
           </div>
         </div>
@@ -61,8 +62,8 @@ export default function CareerAcceleratorPage() {
       <section className="section border-t border-white/10 bg-white/[0.012]">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="max-w-4xl">
-            <span className="eyebrow">Learn to Think Like a Professional</span>
-            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">AI supports the work. It does not replace professional thinking.</h2>
+            <span className="eyebrow">Learn. Build. Earn. Work.</span>
+            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">AI supports the work. Proof of work creates the opportunity.</h2>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {philosophy.map(([title, copy]) => (
@@ -78,10 +79,10 @@ export default function CareerAcceleratorPage() {
       <section id="programmes" className="section border-t border-white/10">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="max-w-4xl">
-            <span className="eyebrow">Choose Your Programme</span>
-            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Three practical career programmes.</h2>
+            <span className="eyebrow">Choose Your Specialisation</span>
+            <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Four practical skills-to-income tracks.</h2>
             <p className="mt-5 text-base leading-8 text-steel md:text-lg">
-              Each programme has a dedicated page with curriculum, assignments, capstone, portfolio outcomes, FAQs, and enrolment.
+              Each specialisation includes professional foundations, AI-powered execution, projects, portfolio outcomes, and the shared From Skill to Income module.
             </p>
           </div>
 

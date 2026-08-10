@@ -46,7 +46,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
     event.preventDefault()
     if (!selected.length) {
       setStatus('error')
-      setMessage('Select a Career Accelerator programme before payment.')
+      setMessage('Select an AI Income Accelerator track before payment.')
       return
     }
 
@@ -58,7 +58,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
     const payload = {
       kind: 'accelerator',
       programCode: 'NGTP',
-      programName: selectedTracks[0]?.title || 'Career Accelerator',
+      programName: selectedTracks[0]?.title || 'AI Income Accelerator',
       amount: pricing.total,
       selectedTrackSlugs: selectedTracks.map((track) => track.slug),
       selectedTrackNames: selectedTracks.map((track) => track.title),
@@ -102,10 +102,10 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
     <section id="enroll" className="section border-t border-white/10 bg-white/[0.012]">
       <div className="mx-auto grid max-w-7xl gap-8 px-5 md:px-8 lg:grid-cols-[1.05fr_.95fr]">
         <div>
-          <span className="eyebrow">Choose Programme</span>
-          <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Select the Career Accelerator programme you want.</h2>
+          <span className="eyebrow">Choose Track</span>
+          <h2 className="mt-5 text-4xl font-semibold text-white md:text-5xl">Select your AI Income Accelerator track.</h2>
           <p className="mt-5 max-w-2xl text-base leading-8 text-steel">
-            Each programme is independent and costs NGN 10,000. Pick one programme now, then proceed securely through Paystack.
+            Each specialisation costs NGN 10,000 and includes the shared From Skill to Income module. Pick one track now, then proceed securely through Paystack.
           </p>
 
           <div className="mt-8 grid gap-3">
@@ -140,8 +140,8 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
 
           <div className="rounded-lg border border-white/10 bg-black/20 p-4">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-steel">Selected Programme</span>
-              <span className="text-sm font-bold text-white">{pricing.selectedCount ? '1 Programme' : 'None'}</span>
+              <span className="text-sm text-steel">Selected Track</span>
+              <span className="text-sm font-bold text-white">{pricing.selectedCount ? '1 Track' : 'None'}</span>
             </div>
             <div className="mt-4 grid gap-2">
               {selectedTracks.length ? selectedTracks.map((track) => (
@@ -149,7 +149,7 @@ export default function CareerTrackSelector({ defaultTrackSlug }: { defaultTrack
               )) : <p className="text-sm text-steel">No programme selected yet.</p>}
             </div>
             <div className="mt-5 grid gap-3 border-t border-white/10 pt-4 text-sm">
-              <Line label="Programme Fee" value={`NGN ${pricing.subtotal.toLocaleString()}`} />
+              <Line label="Track Fee" value={`NGN ${pricing.subtotal.toLocaleString()}`} />
               <Line label="Pricing Rule" value={pricing.ruleName} />
               <div className="flex items-center justify-between gap-4 text-lg font-semibold text-white">
                 <span>Final Price</span>

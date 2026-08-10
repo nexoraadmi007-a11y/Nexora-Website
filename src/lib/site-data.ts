@@ -59,17 +59,17 @@ export type Cohort = {
 
 const fallbackPrograms: Program[] = [
   {
-    name: 'AI Career Accelerator',
+    name: 'AI Income Accelerator',
     code: 'NGTP',
     family: 'Career',
     audience: 'NYSC members, 500-level students, graduates, and young professionals.',
     audienceType: 'Career',
     slug: 'career-accelerator',
-    duration: '3 career programmes',
+    duration: '4 specialisations',
     price: 10000,
-    description: 'A modular AI Career Accelerator with three independent programmes in AI content creation, AI-powered UI/UX design, and AI financial analysis.',
-    curriculum: 'AI Content Creation\nCertified UI/UX Designer (AI-Powered)\nAI Financial Analyst',
-    cta: 'Apply for Career Accelerator',
+    description: 'A flagship skills-to-income accelerator with four specialisations: AI content and digital marketing, AI UI/UX and design, AI financial and business analysis, and AI automation/no-code solutions.',
+    curriculum: 'AI Content & Digital Marketing\nAI UI/UX & Digital Design\nAI Financial & Business Analysis\nAI Automation & No-Code Solutions\nFrom Skill to Income',
+    cta: 'Apply for AI Income Accelerator',
     paymentLink: '',
   },
   {
@@ -94,7 +94,7 @@ function programFromFields(fields: Record<string, any>): Program {
   const rawPrice = Number(fields['Website Price'] || fallback.price)
   const price = rawPrice || fallback.price
   const publicName = code === 'NGTP'
-    ? 'AI Career Accelerator'
+    ? 'AI Income Accelerator'
     : code === 'BATP'
       ? 'AI Business Transformation Program'
       : code === 'COMPLETE'

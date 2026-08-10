@@ -4,7 +4,7 @@ import WebsiteForm from '@/components/sections/WebsiteForms'
 import PremiumCard from '@/components/ui/PremiumCard'
 
 export const metadata: Metadata = {
-  title: 'Corporate AI Training | NEXORA Institute',
+  title: 'Corporate AI Training | Nexura Institute',
   description: 'Request corporate AI training, employee AI upskilling, productivity workshops, leadership AI sessions, and operational AI awareness training.',
 }
 
@@ -25,7 +25,7 @@ export default function CorporateTrainingPage() {
             <span className="eyebrow mb-6">Companies</span>
             <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Corporate AI training for modern teams.</h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-steel md:text-lg">
-              NEXORA helps organizations train employees, managers, and teams to use AI for practical productivity, communication, reporting, and better execution.
+              Nexura Institute helps organisations train employees, managers, and teams to use AI for practical productivity, communication, reporting, and better execution.
             </p>
           </div>
           <WebsiteForm kind="corporate" title="Request corporate training" cta="Submit Company Inquiry" />
@@ -55,7 +55,7 @@ export default function CorporateTrainingPage() {
         <div className="mx-auto max-w-4xl text-center">
           <CheckCircle2 className="mx-auto h-9 w-9 text-signal" />
           <h2 className="mt-6 text-4xl font-semibold text-white md:text-5xl">Bring practical AI literacy into your organization.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-steel">Send an inquiry and the NEXORA team will follow up with the right training format for your company.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-steel">Send an inquiry and the Nexura Institute team will follow up with the right training format for your company.</p>
         </div>
       </section>
     </>

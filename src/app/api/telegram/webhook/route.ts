@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
           const summary = [
             'NEXORA Programme Knowledge Synchronised',
             '',
-            `AI Career Accelerator: NGN ${Number(career?.currentPrice || 0).toLocaleString('en-NG')}`,
+            `AI Income Accelerator: NGN ${Number(career?.currentPrice || 0).toLocaleString('en-NG')}`,
             `AI Business Transformation Programme: NGN ${Number(business?.currentPrice || 0).toLocaleString('en-NG')}`,
             `Last synchronised: ${new Date().toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}`,
           ].join('\n')

@@ -17,9 +17,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { track: slug } = await params
   const track = getCareerTrack(slug)
-  if (!track) return { title: 'Career Programme Not Found | NEXORA Institute' }
+  if (!track) return { title: 'Learning Track Not Found | Nexura Institute' }
   return {
-    title: `${track.title} | NEXORA Career Accelerator`,
+    title: `${track.title} | AI Income Accelerator`,
     description: track.description,
   }
 }
@@ -34,13 +34,13 @@ export default async function CareerTrackPage({ params }: PageProps) {
       <section className="relative overflow-hidden px-5 pb-20 pt-32 md:px-8 md:pt-40">
         <div className="grid-field absolute inset-0 opacity-45" />
         <div className="relative mx-auto max-w-7xl">
-          <Link href="/career-accelerator" className="button-secondary inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold">
+          <Link href="/learn" className="button-secondary inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold">
             <ArrowLeft className="h-4 w-4" />
-            Back to Career Accelerator
+            Back to AI Income Accelerator
           </Link>
           <div className="mt-10 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
             <div>
-              <span className="eyebrow mb-7">Career Programme</span>
+              <span className="eyebrow mb-7">AI Income Accelerator Track</span>
               <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">{track.title}</h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">{track.description}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">

@@ -6,8 +6,8 @@ import WhatsAppButton from '@/components/layout/WhatsAppButton'
 import ReferralTracker from '@/components/layout/ReferralTracker'
 
 export const metadata: Metadata = {
-  title: 'NEXORA Institute | Practical AI Training for Careers and Businesses',
-  description: 'NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.',
+  title: 'Nexura Institute | Skills-to-Income Infrastructure for the AI Economy',
+  description: 'Nexura Institute helps young Africans learn practical AI-powered skills, build real projects, prepare income-ready portfolios, and access future work opportunities.',
   icons: {
     icon: '/nexora-mark.png',
   },

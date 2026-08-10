@@ -6,8 +6,8 @@ import { batpBeforeAfter, batpDeliverables, batpFaqs, batpIndustries, batpPillar
 import { getBusinessTransformation } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'AI Business Transformation Program | NEXORA Institute',
-  description: 'Transform your business into an AI-powered business in 30 days with branding, website, marketing, sales, automation, dashboard, and growth systems.',
+  title: 'AI Business Transformation Programme | Nexura Institute',
+  description: 'Build the systems behind a business that can grow: branding, website, customer management, marketing, sales, automation, reporting and operations.',
   keywords: ['AI for Small Businesses', 'Business Automation Nigeria', 'AI Business Training', 'Business Growth Programme', 'SME Digital Transformation'],
 }
 
@@ -22,18 +22,18 @@ export default async function BusinessAITransformationPage() {
         <div className="grid-field absolute inset-0 opacity-55" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_.9fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-7">AI Business Transformation Program</span>
-            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Build an AI-Powered Business in 30 Days</h1>
+            <span className="eyebrow mb-7">For Businesses</span>
+            <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">Build the systems behind a business that can grow.</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-steel">
-              Stop running your business manually. Build the systems, branding, marketing, sales process, and automation your business needs to grow.
+              For Instagram businesses, Facebook vendors, WhatsApp businesses, social-commerce brands and founder-led SMEs that need better marketing, sales, customer follow-up, automation and reporting.
             </p>
             <p className="mt-5 max-w-2xl text-base leading-7 text-frost">
-              Transform your business into an AI-powered business in just 30 days.
+              Pricing is confirmed after fit review while the programme scope is being finalised.
             </p>
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Duration</p><p className="mt-1 text-xl font-bold text-white">4 weeks</p></div>
               <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Pathway</p><p className="mt-1 text-xl font-bold text-white">1</p></div>
-              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Price</p><p className="mt-1 text-xl font-bold text-white">NGN 35,000</p></div>
+              <div className="glass rounded-2xl p-4"><p className="text-xs text-steel">Price</p><p className="mt-1 text-xl font-bold text-white">Review first</p></div>
             </div>
             <a href="#apply" className="button-primary mt-9 inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold">
               Apply Now
@@ -41,7 +41,7 @@ export default async function BusinessAITransformationPage() {
             </a>
           </div>
           <div id="apply">
-            <WebsiteForm kind="batp" title="Apply for AI Business Transformation" cta="Pay NGN 35,000" payAfterSubmit context={{ amount: 35000, programName: 'AI Business Transformation Program', programCode: 'BATP', cohort: 'Next BATP Cohort' }} />
+            <WebsiteForm kind="batp" title="Request Business Transformation Review" cta="Submit Business Review Request" context={{ programName: 'AI Business Transformation Programme', programCode: 'BATP', cohort: 'Next BATP Cohort' }} />
           </div>
         </div>
       </section>

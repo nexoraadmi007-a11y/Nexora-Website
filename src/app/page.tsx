@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, BarChart3, Bot, BriefcaseBusiness, CheckCircle2, GraduationCap, Sparkles, type LucideIcon } from 'lucide-react'
+import { ArrowRight, BarChart3, Bot, BriefcaseBusiness, CheckCircle2, GraduationCap, Layers3, Network, Sparkles, type LucideIcon } from 'lucide-react'
 import PremiumCard from '@/components/ui/PremiumCard'
 import { getPrograms, getTestimonials } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'NEXORA Institute | Practical AI Training for Careers and Businesses',
-  description: 'NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.',
+  title: 'Nexura Institute | Skills-to-Income Platform for the AI Economy',
+  description: 'Nexura Institute helps young Africans learn practical AI skills, build real projects, prepare income-ready portfolios, and access future work opportunities.',
 }
 
 function CTA({ href, children, variant = 'primary' }: { href: string; children: React.ReactNode; variant?: 'primary' | 'secondary' }) {
@@ -19,33 +19,33 @@ function CTA({ href, children, variant = 'primary' }: { href: string; children: 
 }
 
 const outcomes: Array<[string, string, LucideIcon]> = [
-  ['Work faster with AI', 'Use ChatGPT and AI tools for research, writing, analysis, planning, and daily execution.', Bot],
-  ['Build stronger career assets', 'Create practical proof of work, portfolios, dashboards, CVs, and LinkedIn assets.', GraduationCap],
-  ['Grow business productivity', 'Improve marketing, customer support, content, CRM, proposals, and operations.', BriefcaseBusiness],
+  ['Learn practical AI skills', 'Develop useful capability in content, design, finance, analysis, automation and business productivity.', Bot],
+  ['Build proof of work', 'Complete real projects, capstones, dashboards, case studies, and portfolio-ready assets.', Layers3],
+  ['Prepare for opportunity', 'Improve your profile, package your skills, and become visible for internships, projects and early work opportunities.', Network],
 ]
 
 const why = [
-  'Practical classes built around real work, not theory.',
-  'Clear program structure, deliverables, and application flow.',
-  'Airtable-powered CRM keeps applications, payments, referrals, and follow-up organized.',
-  'Designed for Nigerian students, young professionals, and business owners.',
+  'A skills-to-income learning model built around usable work, not passive content.',
+  'Structured programmes with projects, portfolio outcomes, and guided delivery.',
+  'Airtable, Paystack, Telegram and admin systems already support enrolment and operations.',
+  'Designed for African students, graduates, early professionals, business owners, and employers.',
 ]
 
 const steps = [
-  ['Choose a program', 'Select the Career Accelerator or Business Transformation Program.'],
-  ['Apply and confirm payment', 'Submit your details and complete enrollment securely.'],
-  ['Learn by building', 'Attend sessions, complete practical tasks, and create usable assets.'],
-  ['Use the skills', 'Apply AI to your career, business, workplace, or client work.'],
+  ['Learn', 'Build practical AI-powered skills through guided live learning and structured modules.'],
+  ['Build', 'Complete projects, portfolio assets, case studies, and capstones that show real capability.'],
+  ['Earn', 'Learn how to package your skill, find clients, write proposals, and handle conversations responsibly.'],
+  ['Work', 'Eligible graduates may be considered for internships, projects, AI-data work and employer opportunities.'],
 ]
 
 const faqs = [
   ['Do I need a tech background?', 'No. The programs are built for practical users who want to apply AI at work or in business.'],
-  ['How long are the programs?', 'Each Career Accelerator programme contains 6 modules plus assignments and a final capstone project.'],
+  ['How long are the programs?', 'Each AI Income Accelerator specialisation runs for 4 weeks with modules, assignments, income-readiness work and a capstone project.'],
   ['Can companies train their teams?', 'Yes. Companies can request corporate AI training, leadership workshops, and employee productivity sessions.'],
 ]
 
 function trackLabel(code: string) {
-  return code === 'BATP' ? '4 weeks - NGN 35,000' : '3 career programmes - NGN 10,000 each'
+  return code === 'BATP' ? 'Price pending confirmation' : '4 specialisations - NGN 10,000 each'
 }
 
 export default async function HomePage() {
@@ -61,16 +61,16 @@ export default async function HomePage() {
         <div className="grid-field absolute inset-0 opacity-45" />
         <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.08fr_.92fr] lg:items-center">
           <div>
-            <span className="eyebrow mb-6">NEXORA Institute</span>
+            <span className="eyebrow mb-6">Nexura Institute</span>
             <h1 className="max-w-5xl text-5xl font-semibold leading-[0.98] text-white md:text-7xl">
-              Learn practical AI skills that advance your career or grow your business.
+              Build skills that create opportunity.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-steel md:text-lg">
-              NEXORA Institute equips young professionals and business owners with practical AI skills that improve careers, businesses, and productivity.
+              Nexura Institute helps young Africans build practical AI-powered skills, create real projects, learn how to take those skills to market, and prepare for the future of work.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <CTA href="/programs">View Programs</CTA>
-              <CTA href="/corporate-training" variant="secondary">For Companies</CTA>
+              <CTA href="/learn">Explore Programmes</CTA>
+              <CTA href="#how-it-works" variant="secondary">See How It Works</CTA>
             </div>
           </div>
           <div className="glass rounded-2xl p-5 md:p-7">
@@ -92,26 +92,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
+      <section id="how-it-works" className="border-y border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
-              <span className="eyebrow mb-5">Programs</span>
-              <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">One institute. Practical AI programs for work and business.</h2>
+              <span className="eyebrow mb-5">Learn. Build. Earn. Work.</span>
+              <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">A visible journey from skill development to opportunity readiness.</h2>
             </div>
-            <CTA href="/programs" variant="secondary">Compare Programs</CTA>
+            <CTA href="/opportunities" variant="secondary">View Opportunities</CTA>
           </div>
-          <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
-            {cards.map(({ code, href, program, icon: Icon }) => (
-              <PremiumCard key={code} className="min-h-[330px] rounded-2xl">
-                <Icon className="h-8 w-8 text-signal" />
-                <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
-                <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
-                <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
-                  <span>{code === 'BATP' ? '4 weeks' : '3 career programmes'}</span>
-                  <span>{code === 'BATP' ? 'NGN 35,000' : 'NGN 10,000 per programme'}</span>
-                </div>
-                <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>Apply Now</CTA>
+          <div className="grid gap-5 md:grid-cols-4">
+            {steps.map(([title, copy], index) => (
+              <PremiumCard key={title} className="min-h-[250px] rounded-lg">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">0{index + 1}</p>
+                <h3 className="mt-5 text-2xl font-semibold text-white">{title}</h3>
+                <p className="mt-4 text-sm leading-7 text-steel">{copy}</p>
               </PremiumCard>
             ))}
           </div>
@@ -120,8 +115,8 @@ export default async function HomePage() {
 
       <section className="px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-7xl">
-          <span className="eyebrow mb-5">Outcomes</span>
-          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Learn skills you can use immediately.</h2>
+          <span className="eyebrow mb-5">Platform Outcomes</span>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Practical learning with proof, readiness, and pathways.</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {outcomes.map(([title, copy, Icon]) => (
               <PremiumCard key={title} className="min-h-[260px] rounded-2xl">
@@ -137,8 +132,8 @@ export default async function HomePage() {
       <section className="border-t border-white/10 bg-white/[0.015] px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
           <div>
-            <span className="eyebrow mb-5">Why NEXORA</span>
-            <h2 className="text-4xl font-semibold text-white md:text-5xl">Built for practical adoption, not AI hype.</h2>
+            <span className="eyebrow mb-5">Why Nexura Institute</span>
+            <h2 className="text-4xl font-semibold text-white md:text-5xl">Built like a workforce platform, not an online-course template.</h2>
           </div>
           <div className="grid gap-3">
             {why.map((item) => (
@@ -153,14 +148,19 @@ export default async function HomePage() {
 
       <section className="px-5 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-7xl">
-          <span className="eyebrow mb-5">How It Works</span>
-          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">A simple path from interest to practical capability.</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-4">
-            {steps.map(([title, copy], index) => (
-              <PremiumCard key={title} className="min-h-[230px] rounded-2xl">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-steel">Step {index + 1}</p>
-                <h3 className="mt-5 text-xl font-semibold text-white">{title}</h3>
-                <p className="mt-4 text-sm leading-7 text-steel">{copy}</p>
+          <span className="eyebrow mb-5">Programmes</span>
+          <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Start with skills. Extend into business transformation when the goal is systems.</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {cards.map(({ code, href, program, icon: Icon }) => (
+              <PremiumCard key={code} className="min-h-[330px] rounded-lg">
+                <Icon className="h-8 w-8 text-signal" />
+                <h3 className="mt-7 text-2xl font-semibold text-white">{program?.name || code}</h3>
+                <p className="mt-4 text-sm leading-7 text-steel">{program?.description}</p>
+                <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-frost">
+                  <span>{code === 'BATP' ? '4 weeks' : '4 specialisations'}</span>
+                  <span>{code === 'BATP' ? 'Price pending confirmation' : 'NGN 10,000 per specialisation'}</span>
+                </div>
+                <CTA href={href} variant={code === 'NGTP' ? 'primary' : 'secondary'}>{code === 'NGTP' ? 'Explore Specialisations' : 'For Businesses'}</CTA>
               </PremiumCard>
             ))}
           </div>
@@ -173,7 +173,7 @@ export default async function HomePage() {
           <h2 className="max-w-3xl text-4xl font-semibold text-white md:text-5xl">Outcome stories will live here as cohorts progress.</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {(testimonials.length ? testimonials.slice(0, 2) : [
-              { name: 'NEXORA Learner', role: 'Career Accelerator', organization: '', testimonial: 'NEXORA made AI feel practical and usable for real work, not just theory.' },
+              { name: 'Nexura Institute Learner', role: 'AI Income Accelerator', organization: '', testimonial: 'Nexura Institute made AI feel practical and usable for real work, not just theory.' },
               { name: 'Business Participant', role: 'Business Accelerator', organization: '', testimonial: 'The program helped us see immediate productivity use cases for AI in daily operations.' },
             ]).map((item) => (
               <PremiumCard key={item.name} className="rounded-2xl">
@@ -208,10 +208,10 @@ export default async function HomePage() {
         <div className="mx-auto max-w-4xl text-center">
           <BarChart3 className="mx-auto h-9 w-9 text-signal" />
           <h2 className="mt-6 text-4xl font-semibold text-white md:text-5xl">Start with the program that fits your next move.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-steel">Whether you are preparing for work, growing a business, or training a team, NEXORA gives you a practical path into AI.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-steel">Whether you are preparing for work, growing a business, or hiring emerging talent, Nexura Institute gives you a practical path into the AI economy.</p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <CTA href="/programs">View Programs</CTA>
-            <CTA href="/contact" variant="secondary">Talk to NEXORA</CTA>
+            <CTA href="/learn">Explore Learning</CTA>
+            <CTA href="/hire-talent" variant="secondary">Hire Nexura Talent</CTA>
           </div>
         </div>
       </section>

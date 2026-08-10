@@ -5,8 +5,8 @@ import PremiumCard from '@/components/ui/PremiumCard'
 import { getPrograms } from '@/lib/site-data'
 
 export const metadata: Metadata = {
-  title: 'Programs | NEXORA Institute',
-  description: 'Choose a NEXORA Institute AI training program for career growth or business transformation.',
+  title: 'Programmes | Nexura Institute',
+  description: 'Choose a Nexura Institute programme for AI skills, income readiness, opportunity preparation or business transformation.',
 }
 
 const fallbackCards: Array<{
@@ -21,19 +21,19 @@ const fallbackCards: Array<{
 }> = [
   {
     code: 'NGTP',
-    name: 'AI Career Accelerator',
-    slug: 'career-accelerator',
-    priceLabel: 'NGN 10,000 per programme',
-    duration: '3 career programmes',
-    target: ['NYSC Members', 'Final-Year Students', 'Graduates', 'Young Professionals'],
-    focus: ['AI content creation', 'Certified UI/UX design', 'AI financial analysis'],
+    name: 'AI Income Accelerator',
+    slug: 'learn',
+    priceLabel: 'NGN 10,000 per specialisation',
+    duration: '4 specialisations',
+    target: ['Undergraduates', 'Final-Year Students', 'NYSC Members', 'Recent Graduates', 'Early-Career Professionals'],
+    focus: ['AI content and digital marketing', 'AI UI/UX and digital design', 'AI financial and business analysis', 'AI automation and no-code solutions', 'From Skill to Income'],
     icon: GraduationCap,
   },
   {
     code: 'BATP',
-    name: 'AI Business Transformation Program',
+    name: 'AI Business Transformation Programme',
     slug: 'business-transformation',
-    priceLabel: 'NGN 35,000',
+    priceLabel: 'Pricing confirmed after review',
     duration: '4 weeks',
     target: ['Business Owners', 'Entrepreneurs', 'SMEs', 'Startups', 'Freelancers', 'Agencies'],
     focus: ['Brand identity', 'Website and lead capture', 'Marketing engine', 'Sales system and CRM', 'Automation, dashboards, and 90-day growth plan'],
@@ -53,12 +53,12 @@ export default async function ProgramsPage() {
       <section className="relative overflow-hidden px-5 pb-16 pt-32 md:px-8 md:pb-20 md:pt-40">
         <div className="grid-field absolute inset-0 opacity-40" />
         <div className="relative mx-auto max-w-7xl">
-          <span className="eyebrow mb-6">Programs</span>
+          <span className="eyebrow mb-6">Programmes</span>
           <h1 className="max-w-5xl text-5xl font-semibold leading-[1] text-white md:text-7xl">
-            Choose the practical AI program that matches your next move.
+            Choose the practical AI pathway that matches your next move.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-steel md:text-lg">
-            NEXORA Institute helps career builders and business owners learn AI through structured, outcome-driven programs.
+            Nexura Institute helps learners and business owners move from AI awareness to real capability, proof of work and opportunity readiness.
           </p>
         </div>
       </section>

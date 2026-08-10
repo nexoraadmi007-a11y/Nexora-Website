@@ -92,7 +92,7 @@ const fieldsByKind: Record<FormKind, Field[]> = {
     { name: 'fullName', label: 'Full name', required: true },
     { name: 'email', label: 'Email', type: 'email', required: true },
     { name: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
-    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['AI Career Accelerator', 'AI Business Transformation Program', 'Complete AI Accelerator', 'Corporate AI Training', 'General Inquiry'] },
+    { name: 'inquiryType', label: 'Inquiry type', type: 'select', required: true, options: ['AI Income Accelerator', 'AI Business Transformation Programme', 'Hire Nexura Talent', 'Partner Network', 'General Inquiry'] },
     { name: 'message', label: 'Message', type: 'textarea', required: true },
   ],
   corporate: [
@@ -199,7 +199,7 @@ export default function WebsiteForm({
     <form onSubmit={submit} className="glass grid gap-4 rounded-[28px] p-5 md:p-7">
       <div>
         <p className="text-xl font-semibold text-white">{title}</p>
-        <p className="mt-2 text-sm leading-6 text-steel">Your details are sent securely into the Nexora Airtable operating system.</p>
+        <p className="mt-2 text-sm leading-6 text-steel">Your details are sent securely into the Nexura Institute operating system.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {fields.map((field) => (
