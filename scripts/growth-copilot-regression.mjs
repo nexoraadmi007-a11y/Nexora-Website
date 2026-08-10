@@ -85,12 +85,12 @@ const cases = [
     ],
     expectIntent: 'AFFORDABILITY_OBJECTION',
     mustInclude: ['NGN 10,000', 'available right now', 'worth it'],
-    mustNotInclude: ['Business Transformation', 'business assessment', 'customer management', 'website', 'NGN 35,000'],
+    mustNotInclude: ['Business Transformation', 'business assessment', 'customer management', 'website', 'NGN 25,000'],
   },
   {
     name: 'Test D - Business Transformation enquiry',
     body: { mode: 'conversation', text: 'tell me more about Business Transformation program', prospectReference: 'test-d-business-enquiry' },
-    mustInclude: ['Business Transformation', 'NGN 35,000', '4 weeks', 'business owners'],
+    mustInclude: ['Business Transformation', 'NGN 25,000', '4 weeks', 'business owners'],
     mustNotInclude: ['AI Content Creation', 'UI/UX', 'Financial Analyst'],
   },
   {
@@ -116,7 +116,7 @@ const cases = [
     body: { mode: 'conversation', text: 'how much does it cost?', prospectReference: `test-g-ambiguous-${runId}` },
     expectIntent: 'PRICE_QUERY',
     mustInclude: ['Career Accelerator', 'Business Transformation'],
-    mustNotInclude: ['NGN 10,000', 'NGN 35,000'],
+    mustNotInclude: ['NGN 10,000', 'NGN 25,000'],
   },
   {
     name: 'Test H - Career price question with context',
@@ -135,7 +135,7 @@ const cases = [
       { mode: 'conversation', text: 'how much does it cost?', prospectReference: 'test-i-business-price' },
     ],
     expectIntent: 'PRICE_QUERY',
-    mustInclude: ['NGN 35,000', '4 weeks'],
+    mustInclude: ['NGN 25,000', '4 weeks'],
     mustNotInclude: ['Career Accelerator'],
   },
   {

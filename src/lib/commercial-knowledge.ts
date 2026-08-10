@@ -181,7 +181,7 @@ function businessProgramme(): CommercialProgramme {
     description: 'A practical four-week business transformation programme for business owners who want better branding, online presence, customer management, marketing, sales, automation, dashboards, and a 90-day growth plan.',
     targetAudience: ['Business owners', 'Entrepreneurs', 'SMEs', 'Instagram vendors', 'Facebook vendors', 'WhatsApp businesses', 'Social-commerce brands', 'Founder-led operations'],
     duration: '4 weeks',
-    currentPrice: 35000,
+    currentPrice: 25000,
     currency: 'NGN',
     priceBasis: 'programme fee',
     active: true,

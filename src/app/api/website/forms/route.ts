@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         kind === 'community' ? 'Community' : '',
         kind === 'contact' ? interestByKind[kind] : '',
       ].filter(Boolean),
-      primaryGoal: kind === 'accelerator' ? 'Join the Nexura Institute AI Income Accelerator' : kind === 'batp' ? text(body.learningGoals || 'Join the Business Transformation Accelerator') : kind === 'complete' ? text(body.learningGoals || 'Join the Complete AI Accelerator') : text(body.message || body.communityInterest),
+      primaryGoal: kind === 'accelerator' ? 'Join the Nexora Institute AI Income Accelerator' : kind === 'batp' ? text(body.learningGoals || 'Join the Business Transformation Accelerator') : kind === 'complete' ? text(body.learningGoals || 'Join the Complete AI Accelerator') : text(body.message || body.communityInterest),
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),
       notes: [
         `Website form: ${kind}`,

@@ -13,7 +13,7 @@ const checks = [
 export function GET() {
   return NextResponse.json({
     status: 'FOUNDATION_READY',
-    message: 'Nexura Institute V2 foundation is running. This endpoint checks configuration presence only and performs no external writes.',
+    message: 'Nexora Institute V2 foundation is running. This endpoint checks configuration presence only and performs no external writes.',
     generatedAt: new Date().toISOString(),
     integrations: Object.fromEntries(checks.map(([name, keys]) => [
       name,

@@ -80,7 +80,7 @@ const fallbackPrograms: Program[] = [
     audienceType: 'Business',
     slug: 'business-transformation',
     duration: '4 weeks',
-    price: 35000,
+    price: 25000,
     description: 'A practical 30-day business transformation program that helps business owners build branding, a website, customer database, marketing engine, sales process, automation, dashboards, and a 90-day growth plan.',
     curriculum: 'Brand identity kit\nLive business website\nMarketing engine\nSales system\nAI business operating system',
     cta: 'Apply for Business Transformation',

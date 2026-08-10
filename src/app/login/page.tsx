@@ -1,19 +1,13 @@
 import Link from 'next/link'
+import { PublicShell } from '@/components/shell'
+import { Card, Field, Section } from '@/components/ui'
 
 export default function LoginPage() {
   return (
-    <main className="foundation">
-      <section className="panel">
-        <p className="eyebrow">Temporary Access</p>
-        <h1>Login will be rebuilt in V2.</h1>
-        <p className="lead">
-          Existing user identity, referral IDs, payment records and operational data are preserved. The old login interface has been removed so authentication can be redesigned cleanly.
-        </p>
-        <div className="actions">
-          <Link href="/">Back to foundation</Link>
-          <Link href="/api/system/health">Check integrations</Link>
-        </div>
-      </section>
-    </main>
+    <PublicShell>
+      <Section eyebrow="Log In" title="Access your Nexora Institute workspace.">
+        <Card><form className="form-grid"><Field name="email" label="Email" type="email" required /><Field name="password" label="Password" type="password" required /><button className="btn btn-primary" type="button">Log in</button><div className="actions"><Link href="/forgot-password">Forgot password?</Link><Link href="/signup">Create account</Link></div><p className="muted">Frontend auth is ready for connection. Durable sessions and verification require the V2 auth service.</p></form></Card>
+      </Section>
+    </PublicShell>
   )
 }

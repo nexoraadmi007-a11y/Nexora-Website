@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     const careerPricing = programCode === 'NGTP'
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
-    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 35000 : 10000))
+    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 25000 : 10000))
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Programme' : selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks (${selectedTrackNames.length})` : selectedTrackNames[0] || 'AI Income Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
