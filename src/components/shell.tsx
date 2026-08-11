@@ -2,8 +2,9 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import {
   BarChart3,
   Bell,
@@ -29,6 +30,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { ButtonLink } from './ui'
+import { aiIncomeTracks, programmes } from '@/config/programmes'
 
 const publicLinks = [
   ['Programmes', '/programmes'],
@@ -74,6 +76,7 @@ const adminGroups: NavGroup[] = [
     items: [
       { label: 'Users', href: '/admin/users', icon: Users },
       { label: 'Programmes', href: '/admin/programmes', icon: GraduationCap },
+      { label: 'Promos', href: '/admin/promos', icon: Megaphone },
       { label: 'Classes', href: '/admin/classes', icon: CalendarDays },
       { label: 'Projects', href: '/admin/opportunities', icon: FolderKanban },
     ],
@@ -108,6 +111,29 @@ function NavGroups({ groups }: { groups: NavGroup[] }) {
 }
 
 function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+  const router = useRouter()
+  const [query, setQuery] = useState('')
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const searchItems = useMemo(() => [
+    ...programmes.map((programme) => ({ title: programme.name, type: 'Programme', href: `/app/programmes/${programme.slug}` })),
+    ...aiIncomeTracks.map((track) => ({ title: track.name, type: 'Track', href: `/programmes/ai-income-accelerator/${track.slug}` })),
+    { title: 'Live Classes', type: 'Class', href: '/app/classes' },
+    { title: 'Projects', type: 'Project', href: '/app/projects' },
+    { title: 'Career Resources', type: 'Resource', href: '/app/resources/career' },
+    { title: 'Income Resources', type: 'Resource', href: '/app/resources/income' },
+    { title: 'Opportunities', type: 'Opportunity', href: '/app/opportunities' },
+    { title: 'Support', type: 'Help', href: '/help' },
+  ], [])
+  const results = query.trim()
+    ? searchItems.filter((item) => `${item.title} ${item.type}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7)
+    : []
+
+  function confirmLogout() {
+    try { window.localStorage.removeItem('nexora_v2_session') } catch {}
+    setLogoutOpen(false)
+    router.push('/login')
+  }
+
   return (
     <div className="workspace-top">
       <div>
@@ -117,8 +143,23 @@ function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string })
       <div className="workspace-actions">
         <label className="search-box">
           <Search size={16} />
-          <input aria-label="Search" placeholder="Search programmes, classes, resources..." />
+          <input
+            aria-label="Search"
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setQuery('')
+              if (event.key === 'Enter' && results[0]) router.push(results[0].href)
+            }}
+            placeholder="Search programmes, classes, resources..."
+            value={query}
+          />
         </label>
+        {query ? (
+          <div className="search-panel">
+            <p>Search Nexora</p>
+            {results.length ? results.map((item) => <Link key={item.href} href={item.href} onClick={() => setQuery('')}><strong>{item.title}</strong><span>{item.type}</span></Link>) : <div className="search-empty">No results for "{query}". Try another term or browse programmes.</div>}
+          </div>
+        ) : null}
         <Link href="/app/notifications" className="icon-shell" aria-label="Notifications"><Bell size={18} /><span /></Link>
         <details className="profile-menu">
           <summary><span className="avatar">NI</span></summary>
@@ -128,9 +169,21 @@ function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string })
             <Link href="/app/billing">Billing</Link>
             <Link href="/app/partner/payment-details">Partner Settings</Link>
             <Link href="/help">Help</Link>
-            <Link href="/login">Log Out</Link>
+            <button type="button" onClick={() => setLogoutOpen(true)}>Log Out</button>
           </div>
         </details>
+        {logoutOpen ? (
+          <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+            <div className="modal-card">
+              <h3 id="logout-title">Log out?</h3>
+              <p className="muted">Are you sure you want to end your Nexora session?</p>
+              <div className="card-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => setLogoutOpen(false)}>Cancel</button>
+                <button className="btn btn-primary" type="button" onClick={confirmLogout}>Log Out</button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -462,6 +462,78 @@ textarea { min-height: 118px; padding-top: 12px; }
 
 .profile-menu div a:hover { background: var(--surface-muted); color: var(--text); }
 
+.profile-menu div button {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 10px 12px;
+  color: var(--danger);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-menu div button:hover { background: rgba(180, 35, 24, .08); }
+
+.search-panel {
+  position: absolute;
+  top: 52px;
+  right: 96px;
+  z-index: 25;
+  display: grid;
+  width: min(420px, 86vw);
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: white;
+  padding: 10px;
+  box-shadow: 0 24px 70px rgba(15, 47, 119, .16);
+  animation: enter .18s ease both;
+}
+
+.search-panel p {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.search-panel a {
+  display: grid;
+  gap: 2px;
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+
+.search-panel a:hover { background: var(--surface-muted); }
+.search-panel a span, .search-empty { color: var(--muted); font-size: 13px; }
+.search-empty { padding: 12px; line-height: 1.5; }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 18, 32, .28);
+  padding: 20px;
+}
+
+.modal-card {
+  width: min(440px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: white;
+  padding: 24px;
+  box-shadow: 0 32px 90px rgba(10, 18, 32, .24);
+  animation: enter .2s ease both;
+}
+
 .page-grid {
   display: grid;
   gap: 18px;
@@ -485,6 +557,7 @@ textarea { min-height: 118px; padding-top: 12px; }
   background: var(--surface-elevated);
   padding: 20px;
   box-shadow: 0 14px 40px rgba(15, 47, 119, 0.045);
+  animation: enter .24s ease both;
 }
 
 .metric-card {
@@ -603,16 +676,19 @@ textarea { min-height: 118px; padding-top: 12px; }
   margin-bottom: 16px;
 }
 
-.tabs span {
+.tabs span, .tabs button {
   border: 1px solid var(--line);
   border-radius: 999px;
+  background: white;
   padding: 8px 12px;
   color: var(--muted);
+  font: inherit;
   font-size: 13px;
   font-weight: 800;
+  cursor: pointer;
 }
 
-.tabs span:first-child { background: var(--text); color: white; border-color: var(--text); }
+.tabs span:first-child, .tabs button.active-tab { background: var(--text); color: white; border-color: var(--text); }
 
 .table-wrap {
   overflow-x: auto;
@@ -648,6 +724,60 @@ tr:last-child td { border-bottom: 0; }
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.click-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: white;
+  padding: 18px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.click-card:hover, .click-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: #b9c9f5;
+  box-shadow: 0 18px 50px rgba(15, 47, 119, .09);
+}
+
+.click-card.active {
+  border-color: #9eb7ff;
+  background: #f4f7ff;
+}
+
+.click-card strong { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.status-pill.success { background: rgba(16, 125, 82, .09); color: var(--success); }
+.status-pill.warning { background: rgba(161, 98, 7, .12); color: var(--warning); }
+.status-pill.danger { background: rgba(180, 35, 24, .1); color: var(--danger); }
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .empty-state {

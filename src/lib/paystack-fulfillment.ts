@@ -266,7 +266,7 @@ async function updateAssociateReferralStats(ambassadorId: string, amount: number
   const ambassador = records[0]
   if (!ambassador) return
   const paidCount = number(ambassador.fields['Paid Referral Count']) + 1
-  const commissionRate = number(ambassador.fields['Commission Rate Percent']) || 5
+  const commissionRate = number(ambassador.fields['Commission Rate Percent']) || 15
   const earned = number(ambassador.fields['Total Commission Earned']) + Math.round(amount * (commissionRate / 100))
   const paid = number(ambassador.fields['Commission Paid'])
   await updateRecord('Ambassadors', ambassadorId, compact({

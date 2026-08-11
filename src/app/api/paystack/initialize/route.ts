@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRecord, escapeFormula, listRecords } from '@/lib/airtable'
 import { calculateCareerTrackPricing, careerAcceleratorTracks } from '@/lib/career-accelerator-v2'
 import { captureLead } from '@/lib/lead-capture'
+import { calculateCheckoutPrice, commissionAmount } from '@/lib/product-rules'
 import { sendTelegramMessage } from '@/lib/telegram'
 
 export const runtime = 'nodejs'
@@ -125,7 +126,12 @@ export async function POST(request: NextRequest) {
     const careerPricing = programCode === 'NGTP'
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
-    const amount = programCode === 'NGTP' ? careerPricing?.total || 0 : Number(body.amount || (programCode === 'BATP' ? 25000 : 10000))
+    const programmeSlug = text(body.programmeSlug, 120) || (programCode === 'BATP' ? 'business-transformation' : 'ai-income-accelerator')
+    const checkoutPricing = calculateCheckoutPrice({ programme: programmeSlug, promoCode: text(body.promoCode, 80) })
+    if (checkoutPricing.error) {
+      return NextResponse.json({ error: checkoutPricing.error }, { status: 400 })
+    }
+    const amount = checkoutPricing.finalPrice
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Programme' : selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks (${selectedTrackNames.length})` : selectedTrackNames[0] || 'AI Income Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
@@ -134,8 +140,8 @@ export async function POST(request: NextRequest) {
     const ambassador = await findAmbassador(referralCode)
     const selectedProgrammeCode = programCode === 'NGTP' ? validCareerTracks[0]?.code || 'NGTP' : programCode
     const program = await findProgram(selectedProgrammeCode)
-    const commissionPercent = ambassador ? 5 : 0
-    const commissionAmount = ambassador ? Math.round(amount * 0.05) : 0
+    const commissionPercent = ambassador ? 15 : 0
+    const l1CommissionAmount = ambassador ? commissionAmount(amount, 'L1') : 0
     const reference = `NEXORA-${programCode}-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     if (!fullName || !email) {
@@ -162,7 +168,7 @@ export async function POST(request: NextRequest) {
       notes: [
         `Payment/application initialized for ${programCode}. Reference: ${reference}`,
         selectedTrackNames.length ? `Selected programmes: ${selectedTrackNames.join(', ')}` : '',
-        careerPricing ? `Pricing rule: ${careerPricing.ruleName}. Subtotal NGN ${careerPricing.subtotal}. Discount NGN ${careerPricing.discount}. Final NGN ${careerPricing.total}.` : '',
+        `Pricing: list NGN ${checkoutPricing.listPrice}. Discount NGN ${checkoutPricing.discount}. Final NGN ${checkoutPricing.finalPrice}.`,
       ].filter(Boolean).join('\n'),
     })
 
@@ -205,7 +211,7 @@ export async function POST(request: NextRequest) {
           'Referral Status': 'Submitted',
           'Programme Fee': amount,
           'Commission Percent': commissionPercent,
-          'Commission Amount': commissionAmount,
+          'Commission Amount': l1CommissionAmount,
           'Commission Status': 'Pending',
           'Source Page': sourcePage,
           'Payment Reference': reference,
@@ -243,13 +249,17 @@ export async function POST(request: NextRequest) {
           application_record_id: application.id,
           programme_record_id: program?.id || '',
           commission_percent: commissionPercent,
-          commission_amount: commissionAmount,
+          commission_amount: l1CommissionAmount,
+          list_price: checkoutPricing.listPrice,
+          promo_code: checkoutPricing.promoCode,
+          promo_discount: checkoutPricing.discount,
+          final_price: checkoutPricing.finalPrice,
           selected_track_slugs: validCareerTracks.map((track) => track.slug).join(','),
           selected_tracks: selectedTrackNames.join(', '),
           track_count: selectedTrackNames.length,
           pricing_rule: careerPricing?.ruleName || text(body.trackBundleRule, 120),
-          bundle_subtotal: careerPricing?.subtotal || amount,
-          bundle_discount: careerPricing?.discount || 0,
+          bundle_subtotal: checkoutPricing.listPrice,
+          bundle_discount: checkoutPricing.discount,
           business_name: text(body.businessName, 180),
           business_industry: text(body.industry, 120),
           business_stage: text(body.businessStage, 120),
@@ -275,7 +285,7 @@ export async function POST(request: NextRequest) {
       'Referral Code': referralCode,
       ...(ambassador ? { Ambassador: [ambassador.id] } : {}),
       'Commission Percent': commissionPercent,
-      'Commission Amount': commissionAmount,
+      'Commission Amount': l1CommissionAmount,
       Amount: amount,
       Currency: 'NGN',
       'Payment Status': 'Initialized',
@@ -283,7 +293,7 @@ export async function POST(request: NextRequest) {
       'Paystack Access Code': data.data.access_code,
       'Source Page': sourcePage,
       'Date Submitted': new Date().toISOString(),
-      'Raw Response': JSON.stringify({ paystack: data, selectedTracks: selectedTrackNames, pricing: careerPricing, visitorId, sessionId }).slice(0, 9000),
+      'Raw Response': JSON.stringify({ paystack: data, selectedTracks: selectedTrackNames, pricing: checkoutPricing, visitorId, sessionId }).slice(0, 9000),
     }))
 
     if (ambassador) {
@@ -308,7 +318,7 @@ export async function POST(request: NextRequest) {
         'Referral Status': 'Submitted',
         'Programme Fee': amount,
         'Commission Percent': commissionPercent,
-        'Commission Amount': commissionAmount,
+        'Commission Amount': l1CommissionAmount,
         'Commission Status': 'Pending',
         'Source Page': sourcePage,
         'Payment Reference': reference,

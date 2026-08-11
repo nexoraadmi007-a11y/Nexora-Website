@@ -1,9 +1,20 @@
+'use client'
+
+import { useState } from 'react'
 import { HandCoins, LineChart, Users, WalletCards } from 'lucide-react'
 import { AppShell } from '@/components/shell'
 import { Card } from '@/components/ui'
 import { ChecklistItem, DataTable, MetricCard, ProgressBar } from '@/components/product'
 
 export default function PartnerPage() {
+  const [copied, setCopied] = useState(false)
+  const referralLink = 'https://www.nexoragroup.ink/signup?ref=YOUR-CODE'
+  function copyLink() {
+    navigator.clipboard?.writeText(referralLink)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1800)
+  }
+
   return (
     <AppShell title="Partner Overview">
       <div className="page-grid">
@@ -35,8 +46,9 @@ export default function PartnerPage() {
           <Card>
             <h3>Your Referral Link</h3>
             <p className="muted">Activate your profile to generate a stable referral code and link.</p>
-            <code>https://www.nexoragroup.ink/signup?ref=YOUR-CODE</code>
-            <div className="card-actions"><button className="btn btn-secondary" type="button">Copy</button><button className="btn btn-secondary" type="button">Share</button></div>
+            <code>{referralLink}</code>
+            {copied ? <p className="form-message success">Referral link copied.</p> : null}
+            <div className="card-actions"><button className="btn btn-secondary" type="button" onClick={copyLink}>Copy</button><a className="btn btn-secondary" href={`https://wa.me/?text=${encodeURIComponent(referralLink)}`}>Share</a></div>
           </Card>
           <Card>
             <h3>Milestone Progress</h3>
@@ -48,9 +60,9 @@ export default function PartnerPage() {
         <Card>
           <h3>Commission Breakdown</h3>
           <DataTable headers={['Level', 'Rate', 'Rule']} rows={[
-            ['L1', 'NGN 1,500', 'Per qualified direct sale, unlimited'],
-            ['L2', 'NGN 1,000', 'Maximum 10 qualified sales monthly'],
-            ['L3', 'NGN 500', 'Maximum 10 qualified sales monthly'],
+            ['L1', '15%', 'Per qualified direct sale, unlimited'],
+            ['L2', '10%', 'Maximum 10 qualified sales monthly'],
+            ['L3', '5%', 'Maximum 10 qualified sales monthly'],
             ['Payout ceiling', '35%', 'Finance review applies before payout'],
           ]} />
         </Card>

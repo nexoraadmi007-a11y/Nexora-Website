@@ -23,6 +23,7 @@ export type Programme = {
   slug: string
   name: string
   priceNgn: number
+  listPriceNgn: number
   duration: string
   audience: string[]
   proposition: string
@@ -91,7 +92,8 @@ export const programmes: Programme[] = [
     legacyCode: 'NGTP',
     slug: 'ai-income-accelerator',
     name: 'AI Income Accelerator',
-    priceNgn: 10000,
+    priceNgn: 20000,
+    listPriceNgn: 20000,
     duration: '4 weeks per track',
     audience: ['Undergraduates', 'Final-year students', 'NYSC members', 'Recent graduates', 'Young professionals', 'Career switchers'],
     proposition: 'Learn a practical AI-powered skill, build proof that you can do the work, and learn how to take that skill to market.',
@@ -103,7 +105,8 @@ export const programmes: Programme[] = [
     legacyCode: 'BATP',
     slug: 'business-transformation',
     name: 'AI Business Transformation Programme',
-    priceNgn: 25000,
+    priceNgn: 50000,
+    listPriceNgn: 50000,
     duration: '4 weeks',
     audience: ['Instagram vendors', 'Facebook businesses', 'WhatsApp sellers', 'SMEs', 'Founder-led businesses', 'Social-commerce brands'],
     proposition: 'Build the systems behind a business that can grow.',
