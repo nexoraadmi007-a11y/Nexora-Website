@@ -202,6 +202,84 @@ textarea { min-height: 118px; padding-top: 12px; }
   gap: 16px;
 }
 
+.password-field { align-content: start; }
+
+.password-input {
+  position: relative;
+  display: block;
+}
+
+.password-input input { padding-right: 48px; }
+
+.icon-button {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-button:hover { background: var(--surface-muted); color: var(--text); }
+
+.password-guide {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-muted);
+  padding: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.password-guide p {
+  margin-bottom: 2px;
+  color: var(--text);
+  font-weight: 850;
+}
+
+.password-guide span::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #b7c3d4;
+}
+
+.password-guide span.ok { color: var(--success); font-weight: 750; }
+.password-guide span.ok::before { background: var(--success); }
+
+.form-message {
+  margin: 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.form-message.success {
+  border: 1px solid rgba(16, 125, 82, .22);
+  background: rgba(16, 125, 82, .08);
+  color: var(--success);
+}
+
+.form-message.error {
+  border: 1px solid rgba(180, 35, 24, .22);
+  background: rgba(180, 35, 24, .08);
+  color: var(--danger);
+}
+
 .app-shell {
   display: grid;
   min-height: 100vh;
