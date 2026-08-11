@@ -1,6 +1,7 @@
 import { AdminShell } from '@/components/shell'
-import { Card, EmptyState } from '@/components/ui'
+import { Card } from '@/components/ui'
+import { DataTable } from '@/components/product'
 
 export default function AdminReferralsPage() {
-  return <AdminShell title="Referrals"><Card><EmptyState title="Referral event audit pending.">Referral clicks, captured codes, account creation, payments and qualified sales will be shown from canonical events.</EmptyState></Card></AdminShell>
+  return <AdminShell title="Referrals"><div className="page-grid"><Card><h3>Referral Audit</h3><p className="muted">Track code capture, registration, payment, qualification and commission status.</p></Card><DataTable headers={['Referral Code', 'Registrant', 'Payment', 'Qualification', 'Commission']} rows={[['-', 'No referral selected', '-', '-', '-']]}/></div></AdminShell>
 }

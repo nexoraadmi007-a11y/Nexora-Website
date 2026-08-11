@@ -1,6 +1,7 @@
 import { AdminShell } from '@/components/shell'
-import { Card, EmptyState } from '@/components/ui'
+import { Card } from '@/components/ui'
+import { DataTable } from '@/components/product'
 
 export default function AdminOpportunitiesPage() {
-  return <AdminShell title="Opportunities"><Card><EmptyState title="Opportunity publishing pending.">Only real opportunities should be created and published from this system.</EmptyState></Card></AdminShell>
+  return <AdminShell title="Opportunities"><div className="page-grid"><Card><h3>Opportunity Publishing</h3><p className="muted">Publish verified roles, projects and freelance briefs for eligible learners.</p><button className="btn btn-primary" type="button">Create Opportunity</button></Card><DataTable headers={['Opportunity', 'Type', 'Eligibility', 'Status']} rows={[['No opportunity drafted', '-', '-', 'Draft queue empty']]}/></div></AdminShell>
 }

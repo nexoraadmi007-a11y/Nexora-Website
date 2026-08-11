@@ -1,6 +1,14 @@
 import { AppShell } from '@/components/shell'
-import { Card, EmptyState } from '@/components/ui'
+import { Card } from '@/components/ui'
+
+const sections = ['Account', 'Password & Security', 'Notifications', 'Privacy', 'Partner Payment Details']
 
 export default function SettingsPage() {
-  return <AppShell title="Settings"><Card><EmptyState title="Account settings pending.">Security, password, notification, privacy and connected-account controls will be connected to V2 auth.</EmptyState></Card></AppShell>
+  return (
+    <AppShell title="Settings">
+      <div className="grid-2">
+        {sections.map((section) => <Card key={section}><h3>{section}</h3><p className="muted">Manage {section.toLowerCase()} preferences from this workspace.</p><button className="btn btn-secondary" type="button">Open</button></Card>)}
+      </div>
+    </AppShell>
+  )
 }

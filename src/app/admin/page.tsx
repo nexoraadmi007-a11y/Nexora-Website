@@ -1,13 +1,28 @@
+import { GraduationCap, HandCoins, LineChart, Users, WalletCards } from 'lucide-react'
 import { AdminShell } from '@/components/shell'
-import { Card, EmptyState } from '@/components/ui'
+import { Card } from '@/components/ui'
+import { DataTable, MetricCard } from '@/components/product'
 
 export default function AdminPage() {
   return (
     <AdminShell title="Overview">
-      <div className="grid-3">
-        <Card><h3>Learners</h3><EmptyState title="Connect canonical data.">New enrolments, active learners and completion will appear after the V2 data model is connected.</EmptyState></Card>
-        <Card><h3>Revenue</h3><EmptyState title="Payment analytics pending.">Recognised revenue, refunds and Paystack verification will come from server-side records.</EmptyState></Card>
-        <Card><h3>Partners</h3><EmptyState title="Partner finance pending.">Qualified sales, payout liabilities and ceiling warnings will come from the commission engine.</EmptyState></Card>
+      <div className="page-grid">
+        <div className="metric-grid">
+          <MetricCard icon={Users} label="Total Learners" value="-" note="Connect enrolment records." />
+          <MetricCard icon={GraduationCap} label="Active Learners" value="-" note="Based on active programmes." />
+          <MetricCard icon={LineChart} label="Programme Revenue" value="NGN 0" note="Verified payments only." />
+          <MetricCard icon={HandCoins} label="Partners" value="-" note="Activated partner profiles." />
+          <MetricCard icon={WalletCards} label="Pending Payouts" value="NGN 0" note="Finance review queue." />
+        </div>
+        <Card>
+          <h3>Operational Queue</h3>
+          <DataTable headers={['Area', 'What admins manage', 'Next Action']} rows={[
+            ['Programmes', 'Prices, tracks, modules, projects and resources', 'Review catalogue'],
+            ['Classes', 'Cohorts, schedules, trainers and recordings', 'Create first schedule'],
+            ['Partners', 'Activation, referrals, bank details and status', 'Review applications'],
+            ['Payouts', 'Commission liability, approvals and payment cycles', 'Open payout register'],
+          ]} />
+        </Card>
       </div>
     </AdminShell>
   )
