@@ -37,10 +37,11 @@ export default function SignupPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const form = event.currentTarget
     setStatus('submitting')
     setMessage('')
 
-    const formData = new FormData(event.currentTarget)
+    const formData = new FormData(form)
     const fullName = `${formData.get('firstName') || ''} ${formData.get('lastName') || ''}`.trim()
 
     if (!passwordReady) {
@@ -56,7 +57,6 @@ export default function SignupPage() {
         body: JSON.stringify({
           fullName,
           email: formData.get('email'),
-          phone: formData.get('phone'),
           whatsAppNumber: formData.get('whatsapp'),
           country: formData.get('country'),
           password,
@@ -68,7 +68,7 @@ export default function SignupPage() {
 
       setStatus('success')
       setMessage('Your account request has been received. Nexora Institute will complete account access setup from the admin side.')
-      event.currentTarget.reset()
+      form.reset()
       setPassword('')
     } catch (error) {
       setStatus('error')
@@ -95,11 +95,7 @@ export default function SignupPage() {
                 <input name="email" type="email" required />
               </label>
               <label className="field">
-                <span>Phone</span>
-                <input name="phone" inputMode="tel" required />
-              </label>
-              <label className="field">
-                <span>WhatsApp Contact</span>
+                <span>WhatsApp Number</span>
                 <input name="whatsapp" inputMode="tel" placeholder="Use your WhatsApp number" required />
               </label>
               <label className="field">

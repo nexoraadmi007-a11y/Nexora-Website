@@ -23,13 +23,12 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as SignupPayload
     const fullName = text(body.fullName, 160)
     const email = text(body.email, 254).toLowerCase()
-    const phoneNumber = phone(body.phone)
     const whatsapp = phone(body.whatsAppNumber || body.whatsapp)
     const country = text(body.country, 80)
     const password = text(body.password, 200)
 
-    if (!fullName || !email || !phoneNumber || !whatsapp || !country || !password) {
-      return NextResponse.json({ error: 'Full name, email, phone, WhatsApp contact, country, and password are required.' }, { status: 400 })
+    if (!fullName || !email || !whatsapp || !country || !password) {
+      return NextResponse.json({ error: 'Full name, email, WhatsApp number, country, and password are required.' }, { status: 400 })
     }
 
     if (!hasValidPassword(password)) {
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
       sourcePage: '/signup',
       fullName,
       email,
-      phone: phoneNumber,
+      phone: whatsapp,
       whatsAppNumber: whatsapp,
       location: country,
       currentStatus: 'Professional',
@@ -56,7 +55,6 @@ export async function POST(request: NextRequest) {
       'New Nexora Institute account signup request',
       `Name: ${fullName}`,
       `Email: ${email}`,
-      `Phone: ${phoneNumber}`,
       `WhatsApp: ${whatsapp}`,
       `Country: ${country}`,
     ].join('\n')).catch(() => undefined)

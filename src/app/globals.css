@@ -178,7 +178,7 @@ h3 {
   gap: 8px;
 }
 
-.field span {
+.field > span:first-child {
   color: var(--muted);
   font-size: 13px;
   font-weight: 750;
@@ -206,7 +206,8 @@ textarea { min-height: 118px; padding-top: 12px; }
 
 .password-input {
   position: relative;
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
 .password-input input { padding-right: 48px; }
@@ -214,7 +215,8 @@ textarea { min-height: 118px; padding-top: 12px; }
 .icon-button {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 10px;
+  transform: translateY(-50%);
   display: inline-flex;
   width: 36px;
   height: 36px;
