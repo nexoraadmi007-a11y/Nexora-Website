@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     const totalClicks = events.filter((record) => value(record.fields, 'Event Type') === 'LINK_CLICKED').length
     const checkoutStarted = events.filter((record) => value(record.fields, 'Event Type') === 'CHECKOUT_STARTED').length
     const progress = target > 0 ? confirmedIntake / target : 0
-    const commissionRate = number(associate.fields['Commission Rate Percent']) || 5
+    const commissionRate = number(associate.fields['Commission Rate Percent']) || 15
 
     return NextResponse.json({
       ok: true,

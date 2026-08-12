@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
@@ -12,10 +12,17 @@ function CheckoutInner() {
   const initial = searchParams.get('programme') || 'ai-income-accelerator'
   const [programmeSlug, setProgrammeSlug] = useState(initial)
   const [promoCode, setPromoCode] = useState('')
+  const [referralCode, setReferralCode] = useState('')
   const [pricing, setPricing] = useState<{ listPrice: number; discount: number; finalPrice: number; code?: string; message?: string } | null>(null)
   const [message, setMessage] = useState('')
   const programme = useMemo(() => findProgramme(programmeSlug) || programmes[0], [programmeSlug])
   const current = pricing || { listPrice: programme.listPriceNgn, discount: 0, finalPrice: programme.listPriceNgn }
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('ref')?.trim()
+    const fromCookie = document.cookie.split('; ').find((item) => item.startsWith('nexora_referral_code='))?.split('=')[1]
+    setReferralCode(fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : ''))
+  }, [searchParams])
 
   async function applyPromo() {
     const response = await fetch('/api/promos/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ programme: programme.slug, code: promoCode }) })
@@ -34,7 +41,7 @@ function CheckoutInner() {
         fullName: formData.get('fullName'),
         email: formData.get('email'),
         phone: formData.get('whatsapp'),
-        referralCode: formData.get('referralCode'),
+        referralCode: formData.get('referralCode') || referralCode,
         promoCode: pricing?.code || promoCode,
         programCode: programme.legacyCode,
         programName: programme.name,
@@ -76,7 +83,7 @@ function CheckoutInner() {
               <Field name="fullName" label="Full Name" required />
               <Field name="email" label="Email" type="email" required />
               <Field name="whatsapp" label="WhatsApp Number" required />
-              <Field name="referralCode" label="Referral Code" />
+              <label className="field"><span>Referral Code</span><input name="referralCode" value={referralCode} onChange={(event) => setReferralCode(event.target.value)} placeholder="Optional partner code" /></label>
               {message ? <p className={`form-message ${message.includes('Initializing') ? 'success' : 'error'}`}>{message}</p> : null}
               <button className="btn btn-primary" type="submit">Continue to Paystack</button>
             </form>

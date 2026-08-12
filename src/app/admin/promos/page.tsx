@@ -12,7 +12,7 @@ export default function AdminPromosPage() {
           <a className="btn btn-secondary" href="/admin/settings">Manage promo settings</a>
         </Card>
         <DataTable headers={['Code', 'Discount', 'Programme', 'Redemptions', 'Revenue', 'Status']} rows={[
-          ['WEBINAR50', '50%', 'Eligible programmes', 'Preview', 'Preview', 'Active'],
+          ['WEBINAR50', '50%', 'Eligible programmes', '0', 'NGN 0', 'Inactive'],
         ]} />
       </div>
     </AdminShell>

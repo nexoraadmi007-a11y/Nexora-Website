@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
 import { Card, Section } from '@/components/ui'
+import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 const countries = [
   'Nigeria',
@@ -21,11 +23,13 @@ const countries = [
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error'
 
-export default function SignupPage() {
+function SignupInner() {
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [status, setStatus] = useState<SubmitState>('idle')
   const [message, setMessage] = useState('')
   const [password, setPassword] = useState('')
+  const [referralCode, setReferralCode] = useState('')
 
   const passwordChecks = useMemo(() => ({
     length: password.length >= 8,
@@ -34,6 +38,13 @@ export default function SignupPage() {
   }), [password])
 
   const passwordReady = passwordChecks.length && passwordChecks.letter && passwordChecks.number
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('ref')?.trim()
+    const fromCookie = document.cookie.split('; ').find((item) => item.startsWith('nexora_referral_code='))?.split('=')[1]
+    const code = fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : '')
+    setReferralCode(code)
+  }, [searchParams])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -60,14 +71,33 @@ export default function SignupPage() {
           whatsAppNumber: formData.get('whatsapp'),
           country: formData.get('country'),
           password,
+          referralCode,
         }),
       })
 
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'Account request failed.')
 
+      if (isSupabaseConfigured()) {
+        const supabase = createSupabaseBrowserClient()
+        const { error } = await supabase.auth.signUp({
+          email: String(formData.get('email') || '').trim().toLowerCase(),
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/app`,
+            data: {
+              full_name: fullName,
+              whatsapp: formData.get('whatsapp'),
+              country: formData.get('country'),
+              referral_code: referralCode,
+            },
+          },
+        })
+        if (error) throw error
+      }
+
       setStatus('success')
-      setMessage('Your account request has been received. Nexora Institute will complete account access setup from the admin side.')
+      setMessage(isSupabaseConfigured() ? 'Your account has been created. Check your email if confirmation is required before login.' : 'Your account request has been received. Nexora Institute will complete account access setup from the admin side.')
       form.reset()
       setPassword('')
     } catch (error) {
@@ -132,16 +162,26 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {referralCode ? <p className="form-message success">Referral code captured: {referralCode}</p> : null}
+
             {message ? <p className={`form-message ${status === 'success' ? 'success' : 'error'}`}>{message}</p> : null}
 
             <button className="btn btn-primary" type="submit" disabled={status === 'submitting'}>
               {status === 'submitting' ? 'Creating account...' : 'Create account'}
             </button>
-            <p className="muted">Durable login sessions will be completed when the V2 authentication service is connected.</p>
+            <p className="muted">{isSupabaseConfigured() ? 'Your account is created with secure Nexora authentication.' : 'Durable login sessions will be completed when Supabase is configured.'}</p>
             <Link href="/login">Already have an account?</Link>
           </form>
         </Card>
       </Section>
     </PublicShell>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<PublicShell><Section eyebrow="Create Account" title="Loading account form..." /></PublicShell>}>
+      <SignupInner />
+    </Suspense>
   )
 }

@@ -58,7 +58,7 @@ async function createOfficialAssociate(recordId: string, fields: Fields, note: s
     'Members Reached': Number(fields['Estimated Reach'] || 0),
     'Total Referral Leads': 0,
     'Paid Referral Count': 0,
-    'Commission Rate Percent': 5,
+    'Commission Rate Percent': 15,
     'Total Commission Earned': 0,
     'Commission Paid': 0,
     'Commission Balance': 0,

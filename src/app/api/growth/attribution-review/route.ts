@@ -86,7 +86,7 @@ async function incrementAssociateStats(associateId: string, amount: number) {
   }).catch(() => [])
   const associate = records[0]
   if (!associate) return
-  const rate = number(associate.fields['Commission Rate Percent']) || 5
+  const rate = number(associate.fields['Commission Rate Percent']) || 15
   const earned = Math.round(amount * (rate / 100))
   const totalEarned = number(associate.fields['Total Commission Earned']) + earned
   const paid = number(associate.fields['Commission Paid'])

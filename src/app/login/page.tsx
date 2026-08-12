@@ -6,6 +6,7 @@ import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
 import { Card, Section } from '@/components/ui'
+import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 type LoginState = 'idle' | 'submitting' | 'error'
 
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const [status, setStatus] = useState<LoginState>('idle')
   const [message, setMessage] = useState('')
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setStatus('submitting')
     setMessage('')
@@ -31,15 +32,21 @@ export default function LoginPage() {
     }
 
     try {
-      window.localStorage.setItem('nexora_v2_session', JSON.stringify({
-        email,
-        mode: 'preview',
-        createdAt: new Date().toISOString(),
-      }))
+      if (isSupabaseConfigured()) {
+        const supabase = createSupabaseBrowserClient()
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+      } else {
+        window.localStorage.setItem('nexora_v2_session', JSON.stringify({
+          email,
+          mode: 'preview',
+          createdAt: new Date().toISOString(),
+        }))
+      }
       router.push('/app')
-    } catch {
+    } catch (error) {
       setStatus('error')
-      setMessage('We could not start your preview session. Please try again.')
+      setMessage(error instanceof Error ? error.message : 'We could not log you in. Please try again.')
     }
   }
 
@@ -76,7 +83,7 @@ export default function LoginPage() {
               <Link href="/forgot-password">Forgot password?</Link>
               <Link href="/signup">Create account</Link>
             </div>
-            <p className="muted">Preview login is enabled while durable authentication is being connected.</p>
+            <p className="muted">{isSupabaseConfigured() ? 'Login is secured by Nexora production authentication.' : 'Preview login is enabled until Supabase is configured.'}</p>
           </form>
         </Card>
       </Section>

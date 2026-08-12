@@ -4,12 +4,12 @@ Date: 2026-08-11
 
 ## Scope
 
-This QA pass focused on turning visible V2 screens into working product workflows without inventing production records. Preview workflows use browser local storage where durable backend storage is not yet approved.
+This QA pass focused on turning visible V2 screens into working product workflows without inventing production records. Some account/settings/support workflows remain preview-level until durable auth and database storage are connected.
 
 ## Implemented Repairs
 
 - Profile page reorganized with avatar, profile completion, checklist, personal/career sections, save feedback and CV upload control.
-- Partner activation now uses agreement checkboxes and links to `/legal/partner-terms`.
+- Partner activation now uses agreement checkboxes, links to `/legal/partner-terms`, and calls the server-backed partner activation API.
 - Support page headline corrected and categories are selectable.
 - Support tickets are created in preview storage and visible at `/app/help/tickets`.
 - Settings cards now open real settings routes.
@@ -21,7 +21,7 @@ This QA pass focused on turning visible V2 screens into working product workflow
 - Opportunities page has working tabs, filters and save state.
 - Learner and partner resource categories are clickable and have category detail pages.
 - Partner Earnings includes Request Payout with approved-balance and bank-verification validation.
-- Checkout now shows list price, promo code, discount and final payable amount.
+- Checkout now shows the canonical programme price, optional promo code, discount and final payable amount.
 - Promo validation is server-side at `/api/promos/validate`.
 - Paystack initialization uses server-calculated payable amount.
 - Commission defaults now use 15% L1 on actual verified amount paid.
@@ -32,8 +32,8 @@ This QA pass focused on turning visible V2 screens into working product workflow
 
 | Programme | List Price | Promo | Discount | Final Price | Result |
 | --- | ---: | --- | ---: | ---: | --- |
-| AI Income Accelerator | NGN 20,000 | WEBINAR50 | NGN 10,000 | NGN 10,000 | Passed |
-| AI Business Transformation Programme | NGN 50,000 | WEBINAR50 | NGN 25,000 | NGN 25,000 | Passed |
+| AI Income Accelerator | NGN 10,000 | None | NGN 0 | NGN 10,000 | Passed |
+| AI Business Transformation Programme | NGN 25,000 | None | NGN 0 | NGN 25,000 | Passed |
 
 ## Route Smoke Test
 
@@ -64,7 +64,7 @@ Passed with HTTP 200:
 - Durable authentication and server-side sessions.
 - Persistent profile, settings and support ticket storage.
 - Real Paystack bank account resolution endpoint for production account-name lookup.
-- Real partner activation persistence and server-side access enforcement.
+- Durable first-party authentication and server-side access enforcement.
 - Real notification database and read-state storage.
 - Admin CRUD for promo creation/editing beyond the seeded preview validation rule.
 - Refund and negative adjustment processing in the finance ledger.

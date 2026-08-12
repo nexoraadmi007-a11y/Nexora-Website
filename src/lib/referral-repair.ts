@@ -24,7 +24,7 @@ function baseUrl() {
 }
 
 function referralLink(code: string) {
-  return `${baseUrl()}/career-accelerator?ref=${encodeURIComponent(code)}`
+  return `${baseUrl()}/?ref=${encodeURIComponent(code)}`
 }
 
 export function canonicalAssociateState(fields: Fields): AssociateState {

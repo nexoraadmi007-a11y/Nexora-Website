@@ -22,10 +22,10 @@ export const payoutPolicy = {
 const demoPromos = [
   {
     code: 'WEBINAR50',
-    description: '50% webinar campaign discount',
+    description: 'Inactive legacy webinar campaign discount',
     discountType: 'PERCENTAGE',
     discountValue: 50,
-    active: true,
+    active: false,
     startsAt: '2026-01-01T00:00:00.000Z',
     expiresAt: '2026-12-31T23:59:59.000Z',
   },
