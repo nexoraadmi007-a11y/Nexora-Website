@@ -41,6 +41,7 @@ export default function PartnerActivatePage() {
       return
     }
     window.localStorage.setItem('nexora_partner_email', String(formData.get('email') || '').toLowerCase())
+    window.localStorage.setItem('nexora_partner_referral_code', result.partner.referralCode)
     setIdentity({
       partnerId: result.partner.partnerId,
       referralCode: result.partner.referralCode,

@@ -51,6 +51,100 @@ async function findAuthUserByEmail(email: string) {
   return data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase()) || null
 }
 
+async function partnerDashboardFromSupabase(input: { email?: string; referralCode?: string }) {
+  if (!hasSupabaseAdminConfig()) return null
+  const email = text(input.email, 254).toLowerCase()
+  const referralCode = text(input.referralCode, 120).toUpperCase()
+  if (!email && !referralCode) return null
+
+  const supabase = createSupabaseAdminClient()
+  let partner: {
+    id: string
+    partner_id: string
+    full_name: string
+    email: string
+    whatsapp: string
+    status: string
+  } | null = null
+  let referral: { code: string; referral_url: string } | null = null
+
+  if (referralCode) {
+    const referralLookup = await supabase
+      .from('referral_codes')
+      .select('code, referral_url, partners(id, partner_id, full_name, email, whatsapp, status)')
+      .eq('code', referralCode)
+      .eq('active', true)
+      .maybeSingle()
+    if (referralLookup.error) throw new Error(`Supabase referral dashboard lookup failed: ${referralLookup.error.message}`)
+    if (referralLookup.data) {
+      referral = { code: referralLookup.data.code, referral_url: referralLookup.data.referral_url }
+      partner = Array.isArray(referralLookup.data.partners) ? referralLookup.data.partners[0] : referralLookup.data.partners
+    }
+  } else {
+    const partnerLookup = await supabase
+      .from('partners')
+      .select('id, partner_id, full_name, email, whatsapp, status')
+      .eq('email', email)
+      .maybeSingle()
+    if (partnerLookup.error) throw new Error(`Supabase partner dashboard lookup failed: ${partnerLookup.error.message}`)
+    partner = partnerLookup.data
+  }
+
+  if (!partner) return null
+
+  if (!referral) {
+    const referralLookup = await supabase
+      .from('referral_codes')
+      .select('code, referral_url')
+      .eq('partner_id', partner.id)
+      .eq('active', true)
+      .maybeSingle()
+    if (referralLookup.error) throw new Error(`Supabase partner referral lookup failed: ${referralLookup.error.message}`)
+    referral = referralLookup.data
+  }
+
+  if (!referral) return null
+
+  const [eventsResult, commissionsResult] = await Promise.all([
+    supabase.from('referral_events').select('event_type').eq('partner_id', partner.id).limit(1000),
+    supabase.from('commissions').select('amount_ngn, status').eq('partner_id', partner.id).limit(1000),
+  ])
+
+  const events = eventsResult.data || []
+  const commissions = commissionsResult.data || []
+  const clicks = events.filter((item) => item.event_type === 'LINK_CLICKED').length
+  const registrations = events.filter((item) => ['APPLICATION_STARTED', 'APPLICATION_COMPLETED', 'REGISTRATION_COMPLETED'].includes(item.event_type)).length
+  const paidRegistrations = events.filter((item) => item.event_type === 'PAYMENT_CONFIRMED').length
+  const estimatedEarnings = commissions.reduce((sum, item) => sum + number(item.amount_ngn), 0)
+
+  return {
+    partner: {
+      recordId: partner.id,
+      partnerId: partner.partner_id,
+      name: partner.full_name,
+      email: partner.email,
+      status: partner.status,
+      referralCode: referral.code,
+      referralUrl: referral.referral_url,
+      commissionRate: 15,
+    },
+    metrics: {
+      clicks,
+      registrations,
+      paidRegistrations,
+      qualifiedSales: paidRegistrations,
+      conversionRate: clicks > 0 ? Math.round((paidRegistrations / clicks) * 1000) / 10 : null,
+      directQualifiedSales: paidRegistrations,
+      l2QualifiedSales: 0,
+      l3QualifiedSales: 0,
+      estimatedEarnings,
+      nextMilestone: paidRegistrations >= 50 ? 'All current milestones reached' : paidRegistrations >= 20 ? '50 direct sales unlock +NGN 15,000' : paidRegistrations >= 10 ? '20 direct sales unlock +NGN 7,000' : '10 direct sales unlock NGN 3,000',
+      nextPayout: '30th monthly payout cycle',
+    },
+    referrals: [],
+  } satisfies PartnerDashboard
+}
+
 async function activatePartnerInSupabase(input: {
   fullName: string
   email: string
@@ -267,6 +361,9 @@ export async function activatePartner(input: {
 }
 
 export async function getPartnerDashboard(input: { email?: string; referralCode?: string }) {
+  const supabaseDashboard = await partnerDashboardFromSupabase(input)
+  if (supabaseDashboard) return supabaseDashboard
+
   const record = input.referralCode
     ? await findAmbassadorByReferralCode(text(input.referralCode, 120))
     : await findAmbassadorByEmail(text(input.email, 254).toLowerCase())

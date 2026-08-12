@@ -46,6 +46,11 @@ function savedPartnerEmail() {
   return window.localStorage.getItem('nexora_partner_email') || ''
 }
 
+function savedReferralCode() {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem('nexora_partner_referral_code') || ''
+}
+
 export default function PartnerPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [message, setMessage] = useState('')
@@ -53,15 +58,18 @@ export default function PartnerPage() {
 
   useEffect(() => {
     const email = savedPartnerEmail()
-    if (!email) {
+    const code = savedReferralCode()
+    if (!email && !code) {
       setMessage('Activate your partner profile to generate your permanent referral identity.')
       return
     }
-    fetch(`/api/partner/dashboard?email=${encodeURIComponent(email)}`)
+    fetch(`/api/partner/dashboard?${email ? `email=${encodeURIComponent(email)}` : `code=${encodeURIComponent(code)}`}`)
       .then((response) => response.json().then((body) => ({ response, body })))
       .then(({ response, body }) => {
         if (!response.ok) throw new Error(body.error || 'Partner dashboard could not be loaded.')
         setDashboard(body)
+        if (body.partner?.email) window.localStorage.setItem('nexora_partner_email', body.partner.email.toLowerCase())
+        if (body.partner?.referralCode) window.localStorage.setItem('nexora_partner_referral_code', body.partner.referralCode)
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : 'Partner dashboard could not be loaded.'))
   }, [])
