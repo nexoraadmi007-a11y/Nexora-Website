@@ -50,14 +50,16 @@ export async function recordSupabaseReferralEvent(input: {
   sessionId?: string
 }) {
   if (!hasSupabaseAdminConfig()) return { ok: false, reason: 'SUPABASE_NOT_CONFIGURED' }
+  const referralCode = cleanReferralCode(input.referralCode)
+  if (!referralCode) return { ok: false, reason: 'MISSING_REFERRAL_CODE' }
   const eventType = input.eventType || 'LANDING_PAGE_VIEWED'
   if (!referralEventTypes.has(eventType)) return { ok: false, reason: 'INVALID_EVENT_TYPE' }
-  const referral = await resolveSupabaseReferral(input.referralCode)
-  if (!referral) return { ok: false, reason: 'UNKNOWN_REFERRAL_CODE' }
+  const referral = await resolveSupabaseReferral(referralCode)
   const supabase = createSupabaseAdminClient()
   const { error } = await supabase.from('referral_events').insert({
-    referral_code_id: referral.id,
-    partner_id: referral.partner_id,
+    referral_code_id: referral?.id || null,
+    partner_id: referral?.partner_id || null,
+    referral_code_text: referralCode,
     event_type: eventType,
     session_id: input.sessionId || null,
     anonymous_id: input.anonymousId || null,
@@ -67,5 +69,5 @@ export async function recordSupabaseReferralEvent(input: {
     occurred_at: new Date().toISOString(),
   })
   if (error) throw new Error(`Supabase referral event insert failed: ${error.message}`)
-  return { ok: true, referral }
+  return { ok: true, referral, pendingResolution: !referral }
 }

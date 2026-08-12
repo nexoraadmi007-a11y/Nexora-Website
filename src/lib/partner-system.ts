@@ -66,18 +66,18 @@ async function partnerDashboardFromSupabase(input: { email?: string; referralCod
     whatsapp: string
     status: string
   } | null = null
-  let referral: { code: string; referral_url: string } | null = null
+  let referral: { id?: string; code: string; referral_url: string } | null = null
 
   if (referralCode) {
     const referralLookup = await supabase
       .from('referral_codes')
-      .select('code, referral_url, partners(id, partner_id, full_name, email, whatsapp, status)')
+      .select('id, code, referral_url, partners(id, partner_id, full_name, email, whatsapp, status)')
       .eq('code', referralCode)
       .eq('active', true)
       .maybeSingle()
     if (referralLookup.error) throw new Error(`Supabase referral dashboard lookup failed: ${referralLookup.error.message}`)
     if (referralLookup.data) {
-      referral = { code: referralLookup.data.code, referral_url: referralLookup.data.referral_url }
+      referral = { id: referralLookup.data.id, code: referralLookup.data.code, referral_url: referralLookup.data.referral_url }
       partner = Array.isArray(referralLookup.data.partners) ? referralLookup.data.partners[0] : referralLookup.data.partners
     }
   } else {
@@ -95,7 +95,7 @@ async function partnerDashboardFromSupabase(input: { email?: string; referralCod
   if (!referral) {
     const referralLookup = await supabase
       .from('referral_codes')
-      .select('code, referral_url')
+      .select('id, code, referral_url')
       .eq('partner_id', partner.id)
       .eq('active', true)
       .maybeSingle()
@@ -105,8 +105,10 @@ async function partnerDashboardFromSupabase(input: { email?: string; referralCod
 
   if (!referral) return null
 
+  const eventFilters = [`partner_id.eq.${partner.id}`, `referral_code_text.eq.${referral.code}`]
+  if (referral.id) eventFilters.push(`referral_code_id.eq.${referral.id}`)
   const [eventsResult, commissionsResult] = await Promise.all([
-    supabase.from('referral_events').select('event_type').eq('partner_id', partner.id).limit(1000),
+    supabase.from('referral_events').select('event_type').or(eventFilters.join(',')).limit(1000),
     supabase.from('commissions').select('amount_ngn, status').eq('partner_id', partner.id).limit(1000),
   ])
 

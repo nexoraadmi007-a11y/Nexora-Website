@@ -63,7 +63,10 @@ export default function PartnerPage() {
       setMessage('Activate your partner profile to generate your permanent referral identity.')
       return
     }
-    fetch(`/api/partner/dashboard?${email ? `email=${encodeURIComponent(email)}` : `code=${encodeURIComponent(code)}`}`)
+    const params = new URLSearchParams()
+    if (code) params.set('code', code)
+    if (email) params.set('email', email)
+    fetch(`/api/partner/dashboard?${params.toString()}`)
       .then((response) => response.json().then((body) => ({ response, body })))
       .then(({ response, body }) => {
         if (!response.ok) throw new Error(body.error || 'Partner dashboard could not be loaded.')
