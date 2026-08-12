@@ -6,7 +6,7 @@ import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
 import { Card, Section } from '@/components/ui'
-import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 
 const countries = [
   'Nigeria',
@@ -79,21 +79,12 @@ function SignupInner() {
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || 'Account request failed.')
 
-      if (isSupabaseConfigured()) {
-        const supabase = createSupabaseBrowserClient()
-        const { error } = await supabase.auth.signInWithPassword({
-          email: String(formData.get('email') || '').trim().toLowerCase(),
-          password,
-        })
-        if (error) throw error
-      }
-
       if (referralCode) {
         document.cookie = `nexora_referral_code=${encodeURIComponent(referralCode)}; max-age=${60 * 60 * 24 * 90}; path=/; samesite=lax`
         window.localStorage.setItem('nexora_referral_code', referralCode)
       }
       setStatus('success')
-      setMessage('Your account has been created. Referral details will follow you into course registration automatically.')
+      setMessage(result.message || 'Your account has been created. Check your email and verify it before logging in.')
       form.reset()
       setPassword('')
     } catch (error) {

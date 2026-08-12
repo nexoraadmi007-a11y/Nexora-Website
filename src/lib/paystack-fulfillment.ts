@@ -2,6 +2,8 @@ import { createRecord, escapeFormula, listRecords, updateRecord, type AirtableRe
 import { getGrowthOverview, upsertMonthlyPerformance } from '@/lib/growth-operations'
 import { resolveProgrammeGroup } from '@/lib/programme-groups'
 import { sendTelegramMessage } from '@/lib/telegram'
+import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
+import { recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
 
 type Fields = Record<string, any>
 
@@ -290,6 +292,67 @@ async function notifyAdmin(message: string) {
   })
 }
 
+async function finalizeSupabasePayment(input: {
+  reference: string
+  amount: number
+  paidAt: string
+  referralCode: string
+  transaction: Record<string, any>
+}) {
+  if (!hasSupabaseAdminConfig()) return { paymentId: '', enrolmentId: '' }
+  const supabase = createSupabaseAdminClient()
+  const referral = input.referralCode ? await resolveSupabaseReferral(input.referralCode).catch(() => null) : null
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .update({
+      amount_ngn: input.amount,
+      status: 'PAID',
+      paid_at: input.paidAt,
+      referral_code_id: referral?.id || null,
+      raw_payload: input.transaction,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('paystack_reference', input.reference)
+    .select('id, enrolment_id')
+    .maybeSingle()
+  if (paymentError) throw new Error(`Supabase payment finalization failed: ${paymentError.message}`)
+
+  if (payment?.enrolment_id) {
+    const { error: enrolmentError } = await supabase
+      .from('enrolments')
+      .update({
+        status: 'ENROLLED',
+        referral_code_id: referral?.id || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payment.enrolment_id)
+    if (enrolmentError) throw new Error(`Supabase enrolment finalization failed: ${enrolmentError.message}`)
+  }
+
+  if (referral?.partner_id && payment?.id) {
+    const commission = Math.round(input.amount * 0.15)
+    await supabase.from('commissions').upsert({
+      partner_id: referral.partner_id,
+      payment_id: payment.id,
+      level: 'L1',
+      rate: 15,
+      amount_ngn: commission,
+      status: 'PENDING',
+    }, { onConflict: 'partner_id,payment_id,level' }).throwOnError()
+  }
+
+  if (input.referralCode) {
+    await recordSupabaseReferralEvent({
+      referralCode: input.referralCode,
+      eventType: 'PAYMENT_SUCCEEDED',
+      paymentReference: input.reference,
+      pageUrl: '/payment/success',
+    }).catch((error) => console.error('Supabase payment referral event failed', error instanceof Error ? error.message : error))
+  }
+
+  return { paymentId: payment?.id || '', enrolmentId: payment?.enrolment_id || '' }
+}
+
 async function upsertBusinessParticipant(input: {
   reference: string
   fullName: string
@@ -399,6 +462,17 @@ export async function finalizeSuccessfulPaystackPayment(reference: string, event
     && text(existingAttribution.fields['Attribution Status']) === 'APPROVED'
     && existingAttribution.fields.Associate?.[0] === attributionAssociateId,
   )
+
+  const supabaseFinalized = await finalizeSupabasePayment({
+    reference,
+    amount,
+    paidAt,
+    referralCode,
+    transaction,
+  }).catch((error) => {
+    console.error('Supabase payment finalization failed', error instanceof Error ? error.message : error)
+    return { paymentId: '', enrolmentId: '' }
+  })
 
   if (attributionConflict) {
     await notifyAdmin([

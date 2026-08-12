@@ -5,6 +5,7 @@ import { captureLead } from '@/lib/lead-capture'
 import { calculateCheckoutPrice, commissionAmount } from '@/lib/product-rules'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { cleanReferralCode, recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
+import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
@@ -82,6 +83,91 @@ async function notifyAdmin(message: string) {
   await sendTelegramMessage(chatId, message).catch((error) => {
     console.error('Application Telegram notification failed', error instanceof Error ? error.message : error)
   })
+}
+
+async function findSupabaseProgramme(input: { programCode: string; programmeSlug: string; selectedTrackSlugs: string[] }) {
+  if (!hasSupabaseAdminConfig()) return null
+  const supabase = createSupabaseAdminClient()
+  const programmeCode = input.programCode === 'BATP' ? 'BUSINESS_TRANSFORMATION' : 'AI_INCOME_ACCELERATOR'
+  const { data: programme, error } = await supabase
+    .from('programmes')
+    .select('id, programme_code, slug, name, price_ngn')
+    .eq('programme_code', programmeCode)
+    .maybeSingle()
+  if (error) throw new Error(`Supabase programme lookup failed: ${error.message}`)
+  if (!programme) return null
+  let trackId: string | null = null
+  if (input.selectedTrackSlugs[0]) {
+    const { data: track, error: trackError } = await supabase
+      .from('programme_tracks')
+      .select('id')
+      .eq('programme_id', programme.id)
+      .eq('slug', input.selectedTrackSlugs[0])
+      .maybeSingle()
+    if (trackError) throw new Error(`Supabase track lookup failed: ${trackError.message}`)
+    trackId = track?.id || null
+  }
+  return { ...programme, trackId }
+}
+
+async function findSupabaseUserByEmail(email: string) {
+  if (!hasSupabaseAdminConfig() || !email) return null
+  const supabase = createSupabaseAdminClient()
+  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (error) throw new Error(`Supabase user lookup failed: ${error.message}`)
+  return data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase()) || null
+}
+
+async function createSupabaseCheckout(input: {
+  email: string
+  amount: number
+  reference: string
+  programCode: string
+  programmeSlug: string
+  selectedTrackSlugs: string[]
+  referralCode: string
+  metadata: Record<string, unknown>
+}) {
+  if (!hasSupabaseAdminConfig()) return { enrolmentId: '', paymentId: '' }
+  const supabase = createSupabaseAdminClient()
+  const [user, programme, referral] = await Promise.all([
+    findSupabaseUserByEmail(input.email),
+    findSupabaseProgramme({ programCode: input.programCode, programmeSlug: input.programmeSlug, selectedTrackSlugs: input.selectedTrackSlugs }),
+    input.referralCode ? resolveSupabaseReferral(input.referralCode).catch(() => null) : Promise.resolve(null),
+  ])
+
+  const { data: enrolment, error: enrolmentError } = await supabase
+    .from('enrolments')
+    .insert({
+      user_id: user?.id || null,
+      programme_id: programme?.id || null,
+      track_id: programme?.trackId || null,
+      status: 'PENDING_PAYMENT',
+      referral_code_id: referral?.id || null,
+      updated_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  if (enrolmentError || !enrolment) throw new Error(`Supabase enrolment initialization failed: ${enrolmentError?.message || 'No enrolment returned'}`)
+
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .upsert({
+      user_id: user?.id || null,
+      enrolment_id: enrolment.id,
+      programme_id: programme?.id || null,
+      referral_code_id: referral?.id || null,
+      paystack_reference: input.reference,
+      amount_ngn: input.amount,
+      status: 'INITIALIZED',
+      raw_payload: input.metadata,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'paystack_reference' })
+    .select('id')
+    .single()
+  if (paymentError || !payment) throw new Error(`Supabase payment initialization failed: ${paymentError?.message || 'No payment returned'}`)
+
+  return { enrolmentId: enrolment.id, paymentId: payment.id }
 }
 
 async function createApplication(body: Record<string, unknown>, contactId: string, programId: string | undefined, programCode: string, reference: string) {
@@ -163,6 +249,29 @@ export async function POST(request: NextRequest) {
     if (!amount || amount < 1) {
       return NextResponse.json({ error: 'A valid payment amount is required.' }, { status: 400 })
     }
+
+    const supabaseCheckout = await createSupabaseCheckout({
+      email,
+      amount,
+      reference,
+      programCode,
+      programmeSlug,
+      selectedTrackSlugs: validCareerTracks.map((track) => track.slug),
+      referralCode,
+      metadata: {
+        fullName,
+        email,
+        programCode,
+        programName,
+        selectedTrackNames,
+        sourcePage,
+        referralCode,
+        amount,
+      },
+    }).catch((error) => {
+      console.error('Checkout Supabase initialization failed', error instanceof Error ? error.message : error)
+      return { enrolmentId: '', paymentId: '' }
+    })
 
     const lead = await captureLead({
       ...body,
@@ -275,6 +384,8 @@ export async function POST(request: NextRequest) {
           session_id: sessionId,
           contact_record_id: contactId,
           application_record_id: application?.id || '',
+          supabase_enrolment_id: supabaseCheckout.enrolmentId,
+          supabase_payment_id: supabaseCheckout.paymentId,
           programme_record_id: program?.id || '',
           commission_percent: commissionPercent,
           commission_amount: l1CommissionAmount,

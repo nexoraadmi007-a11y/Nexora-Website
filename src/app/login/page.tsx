@@ -34,8 +34,12 @@ export default function LoginPage() {
     try {
       if (isSupabaseConfigured()) {
         const supabase = createSupabaseBrowserClient()
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        if (!data.user?.email_confirmed_at && !data.user?.confirmed_at) {
+          await supabase.auth.signOut().catch(() => undefined)
+          throw new Error('Please verify your email before logging in.')
+        }
       } else {
         window.localStorage.setItem('nexora_v2_session', JSON.stringify({
           email,

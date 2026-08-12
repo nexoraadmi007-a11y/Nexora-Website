@@ -3,6 +3,7 @@ import { captureLead, phone, text } from '@/lib/lead-capture'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { createRecord, escapeFormula, listRecords } from '@/lib/airtable'
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import { cleanReferralCode, recordSupabaseReferralEvent } from '@/lib/supabase-referrals'
 
 export const runtime = 'nodejs'
@@ -15,6 +16,10 @@ function normalizeReferralCode(value: unknown) {
 
 function hasValidPassword(value: string) {
   return value.length >= 8 && /[A-Za-z]/.test(value) && /[0-9]/.test(value)
+}
+
+function publicSiteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink').replace(/\/$/, '')
 }
 
 async function notifyAdmin(message: string) {
@@ -68,16 +73,27 @@ export async function POST(request: NextRequest) {
     let supabaseNotice = ''
 
     if (hasSupabaseAdminConfig()) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!supabaseUrl || !anonKey) throw new Error('Supabase public auth client is not configured.')
+      const supabaseAuth = createClient(supabaseUrl, anonKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      })
       const supabase = createSupabaseAdminClient()
-      const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+      const { data: createdUser, error: createUserError } = await supabaseAuth.auth.signUp({
         email,
         password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName,
-          whatsapp,
-          country,
-          referral_code: referralCode,
+        options: {
+          emailRedirectTo: `${publicSiteUrl()}/verify-email`,
+          data: {
+            full_name: fullName,
+            whatsapp,
+            country,
+            referral_code: referralCode,
+          },
         },
       })
 
@@ -94,6 +110,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         supabaseUserId = createdUser.user?.id || ''
+        supabaseNotice = 'Account created. Please check your email and verify your account before logging in.'
       }
 
       if (supabaseUserId) {
@@ -162,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: supabaseNotice || 'Account created successfully. You can now log in.',
+      message: supabaseNotice || 'Account created. Please verify your email before logging in.',
       referralCode,
     }, { status: 201 })
   } catch (error) {
