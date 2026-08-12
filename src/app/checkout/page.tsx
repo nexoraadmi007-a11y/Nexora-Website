@@ -6,6 +6,19 @@ import { useSearchParams } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
 import { Card, Field, Section } from '@/components/ui'
 import { findProgramme, formatNaira, programmes } from '@/config/programmes'
+import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+
+function normalizeReferral(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  try {
+    const url = new URL(trimmed)
+    return url.searchParams.get('ref')?.trim() || trimmed
+  } catch {
+    const match = trimmed.match(/[?&]ref=([^&\s]+)/i)
+    return match?.[1] ? decodeURIComponent(match[1]).trim() : trimmed
+  }
+}
 
 function CheckoutInner() {
   const searchParams = useSearchParams()
@@ -21,7 +34,30 @@ function CheckoutInner() {
   useEffect(() => {
     const fromUrl = searchParams.get('ref')?.trim()
     const fromCookie = document.cookie.split('; ').find((item) => item.startsWith('nexora_referral_code='))?.split('=')[1]
-    setReferralCode(fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : ''))
+    const fromStorage = window.localStorage.getItem('nexora_referral_code') || ''
+    const localReferral = normalizeReferral(fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : '') || fromStorage)
+    if (localReferral) {
+      setReferralCode(localReferral)
+      document.cookie = `nexora_referral_code=${encodeURIComponent(localReferral)}; max-age=${60 * 60 * 24 * 90}; path=/; samesite=lax`
+      window.localStorage.setItem('nexora_referral_code', localReferral)
+      return
+    }
+
+    if (!isSupabaseConfigured()) return
+    let active = true
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id
+      if (!userId) return
+      const { data: profile } = await supabase.from('profiles').select('signup_referral_code').eq('id', userId).maybeSingle()
+      const code = normalizeReferral(String(profile?.signup_referral_code || ''))
+      if (active && code) {
+        setReferralCode(code)
+        document.cookie = `nexora_referral_code=${encodeURIComponent(code)}; max-age=${60 * 60 * 24 * 90}; path=/; samesite=lax`
+        window.localStorage.setItem('nexora_referral_code', code)
+      }
+    }).catch(() => undefined)
+    return () => { active = false }
   }, [searchParams])
 
   async function applyPromo() {
@@ -41,7 +77,7 @@ function CheckoutInner() {
         fullName: formData.get('fullName'),
         email: formData.get('email'),
         phone: formData.get('whatsapp'),
-        referralCode: formData.get('referralCode') || referralCode,
+        referralCode: normalizeReferral(String(formData.get('referralCode') || referralCode || '')),
         promoCode: pricing?.code || promoCode,
         programCode: programme.legacyCode,
         programName: programme.name,
@@ -61,7 +97,7 @@ function CheckoutInner() {
 
   return (
     <PublicShell>
-      <Section eyebrow="Review Order" title="Choose programme, apply promo, then pay securely.">
+      <Section eyebrow="Review Order" title="Choose programme, confirm referral, then pay securely.">
         <div className="grid-2">
           <Card>
             <label className="field"><span>Programme</span><select value={programmeSlug} onChange={(event) => { setProgrammeSlug(event.target.value); setPricing(null) }}>{programmes.map((item) => <option key={item.code} value={item.slug}>{item.name}</option>)}</select></label>
@@ -83,7 +119,8 @@ function CheckoutInner() {
               <Field name="fullName" label="Full Name" required />
               <Field name="email" label="Email" type="email" required />
               <Field name="whatsapp" label="WhatsApp Number" required />
-              <label className="field"><span>Referral Code</span><input name="referralCode" value={referralCode} onChange={(event) => setReferralCode(event.target.value)} placeholder="Optional partner code" /></label>
+              <label className="field"><span>Referral Code or Link</span><input name="referralCode" value={referralCode} onChange={(event) => setReferralCode(normalizeReferral(event.target.value))} placeholder="Optional partner referral" /></label>
+              {referralCode ? <p className="form-message success">Referral partner captured. This does not change your course fee.</p> : null}
               {message ? <p className={`form-message ${message.includes('Initializing') ? 'success' : 'error'}`}>{message}</p> : null}
               <button className="btn btn-primary" type="submit">Continue to Paystack</button>
             </form>

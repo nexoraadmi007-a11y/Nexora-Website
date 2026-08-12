@@ -15,6 +15,18 @@ function phone(value: unknown) {
   return text(value, 80).replace(/[^0-9+]/g, '')
 }
 
+function normalizeReferralCode(value: unknown) {
+  const raw = text(value, 300)
+  if (!raw) return ''
+  try {
+    const url = new URL(raw)
+    return text(url.searchParams.get('ref'), 120).toUpperCase()
+  } catch {
+    const match = raw.match(/[?&]ref=([^&\s]+)/i)
+    return text(match?.[1] ? decodeURIComponent(match[1]) : raw, 120).toUpperCase()
+  }
+}
+
 function stringArray(value: unknown) {
   if (Array.isArray(value)) return value.map((item) => text(item, 160)).filter(Boolean)
   const raw = text(value)
@@ -134,7 +146,7 @@ export async function POST(request: NextRequest) {
     const amount = checkoutPricing.finalPrice
     const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Programme' : selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks (${selectedTrackNames.length})` : selectedTrackNames[0] || 'AI Income Accelerator')
     const sourcePage = text(body.sourcePage, 200)
-    const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
+    const referralCode = normalizeReferralCode(body.referralCode) || normalizeReferralCode(request.cookies.get('nexora_referral_code')?.value)
     const visitorId = text(body.visitorId, 160)
     const sessionId = text(body.sessionId, 160)
     const ambassador = await findAmbassador(referralCode)

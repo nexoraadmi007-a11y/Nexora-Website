@@ -8,6 +8,18 @@ export const runtime = 'nodejs'
 
 type SignupPayload = Record<string, unknown>
 
+function normalizeReferralCode(value: unknown) {
+  const raw = text(value, 300)
+  if (!raw) return ''
+  try {
+    const url = new URL(raw)
+    return text(url.searchParams.get('ref'), 120).toUpperCase()
+  } catch {
+    const match = raw.match(/[?&]ref=([^&\s]+)/i)
+    return text(match?.[1] ? decodeURIComponent(match[1]) : raw, 120).toUpperCase()
+  }
+}
+
 function hasValidPassword(value: string) {
   return value.length >= 8 && /[A-Za-z]/.test(value) && /[0-9]/.test(value)
 }
@@ -49,7 +61,7 @@ export async function POST(request: NextRequest) {
     const whatsapp = phone(body.whatsAppNumber || body.whatsapp)
     const country = text(body.country, 80)
     const password = text(body.password, 200)
-    const referralCode = text(body.referralCode, 120) || text(request.cookies.get('nexora_referral_code')?.value, 120)
+    const referralCode = normalizeReferralCode(body.referralCode) || normalizeReferralCode(request.cookies.get('nexora_referral_code')?.value)
 
     if (!fullName || !email || !whatsapp || !country || !password) {
       return NextResponse.json({ error: 'Full name, email, WhatsApp number, country, and password are required.' }, { status: 400 })
@@ -59,6 +71,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must contain at least 8 characters, including a letter and a number.' }, { status: 400 })
     }
 
+    let supabaseUserId = text(body.supabaseUserId, 80)
+    let supabaseNotice = ''
+
+    if (hasSupabaseAdminConfig()) {
+      const supabase = createSupabaseAdminClient()
+      const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          whatsapp,
+          country,
+          referral_code: referralCode,
+        },
+      })
+
+      if (createUserError) {
+        if (/already registered|already been registered|already exists/i.test(createUserError.message)) {
+          const { data: users, error: lookupError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+          if (lookupError) throw new Error(`Supabase account lookup failed: ${lookupError.message}`)
+          const matchedUser = users?.users.find((user) => user.email?.toLowerCase() === email)
+          if (!matchedUser) throw new Error('This email is already registered. Please log in instead.')
+          supabaseUserId = matchedUser.id
+          supabaseNotice = 'Existing Nexora account found. Referral details were refreshed.'
+        } else {
+          throw new Error(`Supabase account creation failed: ${createUserError.message}`)
+        }
+      } else {
+        supabaseUserId = createdUser.user?.id || ''
+      }
+
+      if (supabaseUserId) {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: supabaseUserId,
+          full_name: fullName,
+          email,
+          whatsapp,
+          country,
+          role: 'learner',
+          signup_referral_code: referralCode || null,
+          signup_referral_source: referralCode ? 'signup' : null,
+          signup_referral_captured_at: referralCode ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
+        })
+        if (profileError) throw new Error(`Supabase profile save failed: ${profileError.message}`)
+      }
+    }
+
+    let contactId = ''
     const lead = await captureLead({
       platform: 'Website',
       sourcePage: '/signup',
@@ -71,7 +133,11 @@ export async function POST(request: NextRequest) {
       interestAreas: ['Career Accelerator'],
       primaryGoal: 'Create Nexora Institute account',
       notes: `Signup intent captured from the V2 public account page.${referralCode ? ` Referral code: ${referralCode}.` : ''}`,
+    }).catch((error) => {
+      console.error('Signup Airtable lead capture failed', error instanceof Error ? error.message : error)
+      return null
     })
+    contactId = lead?.contact.id || ''
 
     if (referralCode) {
       const ambassador = await findAmbassador(referralCode)
@@ -79,30 +145,9 @@ export async function POST(request: NextRequest) {
         await createReferralRegistrationEvent({
           referralCode,
           ambassadorId: ambassador.id,
-          contactId: lead.contact.id,
+          contactId,
           sourcePage: '/signup',
         })
-      }
-    }
-
-    if (hasSupabaseAdminConfig()) {
-      const supabase = createSupabaseAdminClient()
-      const { data: users, error: userLookupError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
-      if (userLookupError) {
-        console.error('Supabase user lookup failed', userLookupError.message)
-      }
-      const matchedUser = users?.users.find((user) => user.email?.toLowerCase() === email)
-      if (matchedUser) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: matchedUser.id,
-          full_name: fullName,
-          email,
-          whatsapp,
-          country,
-          role: 'learner',
-          updated_at: new Date().toISOString(),
-        })
-        if (profileError) console.error('Supabase profile upsert failed', profileError.message)
       }
     }
 
@@ -117,7 +162,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: 'Account request received. Nexora Institute will complete access setup.',
+      message: supabaseNotice || 'Account created successfully. You can now log in.',
+      referralCode,
     }, { status: 201 })
   } catch (error) {
     console.error('Signup request failed', error instanceof Error ? error.message : error)

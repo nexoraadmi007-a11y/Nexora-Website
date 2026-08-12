@@ -42,7 +42,8 @@ function SignupInner() {
   useEffect(() => {
     const fromUrl = searchParams.get('ref')?.trim()
     const fromCookie = document.cookie.split('; ').find((item) => item.startsWith('nexora_referral_code='))?.split('=')[1]
-    const code = fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : '')
+    const fromStorage = window.localStorage.getItem('nexora_referral_code') || ''
+    const code = fromUrl || (fromCookie ? decodeURIComponent(fromCookie) : '') || fromStorage
     setReferralCode(code)
   }, [searchParams])
 
@@ -80,24 +81,19 @@ function SignupInner() {
 
       if (isSupabaseConfigured()) {
         const supabase = createSupabaseBrowserClient()
-        const { error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signInWithPassword({
           email: String(formData.get('email') || '').trim().toLowerCase(),
           password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/app`,
-            data: {
-              full_name: fullName,
-              whatsapp: formData.get('whatsapp'),
-              country: formData.get('country'),
-              referral_code: referralCode,
-            },
-          },
         })
         if (error) throw error
       }
 
+      if (referralCode) {
+        document.cookie = `nexora_referral_code=${encodeURIComponent(referralCode)}; max-age=${60 * 60 * 24 * 90}; path=/; samesite=lax`
+        window.localStorage.setItem('nexora_referral_code', referralCode)
+      }
       setStatus('success')
-      setMessage(isSupabaseConfigured() ? 'Your account has been created. Check your email if confirmation is required before login.' : 'Your account request has been received. Nexora Institute will complete account access setup from the admin side.')
+      setMessage('Your account has been created. Referral details will follow you into course registration automatically.')
       form.reset()
       setPassword('')
     } catch (error) {
@@ -134,6 +130,15 @@ function SignupInner() {
                   {countries.map((country) => <option key={country} value={country}>{country}</option>)}
                 </select>
               </label>
+              <label className="field">
+                <span>Referral Code or Link</span>
+                <input
+                  name="referralCode"
+                  value={referralCode}
+                  onChange={(event) => setReferralCode(event.target.value)}
+                  placeholder="Optional partner referral"
+                />
+              </label>
               <label className="field password-field">
                 <span>Password</span>
                 <span className="password-input">
@@ -162,7 +167,7 @@ function SignupInner() {
               </div>
             </div>
 
-            {referralCode ? <p className="form-message success">Referral code captured: {referralCode}</p> : null}
+            {referralCode ? <p className="form-message success">Referral partner captured: {referralCode}</p> : null}
 
             {message ? <p className={`form-message ${status === 'success' ? 'success' : 'error'}`}>{message}</p> : null}
 

@@ -6,10 +6,17 @@ create table if not exists public.profiles (
   email text unique,
   whatsapp text,
   country text,
+  signup_referral_code text,
+  signup_referral_source text,
+  signup_referral_captured_at timestamptz,
   role text not null default 'learner',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists signup_referral_code text;
+alter table public.profiles add column if not exists signup_referral_source text;
+alter table public.profiles add column if not exists signup_referral_captured_at timestamptz;
 
 create table if not exists public.programmes (
   id uuid primary key default gen_random_uuid(),
@@ -224,6 +231,20 @@ create policy "partners read own wallet entries" on public.wallet_entries for se
     and p.user_id = (select auth.uid())
   )
 );
+
+grant select on public.programmes to anon, authenticated;
+grant select on public.programme_tracks to anon, authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select on public.enrolments to authenticated;
+grant select on public.payments to authenticated;
+grant select, insert on public.support_tickets to authenticated;
+grant select on public.notifications to authenticated;
+grant select on public.storage_objects to authenticated;
+grant select on public.partners to authenticated;
+grant select on public.referral_codes to authenticated;
+grant select on public.referral_events to authenticated;
+grant select on public.commissions to authenticated;
+grant select on public.wallet_entries to authenticated;
 
 insert into public.programmes (programme_code, slug, name, family, price_ngn, duration, active)
 values
