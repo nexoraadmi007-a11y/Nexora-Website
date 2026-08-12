@@ -4,6 +4,7 @@ import { calculateCareerTrackPricing, careerAcceleratorTracks } from '@/lib/care
 import { captureLead } from '@/lib/lead-capture'
 import { calculateCheckoutPrice, commissionAmount } from '@/lib/product-rules'
 import { sendTelegramMessage } from '@/lib/telegram'
+import { cleanReferralCode, recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
 
 export const runtime = 'nodejs'
 
@@ -16,15 +17,7 @@ function phone(value: unknown) {
 }
 
 function normalizeReferralCode(value: unknown) {
-  const raw = text(value, 300)
-  if (!raw) return ''
-  try {
-    const url = new URL(raw)
-    return text(url.searchParams.get('ref'), 120).toUpperCase()
-  } catch {
-    const match = raw.match(/[?&]ref=([^&\s]+)/i)
-    return text(match?.[1] ? decodeURIComponent(match[1]) : raw, 120).toUpperCase()
-  }
+  return cleanReferralCode(value)
 }
 
 function stringArray(value: unknown) {
@@ -149,11 +142,16 @@ export async function POST(request: NextRequest) {
     const referralCode = normalizeReferralCode(body.referralCode) || normalizeReferralCode(request.cookies.get('nexora_referral_code')?.value)
     const visitorId = text(body.visitorId, 160)
     const sessionId = text(body.sessionId, 160)
-    const ambassador = await findAmbassador(referralCode)
+    const supabaseReferral = referralCode ? await resolveSupabaseReferral(referralCode).catch((error) => {
+      console.error('Supabase referral resolution failed', error instanceof Error ? error.message : error)
+      return null
+    }) : null
+    const ambassador = supabaseReferral ? null : await findAmbassador(referralCode).catch(() => null)
     const selectedProgrammeCode = programCode === 'NGTP' ? validCareerTracks[0]?.code || 'NGTP' : programCode
-    const program = await findProgram(selectedProgrammeCode)
-    const commissionPercent = ambassador ? 15 : 0
-    const l1CommissionAmount = ambassador ? commissionAmount(amount, 'L1') : 0
+    const program = await findProgram(selectedProgrammeCode).catch(() => null)
+    const referralOwnerFound = Boolean(supabaseReferral || ambassador)
+    const commissionPercent = referralOwnerFound ? 15 : 0
+    const l1CommissionAmount = referralOwnerFound ? commissionAmount(amount, 'L1') : 0
     const reference = `NEXORA-${programCode}-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     if (!fullName || !email) {
@@ -182,14 +180,32 @@ export async function POST(request: NextRequest) {
         selectedTrackNames.length ? `Selected programmes: ${selectedTrackNames.join(', ')}` : '',
         `Pricing: list NGN ${checkoutPricing.listPrice}. Discount NGN ${checkoutPricing.discount}. Final NGN ${checkoutPricing.finalPrice}.`,
       ].filter(Boolean).join('\n'),
+    }).catch((error) => {
+      console.error('Checkout Airtable lead capture failed', error instanceof Error ? error.message : error)
+      return null
     })
 
-    const application = await createApplication(body, lead.contact.id, program?.id, programCode, reference)
+    const contactId = lead?.contact.id || ''
+    const application = contactId
+      ? await createApplication(body, contactId, program?.id, programCode, reference).catch((error) => {
+        console.error('Checkout Airtable application capture failed', error instanceof Error ? error.message : error)
+        return null
+      })
+      : null
+    if (referralCode && supabaseReferral) {
+      await recordSupabaseReferralEvent({
+        referralCode,
+        eventType: 'APPLICATION_STARTED',
+        anonymousId: visitorId,
+        sessionId,
+        pageUrl: sourcePage,
+      }).catch((error) => console.error('Application Supabase referral event failed', error instanceof Error ? error.message : error))
+    }
     if (ambassador) {
       await createReferralEvent({
         referralCode,
         ambassadorId: ambassador.id,
-        contactId: lead.contact.id,
+        contactId,
         programmeId: program?.id,
         visitorId,
         sessionId,
@@ -204,7 +220,7 @@ export async function POST(request: NextRequest) {
       `Program: ${programName} (${programCode})`,
       selectedTrackNames.length ? `Programme: ${selectedTrackNames.join(', ')}` : '',
       `Amount: NGN ${amount.toLocaleString()}`,
-      `Lead score: ${lead.contact.fields?.['Priority Score'] || 'Captured'}`,
+      `Lead score: ${lead?.contact.fields?.['Priority Score'] || 'Captured'}`,
       `Follow-up stage: Payment Initialized`,
       `AI summary: ${fullName} applied for ${programName}. Main goal: ${text(body.primaryGoal || body.learningGoals || body.growthGoals || 'Not provided', 240)}.`,
       `Reference: ${reference}`,
@@ -216,7 +232,7 @@ export async function POST(request: NextRequest) {
         await createRecord('Ambassador Referrals', compact({
           'Referral ID': `REF-${Date.now()}`,
           Ambassador: [ambassador.id],
-          'Referred Contact': [lead.contact.id],
+          ...(contactId ? { 'Referred Contact': [contactId] } : {}),
           ...(program ? { Programme: [program.id] } : {}),
           'Referral Code': referralCode,
           'Referral Date': new Date().toISOString().slice(0, 10),
@@ -254,11 +270,11 @@ export async function POST(request: NextRequest) {
           cohort: text(body.cohort, 160),
           source_page: sourcePage,
           referral_code: referralCode,
-          ambassador_record_id: ambassador?.id || '',
+          ambassador_record_id: ambassador?.id || supabaseReferral?.partner_id || '',
           visitor_id: visitorId,
           session_id: sessionId,
-          contact_record_id: lead.contact.id,
-          application_record_id: application.id,
+          contact_record_id: contactId,
+          application_record_id: application?.id || '',
           programme_record_id: program?.id || '',
           commission_percent: commissionPercent,
           commission_amount: l1CommissionAmount,
@@ -306,13 +322,24 @@ export async function POST(request: NextRequest) {
       'Source Page': sourcePage,
       'Date Submitted': new Date().toISOString(),
       'Raw Response': JSON.stringify({ paystack: data, selectedTracks: selectedTrackNames, pricing: checkoutPricing, visitorId, sessionId }).slice(0, 9000),
-    }))
+    })).catch((error) => console.error('Website payment event Airtable mirror failed', error instanceof Error ? error.message : error))
+
+    if (referralCode && supabaseReferral) {
+      await recordSupabaseReferralEvent({
+        referralCode,
+        eventType: 'CHECKOUT_STARTED',
+        anonymousId: visitorId,
+        sessionId,
+        paymentReference: reference,
+        pageUrl: sourcePage,
+      }).catch((error) => console.error('Checkout Supabase referral event failed', error instanceof Error ? error.message : error))
+    }
 
     if (ambassador) {
       await createReferralEvent({
         referralCode,
         ambassadorId: ambassador.id,
-        contactId: lead.contact.id,
+        contactId,
         programmeId: program?.id,
         visitorId,
         sessionId,
@@ -323,7 +350,7 @@ export async function POST(request: NextRequest) {
       await createRecord('Ambassador Referrals', compact({
         'Referral ID': `REF-${Date.now()}`,
         Ambassador: [ambassador.id],
-        'Referred Contact': [lead.contact.id],
+        ...(contactId ? { 'Referred Contact': [contactId] } : {}),
         ...(program ? { Programme: [program.id] } : {}),
         'Referral Code': referralCode,
         'Referral Date': new Date().toISOString().slice(0, 10),
@@ -335,7 +362,7 @@ export async function POST(request: NextRequest) {
         'Source Page': sourcePage,
         'Payment Reference': reference,
         Notes: `${programCode} website payment initialized through Paystack.${selectedTrackNames.length ? ` Selected programmes: ${selectedTrackNames.join(', ')}` : ''}`,
-      }))
+      })).catch((error) => console.error('Ambassador referral Airtable mirror failed', error instanceof Error ? error.message : error))
     }
 
     return NextResponse.json({ ok: true, authorizationUrl: data.data.authorization_url, reference })

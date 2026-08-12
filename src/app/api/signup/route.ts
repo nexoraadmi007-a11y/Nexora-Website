@@ -3,21 +3,14 @@ import { captureLead, phone, text } from '@/lib/lead-capture'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { createRecord, escapeFormula, listRecords } from '@/lib/airtable'
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
+import { cleanReferralCode, recordSupabaseReferralEvent } from '@/lib/supabase-referrals'
 
 export const runtime = 'nodejs'
 
 type SignupPayload = Record<string, unknown>
 
 function normalizeReferralCode(value: unknown) {
-  const raw = text(value, 300)
-  if (!raw) return ''
-  try {
-    const url = new URL(raw)
-    return text(url.searchParams.get('ref'), 120).toUpperCase()
-  } catch {
-    const match = raw.match(/[?&]ref=([^&\s]+)/i)
-    return text(match?.[1] ? decodeURIComponent(match[1]) : raw, 120).toUpperCase()
-  }
+  return cleanReferralCode(value)
 }
 
 function hasValidPassword(value: string) {
@@ -140,6 +133,13 @@ export async function POST(request: NextRequest) {
     contactId = lead?.contact.id || ''
 
     if (referralCode) {
+      await recordSupabaseReferralEvent({
+        referralCode,
+        eventType: 'REGISTRATION_COMPLETED',
+        userId: supabaseUserId || undefined,
+        pageUrl: '/signup',
+      }).catch((error) => console.error('Signup Supabase referral event failed', error instanceof Error ? error.message : error))
+
       const ambassador = await findAmbassador(referralCode)
       if (ambassador) {
         await createReferralRegistrationEvent({
