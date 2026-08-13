@@ -84,13 +84,15 @@ export function ChecklistItem({ done, children }: { done?: boolean; children: Re
   )
 }
 
-export function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+export function DataTable({ headers, rows, emptyMessage = 'No records yet.' }: { headers: string[]; rows: string[][]; emptyMessage?: string }) {
   return (
     <div className="table-wrap">
       <table>
         <thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead>
         <tbody>
-          {rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>)}
+          {rows.length ? rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : (
+            <tr><td colSpan={headers.length}><div className="empty-state">{emptyMessage}</div></td></tr>
+          )}
         </tbody>
       </table>
     </div>

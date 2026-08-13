@@ -13,6 +13,7 @@ import {
   CalendarDays,
   CircleHelp,
   CreditCard,
+  FileText,
   FolderKanban,
   GraduationCap,
   HandCoins,
@@ -70,27 +71,33 @@ const appGroups: NavGroup[] = [
 ]
 
 const adminGroups: NavGroup[] = [
-  { items: [{ label: 'Overview', href: '/admin', icon: LayoutDashboard }, { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 }] },
+  { title: 'Overview', items: [{ label: 'Overview', href: '/admin', icon: LayoutDashboard }, { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 }] },
   {
-    title: 'Platform',
+    title: 'Academic',
     items: [
       { label: 'Users', href: '/admin/users', icon: Users },
       { label: 'Programmes', href: '/admin/programmes', icon: GraduationCap },
-      { label: 'Promos', href: '/admin/promos', icon: Megaphone },
       { label: 'Classes', href: '/admin/classes', icon: CalendarDays },
-      { label: 'Projects', href: '/admin/opportunities', icon: FolderKanban },
+      { label: 'Projects', href: '/admin/projects', icon: FolderKanban },
     ],
   },
+  { title: 'Career', items: [{ label: 'Opportunities', href: '/admin/opportunities', icon: Megaphone }] },
   {
     title: 'Growth',
     items: [
       { label: 'Partners', href: '/admin/partners', icon: HandCoins },
       { label: 'Referrals', href: '/admin/referrals', icon: LineChart },
+      { label: 'Promos', href: '/admin/promos', icon: Megaphone },
+    ],
+  },
+  {
+    title: 'Finance',
+    items: [
       { label: 'Commissions', href: '/admin/commissions', icon: WalletCards },
       { label: 'Payouts', href: '/admin/payouts', icon: CreditCard },
     ],
   },
-  { title: 'System', items: [{ label: 'Settings', href: '/admin/settings', icon: Settings }] },
+  { title: 'System', items: [{ label: 'Integrations', href: '/admin/integrations', icon: Settings }, { label: 'Audit Log', href: '/admin/audit', icon: FileText }, { label: 'Settings', href: '/admin/settings', icon: Settings }] },
 ]
 
 function NavGroups({ groups }: { groups: NavGroup[] }) {
@@ -110,7 +117,7 @@ function NavGroups({ groups }: { groups: NavGroup[] }) {
   )
 }
 
-function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; title: string; admin?: boolean }) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [logoutOpen, setLogoutOpen] = useState(false)
@@ -131,7 +138,7 @@ function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string })
   function confirmLogout() {
     try { window.localStorage.removeItem('nexora_v2_session') } catch {}
     setLogoutOpen(false)
-    router.push('/login')
+    router.push(admin ? '/admin/login' : '/login')
   }
 
   return (
@@ -160,14 +167,14 @@ function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string })
             {results.length ? results.map((item) => <Link key={item.href} href={item.href} onClick={() => setQuery('')}><strong>{item.title}</strong><span>{item.type}</span></Link>) : <div className="search-empty">No results for "{query}". Try another term or browse programmes.</div>}
           </div>
         ) : null}
-        <Link href="/app/notifications" className="icon-shell" aria-label="Notifications"><Bell size={18} /><span /></Link>
+        <Link href={admin ? '/admin/notifications' : '/app/notifications'} className="icon-shell" aria-label="Notifications"><Bell size={18} /><span /></Link>
         <details className="profile-menu">
           <summary><span className="avatar">NI</span></summary>
           <div>
-            <Link href="/app/profile">Profile</Link>
-            <Link href="/app/settings">Settings</Link>
-            <Link href="/app/billing">Billing</Link>
-            <Link href="/app/partner/payment-details">Partner Settings</Link>
+            <Link href={admin ? '/admin/profile' : '/app/profile'}>{admin ? 'Admin Profile' : 'Profile'}</Link>
+            <Link href={admin ? '/admin/settings' : '/app/settings'}>{admin ? 'Admin Settings' : 'Settings'}</Link>
+            {admin ? <Link href="/admin/settings#security">Security</Link> : <Link href="/app/billing">Billing</Link>}
+            {admin ? <Link href="/admin/audit">Audit Log</Link> : <Link href="/app/partner/payment-details">Partner Settings</Link>}
             <Link href="/help">Help</Link>
             <button type="button" onClick={() => setLogoutOpen(true)}>Log Out</button>
           </div>
@@ -175,8 +182,8 @@ function WorkspaceHeader({ eyebrow, title }: { eyebrow: string; title: string })
         {logoutOpen ? (
           <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logout-title">
             <div className="modal-card">
-              <h3 id="logout-title">Log out?</h3>
-              <p className="muted">Are you sure you want to end your Nexora session?</p>
+              <h3 id="logout-title">{admin ? 'Log out of Admin?' : 'Log out?'}</h3>
+              <p className="muted">{admin ? 'Are you sure you want to end this administration session?' : 'Are you sure you want to end your Nexora session?'}</p>
               <div className="card-actions">
                 <button className="btn btn-secondary" type="button" onClick={() => setLogoutOpen(false)}>Cancel</button>
                 <button className="btn btn-primary" type="button" onClick={confirmLogout}>Log Out</button>
@@ -243,7 +250,7 @@ export function AdminShell({ children, title = 'Admin Operating System' }: { chi
         <NavGroups groups={adminGroups} />
       </aside>
       <main className="workspace">
-        <WorkspaceHeader eyebrow="Operations" title={title} />
+        <WorkspaceHeader eyebrow="Operations" title={title} admin />
         <div className="workspace-body">{children}</div>
       </main>
     </div>
