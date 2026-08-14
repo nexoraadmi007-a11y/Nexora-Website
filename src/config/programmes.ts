@@ -1,10 +1,10 @@
 export type ProgrammeCode = 'AI_INCOME_ACCELERATOR' | 'BUSINESS_TRANSFORMATION'
 
 export type TrackCode =
-  | 'AI_CONTENT_DIGITAL_MARKETING'
-  | 'AI_UI_UX_DIGITAL_DESIGN'
-  | 'AI_FINANCIAL_BUSINESS_ANALYSIS'
-  | 'AI_AUTOMATION_NO_CODE'
+  | 'AI_FINANCE'
+  | 'AI_CONTENT_CREATION'
+  | 'AI_NO_CODE'
+  | 'AI_BUSINESS'
 
 export type ProgrammeTrack = {
   code: TrackCode
@@ -45,9 +45,19 @@ export const skillToIncomeModule = {
 
 export const aiIncomeTracks: ProgrammeTrack[] = [
   {
-    code: 'AI_CONTENT_DIGITAL_MARKETING',
+    code: 'AI_FINANCE',
+    slug: 'ai-finance',
+    name: 'AI Finance',
+    summary: 'Build practical finance analysis, spreadsheet reporting and AI-supported business insight skills.',
+    learn: ['Financial thinking', 'Spreadsheet analysis', 'Business reporting', 'AI-assisted insights'],
+    projects: ['Sales analysis', 'Expense tracker', 'SME finance dashboard', 'Insight report'],
+    services: ['SME financial reporting', 'Expense systems', 'Business dashboards', 'Reporting support'],
+    tools: ['Google Sheets', 'Excel', 'ChatGPT', 'Looker Studio'],
+  },
+  {
+    code: 'AI_CONTENT_CREATION',
     slug: 'ai-content-creation',
-    name: 'AI Content & Digital Marketing',
+    name: 'AI Content Creation',
     summary: 'Build practical AI-assisted content, campaign and social-media execution skills.',
     learn: ['AI-assisted research', 'Content strategy', 'Copywriting', 'Social-media content', 'Visual creation', 'Short-form video', 'Campaign planning', 'Analytics'],
     projects: ['Content calendar', 'Campaign concept', 'Short-form video plan', 'Content portfolio'],
@@ -55,34 +65,24 @@ export const aiIncomeTracks: ProgrammeTrack[] = [
     tools: ['ChatGPT', 'Canva', 'CapCut', 'Google Workspace', 'Meta platforms'],
   },
   {
-    code: 'AI_UI_UX_DIGITAL_DESIGN',
-    slug: 'ui-ux-designer',
-    name: 'AI UI/UX & Digital Design',
-    summary: 'Learn interface thinking, Figma workflows, landing pages and product case studies.',
-    learn: ['Design fundamentals', 'User research', 'User journeys', 'Wireframes', 'Figma', 'UI design', 'AI-assisted design', 'Landing pages'],
-    projects: ['UX audit', 'Landing-page design', 'App screen redesign', 'Product case study'],
-    services: ['Landing-page design', 'Website UI', 'App interface', 'UX audits', 'Product design support'],
-    tools: ['Figma', 'ChatGPT', 'Canva', 'Notion'],
-  },
-  {
-    code: 'AI_FINANCIAL_BUSINESS_ANALYSIS',
-    slug: 'ai-financial-analyst',
-    name: 'AI Financial & Business Analysis',
-    summary: 'Use spreadsheets and AI to clean data, analyse performance and build useful reports.',
-    learn: ['Spreadsheet foundations', 'Financial data', 'Basic financial statements', 'AI-assisted analysis', 'Data cleaning', 'Dashboards', 'Business reporting', 'Insights'],
-    projects: ['Sales analysis', 'Expense tracker', 'SME dashboard', 'Insight report'],
-    services: ['Sales analysis', 'SME financial reporting', 'Expense systems', 'Dashboards', 'Reporting support'],
-    tools: ['Google Sheets', 'Excel', 'ChatGPT', 'Looker Studio'],
-  },
-  {
-    code: 'AI_AUTOMATION_NO_CODE',
-    slug: 'ai-automation-no-code',
-    name: 'AI Automation & No-Code Solutions',
+    code: 'AI_NO_CODE',
+    slug: 'ai-no-code',
+    name: 'AI No-Code',
     summary: 'Build forms, Airtable systems, automations, CRM basics and simple internal tools.',
     learn: ['Workflow thinking', 'Forms', 'Airtable', 'Automation', 'AI workflows', 'APIs', 'CRM basics', 'Landing pages', 'Simple internal tools'],
     projects: ['Lead capture system', 'Customer follow-up workflow', 'Simple CRM', 'Automation map'],
     services: ['CRM setup', 'Business automation', 'Lead systems', 'Customer follow-up systems', 'Simple websites', 'Data-collection systems'],
     tools: ['Airtable', 'Tally/Forms', 'Zapier or Make', 'ChatGPT', 'Notion'],
+  },
+  {
+    code: 'AI_BUSINESS',
+    slug: 'ai-business',
+    name: 'AI Business',
+    summary: 'Learn practical AI-supported business operations, customer systems, growth thinking and execution workflows.',
+    learn: ['Business model thinking', 'Customer management', 'Sales follow-up', 'AI operations', 'Simple dashboards', 'Execution workflows'],
+    projects: ['Business audit', 'Customer follow-up workflow', 'Simple growth dashboard', '90-day action plan'],
+    services: ['Business operations support', 'Customer systems', 'Growth workflow setup', 'AI business assistant services'],
+    tools: ['ChatGPT', 'Google Workspace', 'Notion', 'Airtable'],
   },
 ]
 
@@ -96,7 +96,7 @@ export const programmes: Programme[] = [
     listPriceNgn: 10000,
     duration: '4 weeks per track',
     audience: ['Undergraduates', 'Final-year students', 'NYSC members', 'Recent graduates', 'Young professionals', 'Career switchers'],
-    proposition: 'Learn a practical AI-powered skill, build proof that you can do the work, and learn how to take that skill to market.',
+    proposition: 'Choose one practical AI-powered track, build proof that you can do the work, and learn how to take that skill to market.',
     outcomes: ['Practical AI skill', 'Portfolio projects', 'Income readiness', 'Opportunity readiness', 'Certificate after completion review'],
     tracks: aiIncomeTracks,
   },
@@ -104,7 +104,7 @@ export const programmes: Programme[] = [
     code: 'BUSINESS_TRANSFORMATION',
     legacyCode: 'BATP',
     slug: 'business-transformation',
-    name: 'AI Business Transformation Programme',
+    name: 'Business Accelerator',
     priceNgn: 25000,
     listPriceNgn: 25000,
     duration: '4 weeks',
@@ -120,8 +120,10 @@ export function formatNaira(value: number) {
 }
 
 export function findProgramme(slugOrCode: string) {
-  const value = slugOrCode.toLowerCase()
-  return programmes.find((programme) => programme.slug === value || programme.code.toLowerCase() === value || programme.legacyCode.toLowerCase() === value)
+  const value = slugOrCode.toLowerCase().replace(/_/g, '-')
+  if (['ai-income-accelerator-program', 'ai-career-accelerator'].includes(value)) return programmes[0]
+  if (['business-accelerator', 'business-transformation-programme', 'business-transformation-program'].includes(value)) return programmes[1]
+  return programmes.find((programme) => programme.slug === value || programme.code.toLowerCase().replace(/_/g, '-') === value || programme.legacyCode.toLowerCase() === value)
 }
 
 export function findTrack(slug: string) {

@@ -7,6 +7,7 @@ import { PublicShell } from '@/components/shell'
 import { Card, Field, Section } from '@/components/ui'
 import { findProgramme, formatNaira, programmes } from '@/config/programmes'
 import { normalizeCareerCourseSlug } from '@/lib/career-course-map'
+import { AI_INCOME_ACCELERATOR_PROGRAM, BUSINESS_ACCELERATOR_PROGRAM, findAiIncomeTrack } from '@/lib/accelerator-products'
 import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 function normalizeReferral(value: string) {
@@ -35,6 +36,7 @@ function CheckoutInner() {
     const normalized = normalizeCareerCourseSlug(selectedTrackSlug)
     return programme.tracks.find((track) => track.slug === normalized || track.code.toLowerCase() === normalized) || null
   }, [programme.tracks, selectedTrackSlug])
+  const selectedProductTrack = useMemo(() => selectedTrack ? findAiIncomeTrack(selectedTrack.slug) : null, [selectedTrack])
   const current = pricing || { listPrice: programme.listPriceNgn, discount: 0, finalPrice: programme.listPriceNgn }
 
   useEffect(() => {
@@ -102,6 +104,9 @@ function CheckoutInner() {
         phone: formData.get('whatsapp'),
         referralCode: normalizeReferral(String(formData.get('referralCode') || referralCode || '')),
         promoCode: pricing?.code || promoCode,
+        program: programme.tracks.length ? AI_INCOME_ACCELERATOR_PROGRAM : BUSINESS_ACCELERATOR_PROGRAM,
+        track: selectedProductTrack?.value || null,
+        amount: current.finalPrice,
         programCode: programme.legacyCode,
         programName: selectedTrack ? selectedTrack.name : programme.name,
         programmeSlug: programme.slug,

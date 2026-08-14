@@ -7,6 +7,7 @@ import { sendTelegramMessage } from '@/lib/telegram'
 import { cleanReferralCode, recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
 import { careerCourseByName, careerCourseBySlug, normalizeCareerCourseSlug } from '@/lib/career-course-map'
+import { AI_INCOME_ACCELERATOR_PROGRAM, BUSINESS_ACCELERATOR_PROGRAM, findAiIncomeTrack, normalizeProgram, validateAcceleratorSelection } from '@/lib/accelerator-products'
 
 export const runtime = 'nodejs'
 
@@ -216,8 +217,21 @@ export async function POST(request: NextRequest) {
     const fullName = text(body.fullName, 160)
     const email = text(body.email, 254).toLowerCase()
     const requestedCode = text(body.programCode, 20).toUpperCase()
-    const programCode = requestedCode === 'BATP' ? 'BATP' : requestedCode === 'COMPLETE' ? 'COMPLETE' : 'NGTP'
-    const selectedTrackSlugs = normalizeTrackSlugs(body.selectedTrackSlugs)
+    const requestedProgram = normalizeProgram(body.program)
+      || (requestedCode === 'BATP' ? BUSINESS_ACCELERATOR_PROGRAM : AI_INCOME_ACCELERATOR_PROGRAM)
+    const selection = validateAcceleratorSelection({
+      program: requestedProgram,
+      track: text(body.track, 120) || normalizeTrackSlugs(body.selectedTrackSlugs)[0] || stringArray(body.selectedTrackNames)[0],
+    })
+    if (!selection.ok) {
+      return NextResponse.json({ error: selection.error }, { status: 400 })
+    }
+
+    const programCode = selection.product.program === BUSINESS_ACCELERATOR_PROGRAM ? 'BATP' : 'NGTP'
+    const selectedProductTrack = selection.product.program === AI_INCOME_ACCELERATOR_PROGRAM
+      ? findAiIncomeTrack(selection.product.track)
+      : null
+    const selectedTrackSlugs = selectedProductTrack ? [selectedProductTrack.slug] : []
     const validCareerTracks = careerAcceleratorTracks.filter((track) => selectedTrackSlugs.includes(track.slug))
     const selectedTrackNames = validCareerTracks.length
       ? validCareerTracks.map((track) => track.title)
@@ -225,13 +239,13 @@ export async function POST(request: NextRequest) {
     const careerPricing = programCode === 'NGTP'
       ? calculateCareerTrackPricing(validCareerTracks.map((track) => track.slug))
       : null
-    const programmeSlug = text(body.programmeSlug, 120) || (programCode === 'BATP' ? 'business-transformation' : 'ai-income-accelerator')
+    const programmeSlug = programCode === 'BATP' ? 'business-transformation' : 'ai-income-accelerator'
     const checkoutPricing = calculateCheckoutPrice({ programme: programmeSlug, promoCode: text(body.promoCode, 80) })
     if (checkoutPricing.error) {
       return NextResponse.json({ error: checkoutPricing.error }, { status: 400 })
     }
     const amount = checkoutPricing.finalPrice
-    const programName = text(body.programName, 160) || (programCode === 'COMPLETE' ? 'Complete AI Accelerator' : programCode === 'BATP' ? 'AI Business Transformation Programme' : selectedTrackNames.length > 1 ? `AI Income Accelerator Tracks (${selectedTrackNames.length})` : selectedTrackNames[0] || 'AI Income Accelerator')
+    const programName = text(body.programName, 160) || (programCode === 'BATP' ? 'Business Accelerator' : selectedTrackNames[0] || 'AI Income Accelerator')
     const sourcePage = text(body.sourcePage, 200)
     const referralCode = normalizeReferralCode(body.referralCode) || normalizeReferralCode(request.cookies.get('nexora_referral_code')?.value)
     const visitorId = text(body.visitorId, 160)
@@ -291,7 +305,7 @@ export async function POST(request: NextRequest) {
       platform: 'Website',
       programCode,
       programApplied: programCode,
-      interestAreas: programCode === 'COMPLETE' ? ['Complete AI Accelerator', 'NGTP', 'BATP'] : programCode === 'BATP' ? ['BATP', 'Business AI Transformation'] : ['NGTP', 'AI Income Accelerator', ...selectedTrackNames],
+      interestAreas: programCode === 'BATP' ? ['BATP', 'Business Accelerator'] : ['NGTP', 'AI Income Accelerator', ...selectedTrackNames],
       currentStatus: text(body.customerCategory, 80),
       primaryGoal: text(body.primaryGoal || body.learningGoals || body.growthGoals),
       biggestChallenge: text(body.biggestChallenge || body.businessChallenges),

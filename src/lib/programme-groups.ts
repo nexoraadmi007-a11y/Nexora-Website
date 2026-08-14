@@ -18,17 +18,24 @@ function byTrack(trackSlug: string) {
       groupType: 'CLASS_GROUP' as const,
     }
   }
-  if (normalized === 'ui-ux-designer' || normalized === 'ai-ui-ux-digital-design') {
+  if (normalized === 'ai-business' || normalized === 'ui-ux-designer' || normalized === 'ai-ui-ux-digital-design') {
     return {
-      groupName: 'Certified UI/UX Designer Class Group',
+      groupName: 'AI Business Class Group',
       groupUrl: env('CAREER_GROUP_UI_UX_DESIGNER_URL'),
       groupType: 'CLASS_GROUP' as const,
     }
   }
-  if (normalized === 'ai-financial-analyst' || normalized === 'ai-financial-business-analysis') {
+  if (normalized === 'ai-finance' || normalized === 'ai-financial-analyst' || normalized === 'ai-financial-business-analysis') {
     return {
-      groupName: 'AI Financial Analyst Class Group',
+      groupName: 'AI Finance Class Group',
       groupUrl: env('CAREER_GROUP_AI_FINANCIAL_ANALYST_URL'),
+      groupType: 'CLASS_GROUP' as const,
+    }
+  }
+  if (normalized === 'ai-no-code' || normalized === 'ai-automation-no-code' || normalized === 'ai-automation-no-code-solutions') {
+    return {
+      groupName: 'AI No-Code Class Group',
+      groupUrl: env('CAREER_GROUP_GENERAL_URL') || env('NEXORA_GENERAL_COMMUNITY_URL'),
       groupType: 'CLASS_GROUP' as const,
     }
   }
