@@ -11,21 +11,21 @@ function env(name: string) {
 
 function byTrack(trackSlug: string) {
   const normalized = trackSlug.toLowerCase().trim()
-  if (normalized === 'ai-content-creation') {
+  if (normalized === 'ai-content-creation' || normalized === 'ai-content-digital-marketing') {
     return {
       groupName: 'AI Content Creation Class Group',
       groupUrl: env('CAREER_GROUP_AI_CONTENT_CREATION_URL'),
       groupType: 'CLASS_GROUP' as const,
     }
   }
-  if (normalized === 'ui-ux-designer') {
+  if (normalized === 'ui-ux-designer' || normalized === 'ai-ui-ux-digital-design') {
     return {
       groupName: 'Certified UI/UX Designer Class Group',
       groupUrl: env('CAREER_GROUP_UI_UX_DESIGNER_URL'),
       groupType: 'CLASS_GROUP' as const,
     }
   }
-  if (normalized === 'ai-financial-analyst') {
+  if (normalized === 'ai-financial-analyst' || normalized === 'ai-financial-business-analysis') {
     return {
       groupName: 'AI Financial Analyst Class Group',
       groupUrl: env('CAREER_GROUP_AI_FINANCIAL_ANALYST_URL'),

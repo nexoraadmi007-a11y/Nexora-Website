@@ -6,6 +6,7 @@ import { calculateCheckoutPrice, commissionAmount } from '@/lib/product-rules'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { cleanReferralCode, recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
+import { careerCourseByName, careerCourseBySlug, normalizeCareerCourseSlug } from '@/lib/career-course-map'
 
 export const runtime = 'nodejs'
 
@@ -26,6 +27,10 @@ function stringArray(value: unknown) {
   const raw = text(value)
   if (!raw) return []
   return raw.split(',').map((item) => text(item, 160)).filter(Boolean)
+}
+
+function normalizeTrackSlugs(value: unknown) {
+  return stringArray(value).map(normalizeCareerCourseSlug).filter(Boolean)
 }
 
 async function findAmbassador(referralCode: string) {
@@ -88,7 +93,10 @@ async function notifyAdmin(message: string) {
 async function findSupabaseProgramme(input: { programCode: string; programmeSlug: string; selectedTrackSlugs: string[] }) {
   if (!hasSupabaseAdminConfig()) return null
   const supabase = createSupabaseAdminClient()
-  const programmeCode = input.programCode === 'BATP' ? 'BUSINESS_TRANSFORMATION' : 'AI_INCOME_ACCELERATOR'
+  const careerCourse = input.programCode === 'BATP' ? null : careerCourseBySlug(input.selectedTrackSlugs[0])
+  const programmeCode = input.programCode === 'BATP'
+    ? 'BUSINESS_TRANSFORMATION'
+    : careerCourse?.programmeCode || 'AI_INCOME_ACCELERATOR'
   const { data: programme, error } = await supabase
     .from('programmes')
     .select('id, programme_code, slug, name, price_ngn')
@@ -97,7 +105,7 @@ async function findSupabaseProgramme(input: { programCode: string; programmeSlug
   if (error) throw new Error(`Supabase programme lookup failed: ${error.message}`)
   if (!programme) return null
   let trackId: string | null = null
-  if (input.selectedTrackSlugs[0]) {
+  if (input.selectedTrackSlugs[0] && programme.programme_code === 'AI_INCOME_ACCELERATOR') {
     const { data: track, error: trackError } = await supabase
       .from('programme_tracks')
       .select('id')
@@ -209,7 +217,7 @@ export async function POST(request: NextRequest) {
     const email = text(body.email, 254).toLowerCase()
     const requestedCode = text(body.programCode, 20).toUpperCase()
     const programCode = requestedCode === 'BATP' ? 'BATP' : requestedCode === 'COMPLETE' ? 'COMPLETE' : 'NGTP'
-    const selectedTrackSlugs = stringArray(body.selectedTrackSlugs)
+    const selectedTrackSlugs = normalizeTrackSlugs(body.selectedTrackSlugs)
     const validCareerTracks = careerAcceleratorTracks.filter((track) => selectedTrackSlugs.includes(track.slug))
     const selectedTrackNames = validCareerTracks.length
       ? validCareerTracks.map((track) => track.title)
@@ -233,7 +241,10 @@ export async function POST(request: NextRequest) {
       return null
     }) : null
     const ambassador = supabaseReferral ? null : await findAmbassador(referralCode).catch(() => null)
-    const selectedProgrammeCode = programCode === 'NGTP' ? validCareerTracks[0]?.code || 'NGTP' : programCode
+    const selectedCourse = programCode === 'NGTP'
+      ? careerCourseBySlug(validCareerTracks[0]?.slug) || careerCourseByName(selectedTrackNames[0])
+      : null
+    const selectedProgrammeCode = programCode === 'NGTP' ? selectedCourse?.programmeCode || validCareerTracks[0]?.code || 'NGTP' : programCode
     const program = await findProgram(selectedProgrammeCode).catch(() => null)
     const referralOwnerFound = Boolean(supabaseReferral || ambassador)
     const commissionPercent = referralOwnerFound ? 15 : 0

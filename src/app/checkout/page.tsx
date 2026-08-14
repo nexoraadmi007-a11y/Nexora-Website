@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
 import { Card, Field, Section } from '@/components/ui'
 import { findProgramme, formatNaira, programmes } from '@/config/programmes'
+import { normalizeCareerCourseSlug } from '@/lib/career-course-map'
 import { createSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 function normalizeReferral(value: string) {
@@ -24,12 +25,30 @@ function CheckoutInner() {
   const searchParams = useSearchParams()
   const initial = searchParams.get('programme') || 'ai-income-accelerator'
   const [programmeSlug, setProgrammeSlug] = useState(initial)
+  const [selectedTrackSlug, setSelectedTrackSlug] = useState(() => normalizeCareerCourseSlug(searchParams.get('track') || ''))
   const [promoCode, setPromoCode] = useState('')
   const [referralCode, setReferralCode] = useState('')
   const [pricing, setPricing] = useState<{ listPrice: number; discount: number; finalPrice: number; code?: string; message?: string } | null>(null)
   const [message, setMessage] = useState('')
   const programme = useMemo(() => findProgramme(programmeSlug) || programmes[0], [programmeSlug])
+  const selectedTrack = useMemo(() => {
+    const normalized = normalizeCareerCourseSlug(selectedTrackSlug)
+    return programme.tracks.find((track) => track.slug === normalized || track.code.toLowerCase() === normalized) || null
+  }, [programme.tracks, selectedTrackSlug])
   const current = pricing || { listPrice: programme.listPriceNgn, discount: 0, finalPrice: programme.listPriceNgn }
+
+  useEffect(() => {
+    if (!programme.tracks.length) {
+      setSelectedTrackSlug('')
+      return
+    }
+    const normalized = normalizeCareerCourseSlug(selectedTrackSlug)
+    if (normalized && programme.tracks.some((track) => track.slug === normalized)) {
+      if (normalized !== selectedTrackSlug) setSelectedTrackSlug(normalized)
+      return
+    }
+    setSelectedTrackSlug('')
+  }, [programme, selectedTrackSlug])
 
   useEffect(() => {
     const fromUrl = searchParams.get('ref')?.trim()
@@ -68,6 +87,10 @@ function CheckoutInner() {
 
   async function pay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (programme.tracks.length && !selectedTrack) {
+      setMessage('Select the AI Income Accelerator course you want to register for.')
+      return
+    }
     setMessage('Initializing payment...')
     const formData = new FormData(event.currentTarget)
     const response = await fetch('/api/paystack/initialize', {
@@ -80,10 +103,10 @@ function CheckoutInner() {
         referralCode: normalizeReferral(String(formData.get('referralCode') || referralCode || '')),
         promoCode: pricing?.code || promoCode,
         programCode: programme.legacyCode,
-        programName: programme.name,
+        programName: selectedTrack ? selectedTrack.name : programme.name,
         programmeSlug: programme.slug,
-        selectedTrackSlugs: programme.tracks[0] ? [programme.tracks[0].slug] : [],
-        selectedTrackNames: programme.tracks[0] ? [programme.tracks[0].name] : [],
+        selectedTrackSlugs: selectedTrack ? [selectedTrack.slug] : [],
+        selectedTrackNames: selectedTrack ? [selectedTrack.name] : [],
         sourcePage: '/checkout',
       }),
     })
@@ -100,9 +123,20 @@ function CheckoutInner() {
       <Section eyebrow="Review Order" title="Choose programme, confirm referral, then pay securely.">
         <div className="grid-2">
           <Card>
-            <label className="field"><span>Programme</span><select value={programmeSlug} onChange={(event) => { setProgrammeSlug(event.target.value); setPricing(null) }}>{programmes.map((item) => <option key={item.code} value={item.slug}>{item.name}</option>)}</select></label>
+            <label className="field"><span>Programme</span><select value={programmeSlug} onChange={(event) => { setProgrammeSlug(event.target.value); setPricing(null); setMessage('') }}>{programmes.map((item) => <option key={item.code} value={item.slug}>{item.name}</option>)}</select></label>
+            {programme.tracks.length ? (
+              <label className="field">
+                <span>AI Income Accelerator Course</span>
+                <select value={selectedTrackSlug} onChange={(event) => { setSelectedTrackSlug(event.target.value); setMessage('') }} required>
+                  <option value="">Select course</option>
+                  {programme.tracks.map((track) => <option key={track.code} value={track.slug}>{track.name}</option>)}
+                </select>
+              </label>
+            ) : null}
             <h3>{programme.name}</h3>
+            {selectedTrack ? <p><strong>Selected course:</strong> {selectedTrack.name}</p> : null}
             <p className="muted">{programme.duration}</p>
+            {selectedTrack ? <p className="muted">{selectedTrack.summary}</p> : programme.tracks.length ? <p className="muted">Choose one course so your payment, enrolment and class group are assigned correctly.</p> : null}
             <div className="list">
               <p>Programme Price: <strong>{formatNaira(current.listPrice)}</strong></p>
               {current.discount ? <p>{pricing?.code || promoCode.toUpperCase()}: <strong>-{formatNaira(current.discount)}</strong></p> : null}

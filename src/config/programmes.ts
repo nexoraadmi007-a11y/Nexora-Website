@@ -46,7 +46,7 @@ export const skillToIncomeModule = {
 export const aiIncomeTracks: ProgrammeTrack[] = [
   {
     code: 'AI_CONTENT_DIGITAL_MARKETING',
-    slug: 'ai-content-digital-marketing',
+    slug: 'ai-content-creation',
     name: 'AI Content & Digital Marketing',
     summary: 'Build practical AI-assisted content, campaign and social-media execution skills.',
     learn: ['AI-assisted research', 'Content strategy', 'Copywriting', 'Social-media content', 'Visual creation', 'Short-form video', 'Campaign planning', 'Analytics'],
@@ -56,7 +56,7 @@ export const aiIncomeTracks: ProgrammeTrack[] = [
   },
   {
     code: 'AI_UI_UX_DIGITAL_DESIGN',
-    slug: 'ai-ui-ux-digital-design',
+    slug: 'ui-ux-designer',
     name: 'AI UI/UX & Digital Design',
     summary: 'Learn interface thinking, Figma workflows, landing pages and product case studies.',
     learn: ['Design fundamentals', 'User research', 'User journeys', 'Wireframes', 'Figma', 'UI design', 'AI-assisted design', 'Landing pages'],
@@ -66,7 +66,7 @@ export const aiIncomeTracks: ProgrammeTrack[] = [
   },
   {
     code: 'AI_FINANCIAL_BUSINESS_ANALYSIS',
-    slug: 'ai-financial-business-analysis',
+    slug: 'ai-financial-analyst',
     name: 'AI Financial & Business Analysis',
     summary: 'Use spreadsheets and AI to clean data, analyse performance and build useful reports.',
     learn: ['Spreadsheet foundations', 'Financial data', 'Basic financial statements', 'AI-assisted analysis', 'Data cleaning', 'Dashboards', 'Business reporting', 'Insights'],
@@ -76,7 +76,7 @@ export const aiIncomeTracks: ProgrammeTrack[] = [
   },
   {
     code: 'AI_AUTOMATION_NO_CODE',
-    slug: 'ai-automation-no-code-solutions',
+    slug: 'ai-automation-no-code',
     name: 'AI Automation & No-Code Solutions',
     summary: 'Build forms, Airtable systems, automations, CRM basics and simple internal tools.',
     learn: ['Workflow thinking', 'Forms', 'Airtable', 'Automation', 'AI workflows', 'APIs', 'CRM basics', 'Landing pages', 'Simple internal tools'],
