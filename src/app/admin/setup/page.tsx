@@ -8,9 +8,16 @@ import { Card, Section } from '@/components/ui'
 
 export default function AdminSetupPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [showSecret, setShowSecret] = useState(false)
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [success, setSuccess] = useState(false)
+  const passwordChecks = {
+    length: password.length >= 8,
+    letter: /[A-Za-z]/.test(password),
+    number: /[0-9]/.test(password),
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -43,6 +50,9 @@ export default function AdminSetupPage() {
       <Section eyebrow="Nexora Institute" title="Create Admin Access">
         <Card>
           <form className="form-grid" onSubmit={handleSubmit}>
+            <p className="muted">
+              Create your own admin login below. The password is your new login password; the setup secret is the private admin setup code configured on the server.
+            </p>
             <label className="field">
               <span>Full Name</span>
               <input name="fullName" defaultValue="Nexora Admin" required />
@@ -54,17 +64,38 @@ export default function AdminSetupPage() {
             <label className="field password-field">
               <span>Password</span>
               <span className="password-input">
-                <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required />
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  placeholder="Create your own password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
                 <button className="icon-button" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword((value) => !value)}>
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </span>
             </label>
-            <p className="muted">Use at least 8 characters with a letter and a number.</p>
+            <div className="password-guide" aria-live="polite">
+              <p>Password guide</p>
+              <span className={passwordChecks.length ? 'ok' : ''}>At least 8 characters</span>
+              <span className={passwordChecks.letter ? 'ok' : ''}>Include a letter</span>
+              <span className={passwordChecks.number ? 'ok' : ''}>Include a number</span>
+            </div>
             <label className="field password-field">
               <span>Admin Setup Secret</span>
-              <input name="secret" type="password" required />
+              <span className="password-input">
+                <input name="secret" type={showSecret ? 'text' : 'password'} placeholder="Enter the admin setup secret" required />
+                <button className="icon-button" type="button" aria-label={showSecret ? 'Hide setup secret' : 'Show setup secret'} onClick={() => setShowSecret((value) => !value)}>
+                  {showSecret ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </span>
             </label>
+            <p className="muted">
+              After access is created, use this email and the password you chose on the admin login page.
+            </p>
             {message ? <p className={`form-message ${success ? 'success' : 'error'}`}>{message}</p> : null}
             <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Creating access...' : 'Create Admin Access'}</button>
             {success ? <Link className="btn btn-secondary" href="/admin/login">Go to Admin Login</Link> : null}

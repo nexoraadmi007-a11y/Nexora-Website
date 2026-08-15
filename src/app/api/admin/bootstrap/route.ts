@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This email is not allowed for bootstrap admin access.' }, { status: 403 })
     }
     if (!hasValidPassword(password)) {
-      return NextResponse.json({ error: 'Password must contain at least 8 characters, including a letter and a number.' }, { status: 400 })
+      return NextResponse.json({ error: 'Create a password with at least 8 characters, including one letter and one number. Do not type the instruction text itself.' }, { status: 400 })
     }
 
     const supabase = createSupabaseAdminClient()
