@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
   }
   const nextResponse = await updateSupabaseSession(request, response)
   const pathname = request.nextUrl.pathname
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login') && !pathname.startsWith('/admin/access-denied')) {
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login') && !pathname.startsWith('/admin/setup') && !pathname.startsWith('/admin/access-denied')) {
     const user = await getMiddlewareUser(request, nextResponse)
     if (!user) return NextResponse.redirect(new URL('/admin/login', request.url))
     const role = await adminRoleFor(user)
