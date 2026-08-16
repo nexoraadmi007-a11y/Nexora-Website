@@ -161,6 +161,61 @@ export async function adminProgrammes() {
   return data || []
 }
 
+export async function adminStudents() {
+  const { data, error } = await supabase()
+    .from('profiles')
+    .select('id, full_name, email, whatsapp, country, role, created_at, enrolments(status, created_at, programmes(name), programme_tracks(name), payments(status, paid_at))')
+    .neq('role', 'admin')
+    .order('created_at', { ascending: false })
+    .limit(300)
+  if (error) throw new Error(`Admin students failed: ${error.message}`)
+  return data || []
+}
+
+export async function adminEnrolments() {
+  const { data, error } = await supabase()
+    .from('enrolments')
+    .select('id, status, created_at, profiles(full_name, email), programmes(name), programme_tracks(name), payments(status, paid_at, paystack_reference, amount_ngn)')
+    .order('created_at', { ascending: false })
+    .limit(300)
+  if (error) throw new Error(`Admin enrolments failed: ${error.message}`)
+  return data || []
+}
+
+export async function adminPayments() {
+  const { data, error } = await supabase()
+    .from('payments')
+    .select('id, amount_ngn, status, paystack_reference, paid_at, created_at, profiles(full_name, email), programmes(name), enrolments(programme_tracks(name))')
+    .order('created_at', { ascending: false })
+    .limit(300)
+  if (error) throw new Error(`Admin payments failed: ${error.message}`)
+  return data || []
+}
+
+export async function adminTracks() {
+  const { data, error } = await supabase().from('programme_tracks').select('id, track_code, slug, name, active, created_at, programmes(name, programme_code)').order('name')
+  if (error) throw new Error(`Admin tracks failed: ${error.message}`)
+  return data || []
+}
+
+export async function adminCohorts() {
+  const { data, error } = await supabase().from('classes').select('id, cohort, class_date, status, programmes(name)').not('cohort', 'is', null).order('class_date', { ascending: false }).limit(300)
+  if (error) throw new Error(`Admin cohorts failed: ${error.message}`)
+  const grouped = new Map<string, { cohort: string; programme: string; classes: number; nextDate: string; status: string }>()
+  for (const item of data || []) {
+    const key = `${item.cohort}|${(item.programmes as any)?.name || ''}`
+    const current = grouped.get(key)
+    grouped.set(key, {
+      cohort: item.cohort || 'Unassigned',
+      programme: (item.programmes as any)?.name || '-',
+      classes: (current?.classes || 0) + 1,
+      nextDate: item.class_date || current?.nextDate || '-',
+      status: item.status || current?.status || '-',
+    })
+  }
+  return Array.from(grouped.values())
+}
+
 export async function adminPartners(search = '') {
   const { data, error } = await supabase().from('partners').select('*, referral_codes(code, referral_url), partner_bank_accounts(verification_status, bank_name, account_name)').order('created_at', { ascending: false }).limit(200)
   if (error) throw new Error(`Admin partners failed: ${error.message}`)

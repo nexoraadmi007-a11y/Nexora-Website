@@ -75,8 +75,13 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Academic',
     items: [
+      { label: 'Students', href: '/admin/students', icon: Users },
+      { label: 'Enrollments', href: '/admin/enrollments', icon: GraduationCap },
+      { label: 'Payments', href: '/admin/payments', icon: CreditCard },
       { label: 'Users', href: '/admin/users', icon: Users },
       { label: 'Programmes', href: '/admin/programmes', icon: GraduationCap },
+      { label: 'Tracks', href: '/admin/tracks', icon: BookOpen },
+      { label: 'Cohorts', href: '/admin/cohorts', icon: CalendarDays },
       { label: 'Classes', href: '/admin/classes', icon: CalendarDays },
       { label: 'Projects', href: '/admin/projects', icon: FolderKanban },
     ],
@@ -135,10 +140,12 @@ function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; t
     ? searchItems.filter((item) => `${item.title} ${item.type}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7)
     : []
 
-  function confirmLogout() {
+  async function confirmLogout() {
     try { window.localStorage.removeItem('nexora_v2_session') } catch {}
+    await fetch(admin ? '/api/admin/auth/logout' : '/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     setLogoutOpen(false)
-    router.push(admin ? '/admin/login' : '/login')
+    router.replace(admin ? '/admin/login' : '/login')
+    router.refresh()
   }
 
   return (

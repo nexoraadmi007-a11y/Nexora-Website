@@ -13,6 +13,12 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: NEXORA_BOOTSTRAP_ADMIN_EMAILS
+        sync: false
+      - key: NEXORA_ADMIN_BOOTSTRAP_SECRET
+        sync: false
       - key: AIRTABLE_TOKEN
         sync: false
       - key: APIFY_API_TOKEN
