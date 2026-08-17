@@ -5,6 +5,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 
 const adminLogin = read('src/app/admin/login/page.tsx')
 const adminBootstrap = read('src/app/api/admin/bootstrap/route.ts')
+const adminServices = read('src/lib/admin-services.ts')
 const loginRoute = read('src/app/api/admin/auth/login/route.ts')
 const logoutRoute = read('src/app/api/admin/auth/logout/route.ts')
 const session = read('src/lib/admin-session.ts')
@@ -17,6 +18,7 @@ assert(adminLogin.includes("fetch('/api/admin/auth/login'"), 'Admin login must u
 assert(!adminLogin.includes('createSupabaseBrowserClient') && !adminLogin.includes('signInWithPassword'), 'Admin credentials must not be validated in the browser.')
 assert(adminLogin.includes('href="/admin/setup"') && adminLogin.includes('Set or reset admin password'), 'Admin login must expose the secure password reset path.')
 assert(!/from\('admin_roles'\)\.upsert\(\{[\s\S]*?updated_at[\s\S]*?\}, \{ onConflict: 'user_id,role' \}\)/.test(adminBootstrap), 'Admin bootstrap must only write columns present in admin_roles.')
+assert(adminServices.includes('reportQueryError') && !adminServices.includes('list failed: ${error.message}'), 'Read-only admin data errors must not crash protected pages.')
 assert(loginRoute.includes(".from('admin_roles')") && loginRoute.includes(".eq('status', 'ACTIVE')"), 'Admin login must verify an active server-side role.')
 assert(loginRoute.includes('createAdminSessionToken') && loginRoute.includes('ADMIN_SESSION_COOKIE'), 'Admin login must create the dedicated admin session.')
 assert(session.includes("'nexora_admin_session'") && session.includes("httpOnly: true") && session.includes("sameSite: 'strict'"), 'Admin cookie security attributes are missing.')

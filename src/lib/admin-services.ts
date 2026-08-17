@@ -7,6 +7,10 @@ function supabase() {
   return createSupabaseAdminClient()
 }
 
+function reportQueryError(operation: string, error: { message: string; code?: string } | null) {
+  if (error) console.error(`Admin data query failed: ${operation}`, { code: error.code, message: error.message })
+}
+
 export function formatNgn(value: number) {
   return `NGN ${Math.round(value || 0).toLocaleString()}`
 }
@@ -51,13 +55,19 @@ async function count(table: string, field = 'created_at', start?: Date, end?: Da
   if (end) query = query.lte(field, end.toISOString())
   for (const [key, value] of Object.entries(filters || {})) query = query.eq(key, value)
   const { count: result, error } = await query
-  if (error) throw new Error(`${table} count failed: ${error.message}`)
+  if (error) {
+    reportQueryError(`${table} count`, error)
+    return 0
+  }
   return result || 0
 }
 
 async function rows(table: string, select = '*', limit = 100) {
   const { data, error } = await supabase().from(table).select(select).order('created_at', { ascending: false }).limit(limit)
-  if (error) throw new Error(`${table} list failed: ${error.message}`)
+  if (error) {
+    reportQueryError(`${table} list`, error)
+    return []
+  }
   return data || []
 }
 
@@ -150,14 +160,14 @@ export async function adminAnalytics(rangeKey?: string) {
 export async function adminUsers(search = '') {
   const client = supabase()
   const { data: users, error } = await client.from('profiles').select('*').order('created_at', { ascending: false }).limit(200)
-  if (error) throw new Error(`Admin users failed: ${error.message}`)
+  if (error) { reportQueryError('profiles list', error); return [] }
   const query = search.toLowerCase()
   return (users || []).filter((user: any) => !query || `${user.full_name} ${user.email} ${user.whatsapp} ${user.role}`.toLowerCase().includes(query))
 }
 
 export async function adminProgrammes() {
   const { data, error } = await supabase().from('programmes').select('*').order('family').order('name')
-  if (error) throw new Error(`Admin programmes failed: ${error.message}`)
+  if (error) { reportQueryError('programmes list', error); return [] }
   return data || []
 }
 
@@ -168,7 +178,7 @@ export async function adminStudents() {
     .neq('role', 'admin')
     .order('created_at', { ascending: false })
     .limit(300)
-  if (error) throw new Error(`Admin students failed: ${error.message}`)
+  if (error) { reportQueryError('students list', error); return [] }
   return data || []
 }
 
@@ -178,7 +188,7 @@ export async function adminEnrolments() {
     .select('id, status, created_at, profiles(full_name, email), programmes(name), programme_tracks(name), payments(status, paid_at, paystack_reference, amount_ngn)')
     .order('created_at', { ascending: false })
     .limit(300)
-  if (error) throw new Error(`Admin enrolments failed: ${error.message}`)
+  if (error) { reportQueryError('enrolments list', error); return [] }
   return data || []
 }
 
@@ -188,19 +198,19 @@ export async function adminPayments() {
     .select('id, amount_ngn, status, paystack_reference, paid_at, created_at, profiles(full_name, email), programmes(name), enrolments(programme_tracks(name))')
     .order('created_at', { ascending: false })
     .limit(300)
-  if (error) throw new Error(`Admin payments failed: ${error.message}`)
+  if (error) { reportQueryError('payments list', error); return [] }
   return data || []
 }
 
 export async function adminTracks() {
   const { data, error } = await supabase().from('programme_tracks').select('id, track_code, slug, name, active, created_at, programmes(name, programme_code)').order('name')
-  if (error) throw new Error(`Admin tracks failed: ${error.message}`)
+  if (error) { reportQueryError('programme tracks list', error); return [] }
   return data || []
 }
 
 export async function adminCohorts() {
   const { data, error } = await supabase().from('classes').select('id, cohort, class_date, status, programmes(name)').not('cohort', 'is', null).order('class_date', { ascending: false }).limit(300)
-  if (error) throw new Error(`Admin cohorts failed: ${error.message}`)
+  if (error) { reportQueryError('cohorts list', error); return [] }
   const grouped = new Map<string, { cohort: string; programme: string; classes: number; nextDate: string; status: string }>()
   for (const item of data || []) {
     const key = `${item.cohort}|${(item.programmes as any)?.name || ''}`
@@ -218,7 +228,7 @@ export async function adminCohorts() {
 
 export async function adminPartners(search = '') {
   const { data, error } = await supabase().from('partners').select('*, referral_codes(code, referral_url), partner_bank_accounts(verification_status, bank_name, account_name)').order('created_at', { ascending: false }).limit(200)
-  if (error) throw new Error(`Admin partners failed: ${error.message}`)
+  if (error) { reportQueryError('partners list', error); return [] }
   const query = search.toLowerCase()
   return (data || []).filter((partner: any) => !query || `${partner.full_name} ${partner.email} ${partner.whatsapp} ${partner.partner_id} ${partner.referral_codes?.[0]?.code}`.toLowerCase().includes(query))
 }
@@ -237,6 +247,6 @@ export async function adminSimpleTable(table: string, select = '*') {
 
 export async function adminSettings() {
   const { data, error } = await supabase().from('admin_settings').select('*').order('category')
-  if (error) throw new Error(`Admin settings failed: ${error.message}`)
+  if (error) { reportQueryError('admin settings list', error); return [] }
   return data || []
 }
