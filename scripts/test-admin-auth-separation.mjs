@@ -14,6 +14,7 @@ const env = read('.env.example')
 
 assert(adminLogin.includes("fetch('/api/admin/auth/login'"), 'Admin login must use its dedicated server endpoint.')
 assert(!adminLogin.includes('createSupabaseBrowserClient') && !adminLogin.includes('signInWithPassword'), 'Admin credentials must not be validated in the browser.')
+assert(adminLogin.includes('href="/admin/setup"') && adminLogin.includes('Set or reset admin password'), 'Admin login must expose the secure password reset path.')
 assert(loginRoute.includes(".from('admin_roles')") && loginRoute.includes(".eq('status', 'ACTIVE')"), 'Admin login must verify an active server-side role.')
 assert(loginRoute.includes('createAdminSessionToken') && loginRoute.includes('ADMIN_SESSION_COOKIE'), 'Admin login must create the dedicated admin session.')
 assert(session.includes("'nexora_admin_session'") && session.includes("httpOnly: true") && session.includes("sameSite: 'strict'"), 'Admin cookie security attributes are missing.')

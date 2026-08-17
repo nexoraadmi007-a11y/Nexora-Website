@@ -47,11 +47,11 @@ export default function AdminSetupPage() {
 
   return (
     <PublicShell>
-      <Section eyebrow="Nexora Institute" title="Create Admin Access">
+      <Section eyebrow="Nexora Institute" title="Set or Reset Admin Access">
         <Card>
           <form className="form-grid" onSubmit={handleSubmit}>
             <p className="muted">
-              Create your own admin login below. The password is your new login password; the setup secret is the private admin setup code configured on the server.
+              Set a new admin password below. For an existing approved admin email, this securely replaces the old password. The setup secret is the private admin setup code configured on the server.
             </p>
             <label className="field">
               <span>Full Name</span>
@@ -97,7 +97,7 @@ export default function AdminSetupPage() {
               After access is created, use this email and the password you chose on the admin login page.
             </p>
             {message ? <p className={`form-message ${success ? 'success' : 'error'}`}>{message}</p> : null}
-            <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Creating access...' : 'Create Admin Access'}</button>
+            <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Saving admin access...' : 'Set or Reset Password'}</button>
             {success ? <Link className="btn btn-secondary" href="/admin/login">Go to Admin Login</Link> : null}
           </form>
         </Card>

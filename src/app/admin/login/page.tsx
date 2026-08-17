@@ -3,6 +3,7 @@
 import { Eye, EyeOff } from 'lucide-react'
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { PublicShell } from '@/components/shell'
 import { Card, Section } from '@/components/ui'
 
@@ -51,6 +52,7 @@ export default function AdminLoginPage() {
             <label className="inline-choice"><input type="checkbox" checked={rememberDevice} onChange={(event) => setRememberDevice(event.target.checked)} /> Remember this device</label>
             {message ? <p className="form-message error">{message}</p> : null}
             <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
+            <Link href="/admin/setup">Set or reset admin password</Link>
             <p className="muted">Administrator credentials are validated on the server and do not use the student verification flow.</p>
           </form>
         </Card>
