@@ -91,7 +91,6 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       role: 'SUPER_ADMIN' satisfies typeof adminRoles[number],
       status: 'ACTIVE',
-      updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,role' })
     if (roleError) throw new Error(`Admin role setup failed: ${roleError.message}`)
 
