@@ -1,0 +1,10 @@
+create index if not exists classes_programme_idx on public.classes(programme_id);
+create index if not exists classes_track_idx on public.classes(track_id);
+create index if not exists class_memberships_enrolment_idx on public.class_memberships(enrolment_id);
+create index if not exists assignments_track_idx on public.assignments(track_id);
+create index if not exists assignment_submissions_user_idx on public.assignment_submissions(user_id);
+create index if not exists announcements_class_idx on public.announcements(class_id);
+create index if not exists assessments_class_idx on public.assessments(class_id);
+create index if not exists assessments_track_idx on public.assessments(track_id);
+create index if not exists assessment_questions_assessment_idx on public.assessment_questions(assessment_id);
+create index if not exists projects_track_idx on public.projects(track_id);
