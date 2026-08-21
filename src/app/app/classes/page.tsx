@@ -1,26 +1,3 @@
-import { AppShell } from '@/components/shell'
-import { Card } from '@/components/ui'
-import { DataTable } from '@/components/product'
-
-export default function ClassesPage() {
-  return (
-    <AppShell title="Live Classes">
-      <div className="page-grid">
-        <div className="tabs"><span>Upcoming</span><span>Past Classes</span><span>Agenda</span><span>Month</span></div>
-        <Card>
-          <p className="eyebrow">Upcoming</p>
-          <h3>No class scheduled yet.</h3>
-          <p className="muted">Your programme manager will publish the next class here after your cohort and track are confirmed.</p>
-          <div className="card-actions"><a className="btn btn-secondary" href="/app/programmes">View Programmes</a><a className="btn btn-ghost" href="/app/resources">Browse Resources</a></div>
-        </Card>
-        <Card>
-          <h3>Class Agenda</h3>
-          <DataTable headers={['Session', 'Programme', 'Date', 'Trainer', 'Status']} rows={[
-            ['Orientation', 'All learners', 'To be announced', 'Programme Team', 'Pending'],
-            ['Foundations Lab', 'AI Income Accelerator', 'To be announced', 'Trainer assigned after cohort', 'Pending'],
-          ]} />
-        </Card>
-      </div>
-    </AppShell>
-  )
-}
+import { AppShell } from '@/components/shell';import { Card } from '@/components/ui';import { DataTable,MetricCard } from '@/components/product';import { studentClasses,studentSessions } from '@/lib/student-learning'
+export const dynamic = 'force-dynamic'
+export default async function ClassesPage(){const[memberships,sessions]=await Promise.all([studentClasses(),studentSessions()]);const upcoming=sessions.filter((x:any)=>new Date(`${x.session_date}T${x.start_time||'00:00'}`)>=new Date());return <AppShell title="Live Classes"><div className="page-grid"><div className="metric-grid"><MetricCard label="My Classes" value={String(memberships.length)} note="Explicit active memberships"/><MetricCard label="Upcoming Sessions" value={String(upcoming.length)} note="Visible only to your classes"/></div><Card><h3>Your Classes</h3><DataTable headers={['Class','Programme','Track','Cohort','Trainer','Status']} rows={memberships.map((m:any)=>[m.classes?.name||m.classes?.title||'-',m.classes?.programmes?.name||'-',m.classes?.programme_tracks?.name||'-',m.classes?.cohort||'-',m.classes?.trainer||'-',m.classes?.status||'-'])}/></Card><Card><h3>Published Live Sessions</h3><DataTable headers={['Session','Class','Date','Time','Trainer','Meeting']} rows={sessions.map((x:any)=>[x.title,x.classes?.name||x.classes?.title||'-',x.session_date,`${x.start_time||'-'} – ${x.end_time||'-'}`,x.trainer||'-',x.meeting_url||'-'])}/></Card></div></AppShell>}

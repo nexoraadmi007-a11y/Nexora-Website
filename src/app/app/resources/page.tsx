@@ -1,24 +1,3 @@
-import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
-import { AppShell } from '@/components/shell'
-import { Card } from '@/components/ui'
-
-const resources = [
-  ['career', 'Career Resources'],
-  ['income', 'Income Resources'],
-  ['templates', 'Templates'],
-  ['tools', 'Tools'],
-  ['recordings', 'Recordings'],
-  ['guides', 'Guides'],
-]
-
-export default function AppResourcesPage() {
-  return (
-    <AppShell title="Resources">
-      <div className="page-grid">
-        <Card><h3>Resource Centre</h3><p className="muted">Use these resources to prepare for learning, portfolio building, career positioning and income development.</p></Card>
-        <div className="grid-3">{resources.map(([slug, title]) => <Link className="click-card" href={`/app/resources/${slug}`} key={slug}><strong>{title}<ArrowRight size={17} /></strong><span className="muted">Open resources in this category.</span></Link>)}</div>
-      </div>
-    </AppShell>
-  )
-}
+import { AppShell } from '@/components/shell';import { Card } from '@/components/ui';import { studentResources } from '@/lib/student-learning'
+export const dynamic = 'force-dynamic'
+export default async function ResourcesPage(){const resources=await studentResources();return <AppShell title="Class Resources"><div className="page-grid"><Card><h3>Resources & Recorded Classes</h3><p className="muted">These items are scoped to your active class memberships. Private recording links expire after 15 minutes.</p></Card><div className="grid-2">{resources.map((x:any)=><Card key={x.id}><p className="eyebrow">{x.resource_type} · {x.classes?.name||x.classes?.title}</p><h3>{x.title}</h3><p className="muted">{x.description}</p>{x.resource_type==='VIDEO'&&x.access_url?<video controls controlsList="nodownload" preload="metadata" src={x.access_url} style={{width:'100%'}}/>:<a className="btn btn-secondary" href={x.access_url||x.external_url||'#'} target="_blank" rel="noreferrer">Open Resource</a>}</Card>)}</div>{!resources.length?<Card><h3>No resources published yet.</h3><p className="muted">Your class resources will appear here after your programme team publishes them.</p></Card>:null}</div></AppShell>}

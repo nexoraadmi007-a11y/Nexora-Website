@@ -1,42 +1,4 @@
-'use client'
-
-import Link from 'next/link'
-import { useMemo, useState } from 'react'
-import { AppShell } from '@/components/shell'
-import { Card } from '@/components/ui'
-
-const notifications = [
-  { id: 'n1', category: 'Learning', message: 'Complete your profile to improve learning recommendations.', href: '/app/profile', action: 'Open Profile' },
-  { id: 'n2', category: 'Classes', message: 'Your first class appears after enrolment.', href: '/app/classes', action: 'Open Classes' },
-  { id: 'n3', category: 'Projects', message: 'Projects become available after Module 1.', href: '/app/projects', action: 'Open Projects' },
-  { id: 'n4', category: 'Partner', message: 'Activate your partner profile to receive a referral code.', href: '/app/partner/activate', action: 'Activate Partner' },
-  { id: 'n5', category: 'Payments', message: 'Programme purchases and receipts appear in Billing.', href: '/app/billing', action: 'View Billing' },
-  { id: 'n6', category: 'Opportunities', message: 'Improve your profile to prepare for matching.', href: '/app/opportunities', action: 'View Opportunities' },
-]
-const tabs = ['All', 'Learning', 'Classes', 'Projects', 'Partner', 'Payments', 'Opportunities']
-
-export default function NotificationsPage() {
-  const [tab, setTab] = useState('All')
-  const [read, setRead] = useState<string[]>([])
-  const rows = useMemo(() => notifications.filter((item) => tab === 'All' || item.category === tab), [tab])
-
-  return (
-    <AppShell title="Notifications">
-      <div className="page-grid">
-        <div className="tabs">{tabs.map((item) => <button className={tab === item ? 'active-tab' : ''} key={item} type="button" onClick={() => setTab(item)}>{item}</button>)}</div>
-        <Card>
-          <div className="card-actions"><button className="btn btn-secondary" type="button" onClick={() => setRead(notifications.map((item) => item.id))}>Mark All as Read</button></div>
-          <div className="page-grid">
-            {rows.map((item) => (
-              <div className="learning-step current" key={item.id}>
-                <span className={`status-pill ${read.includes(item.id) ? 'success' : 'warning'}`}>{read.includes(item.id) ? 'Read' : 'Unread'}</span>
-                <span>{item.message}</span>
-                <span className="card-actions"><button className="btn btn-ghost" type="button" onClick={() => setRead((current) => Array.from(new Set([...current, item.id])))}>Mark as Read</button><Link className="btn btn-secondary" href={item.href}>{item.action}</Link></span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </AppShell>
-  )
-}
+import { revalidatePath } from 'next/cache';import Link from 'next/link';import { AppShell } from '@/components/shell';import { Card } from '@/components/ui';import { requireStudent,studentNotifications } from '@/lib/student-learning'
+export const dynamic = 'force-dynamic'
+async function markRead(form:FormData){'use server';const{db,user}=await requireStudent();const id=String(form.get('id')||'');let query=db.from('notifications').update({read_at:new Date().toISOString()}).eq('user_id',user.id);if(id)query=query.eq('id',id);await query;revalidatePath('/app/notifications')}
+export default async function NotificationsPage(){const notifications=await studentNotifications();return <AppShell title="Notifications"><div className="page-grid"><Card><form action={markRead}><button className="btn btn-secondary">Mark All as Read</button></form></Card>{notifications.map((x:any)=><Card key={x.id}><span className={`status-pill ${x.read_at?'success':'warning'}`}>{x.read_at?'Read':'Unread'}</span><h3>{x.title}</h3><p>{x.body}</p><div className="card-actions">{!x.read_at?<form action={markRead}><input type="hidden" name="id" value={x.id}/><button className="btn btn-ghost">Mark as Read</button></form>:null}{x.href?<Link className="btn btn-secondary" href={x.href}>Open</Link>:null}</div></Card>)}{!notifications.length?<Card><h3>No notifications yet.</h3></Card>:null}</div></AppShell>}

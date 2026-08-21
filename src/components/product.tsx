@@ -90,7 +90,7 @@ export function DataTable({ headers, rows, emptyMessage = 'No records yet.' }: {
       <table>
         <thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead>
         <tbody>
-          {rows.length ? rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell}</td>)}</tr>) : (
+          {rows.length ? rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`}>{cell.startsWith('/') ? <Link href={cell}>Open</Link> : cell}</td>)}</tr>) : (
             <tr><td colSpan={headers.length}><div className="empty-state">{emptyMessage}</div></td></tr>
           )}
         </tbody>
