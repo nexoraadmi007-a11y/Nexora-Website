@@ -35,11 +35,9 @@ export default async function ProgrammePage({ params }: { params: Promise<{ prog
       <Section eyebrow="Outcomes" title="What the programme is designed to produce.">
         <div className="grid-3">{programme.outcomes.map((outcome) => <Card key={outcome}><p>{outcome}</p></Card>)}</div>
       </Section>
-      {programme.code === 'AI_INCOME_ACCELERATOR' ? (
-        <Section eyebrow={skillToIncomeModule.title} title="Income acquisition is taught as a professional skill, not promised as a result.">
-          <Card><ul className="list">{skillToIncomeModule.topics.map((topic) => <li key={topic}>{topic}</li>)}</ul></Card>
-        </Section>
-      ) : null}
+      <Section eyebrow={skillToIncomeModule.title} title="Income acquisition is taught as a professional skill, not promised as a result.">
+        <Card><ul className="list">{skillToIncomeModule.topics.map((topic) => <li key={topic}>{topic}</li>)}</ul></Card>
+      </Section>
     </PublicShell>
   )
 }

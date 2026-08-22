@@ -16,4 +16,4 @@ export const aiIncomeTracks: ProgrammeTrack[] = []
 export const skillToIncomeModule = { title: 'From Skill to Income', topics: ['Positioning your skill', 'Building proof of work', 'Finding opportunities', 'Client delivery'] }
 export function formatNaira(value: number) { return `₦${value.toLocaleString('en-NG')}` }
 export function findProgramme(value: string) { const course = findCourse(value); return course ? programmes.find((item) => item.code === course.code) : undefined }
-export function findTrack() { return undefined }
+export function findTrack(_value?: string) { return undefined }

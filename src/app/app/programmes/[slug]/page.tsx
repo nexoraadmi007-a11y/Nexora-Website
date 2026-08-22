@@ -11,8 +11,6 @@ export default async function AppProgrammeDetailPage({ params }: Props) {
   const programme = findProgramme(slug)
   if (!programme) notFound()
 
-  const isCareer = programme.code === 'AI_INCOME_ACCELERATOR'
-
   return (
     <AppShell title={programme.name}>
       <div className="page-grid">
@@ -31,26 +29,10 @@ export default async function AppProgrammeDetailPage({ params }: Props) {
           </Card>
         </div>
 
-        {isCareer ? (
-          <Card>
-            <h3>Tracks</h3>
-            <div className="grid-2">
-              {programme.tracks.map((track) => (
-                <div className="programme-card" key={track.code}>
-                  <h3>{track.name}</h3>
-                  <p>{track.summary}</p>
-                  <div className="tag-row">{track.learn.slice(0, 5).map((skill) => <span key={skill}>{skill}</span>)}</div>
-                  <a className="btn btn-secondary" href={`/programmes/ai-income-accelerator/${track.slug}`}>View track</a>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ) : (
-          <Card>
-            <h3>Transformation Areas</h3>
-            <div className="tag-row">{['Brand', 'Digital Presence', 'Customer Management', 'Marketing', 'Sales', 'Automation', 'Reporting'].map((area) => <span key={area}>{area}</span>)}</div>
-          </Card>
-        )}
+        <Card>
+          <h3>Independent Course</h3>
+          <p className="muted">This course has its own enrolment, classes, assignments and completion record.</p>
+        </Card>
 
         <div className="grid-2">
           <Card>
