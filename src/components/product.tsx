@@ -41,7 +41,7 @@ export function ProgrammeCard({ programme, hrefPrefix = '/app/programmes' }: { p
       </div>
       <div className="programme-meta">
         <strong>{formatNaira(programme.priceNgn)}</strong>
-        <span>{programme.tracks.length ? `${programme.tracks.length} tracks` : 'Business programme'}</span>
+        <span>Independent course</span>
       </div>
       {programme.tracks.length ? (
         <div className="tag-row">
@@ -53,8 +53,8 @@ export function ProgrammeCard({ programme, hrefPrefix = '/app/programmes' }: { p
         </div>
       )}
       <div className="card-actions">
-        <Link className="btn btn-secondary" href={`${hrefPrefix}/${programme.slug}`}>View Programme</Link>
-        <Link className="btn btn-primary" href={`/checkout?programme=${programme.slug}`}>Enrol</Link>
+        <Link className="btn btn-secondary" href={`${hrefPrefix}/${programme.slug}`}>View Course</Link>
+        <Link className="btn btn-primary" href={`/checkout?course=${programme.slug}`}>Select Course</Link>
       </div>
     </article>
   )

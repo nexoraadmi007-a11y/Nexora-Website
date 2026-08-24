@@ -19,7 +19,8 @@ function CheckoutInner() {
   })
   const [referralCode, setReferralCode] = useState('')
   const [message, setMessage] = useState('')
-  const total = useMemo(() => selected.length * coursePriceNgn, [selected])
+  const [quote, setQuote] = useState<{ subtotal: number; processingFee: number; total: number } | null>(null)
+  const selectedCourses = useMemo(() => COURSE_CATALOGUE.filter((course) => selected.includes(course.code)), [selected])
 
   useEffect(() => {
     const fromUrl = params.get('ref') || ''
@@ -27,6 +28,15 @@ function CheckoutInner() {
     const code = cleanReferral(fromUrl || fromStorage)
     if (code) { setReferralCode(code); window.localStorage.setItem('nexora_referral_code', code) }
   }, [params])
+
+  useEffect(() => {
+    if (!selected.length) { setQuote(null); return }
+    const controller = new AbortController()
+    fetch('/api/paystack/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseCodes: selected }), signal: controller.signal })
+      .then(async (response) => { const result = await response.json(); if (!response.ok) throw new Error(result.error); setQuote(result); setMessage('') })
+      .catch((error) => { if (error.name !== 'AbortError') { setQuote(null); setMessage(error.message || 'Could not calculate payment total.') } })
+    return () => controller.abort()
+  }, [selected])
 
   function toggle(code: string) {
     setSelected((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code])
@@ -47,19 +57,22 @@ function CheckoutInner() {
     setMessage(result.error || 'Payment could not be initialized. Please try again.')
   }
 
-  return <PublicShell><Section eyebrow="Course checkout" title="Choose one, two, or all three courses.">
-    <div className="grid-2"><Card>
-      <div className="form-grid">{COURSE_CATALOGUE.map((course) => <label className="field" key={course.code}>
-        <span><input type="checkbox" checked={selected.includes(course.code)} onChange={() => toggle(course.code)} /> <strong>{course.name}</strong></span>
-        <span className="muted">{course.summary} — {formatNaira(coursePriceNgn)}</span>
+  return <PublicShell><Section eyebrow="Course checkout" title="Select your courses">
+    <div className="checkout-layout"><Card>
+      <p className="muted">Choose one or more courses. Each selected course receives its own enrolment.</p>
+      <div className="course-selector">{COURSE_CATALOGUE.map((course) => <label className={`course-option ${selected.includes(course.code) ? 'selected' : ''}`} key={course.code}>
+        <input type="checkbox" checked={selected.includes(course.code)} onChange={() => toggle(course.code)} />
+        <span><strong>{course.name}</strong><small>{course.summary}</small></span><b>{formatNaira(coursePriceNgn)}</b>
       </label>)}</div>
-      <p className="price">Total: {formatNaira(total)}</p>
-      <p className="muted">Every selected course receives its own enrolment.</p>
+      <p className="selection-count">{selected.length} {selected.length === 1 ? 'course' : 'courses'} selected</p>
     </Card><Card><form className="form-grid" onSubmit={pay}>
+      <div className="payment-summary"><h3>Payment summary</h3>{selectedCourses.map((course) => <div key={course.code}><span>{course.name}</span><strong>{formatNaira(coursePriceNgn)}</strong></div>)}
+        <hr/><div><span>Course subtotal</span><strong>{formatNaira(quote?.subtotal || 0)}</strong></div><div><span>Processing fee</span><strong>{formatNaira(quote?.processingFee || 0)}</strong></div><div className="payment-total"><span>Total payable</span><strong>{formatNaira(quote?.total || 0)}</strong></div>
+      </div>
       <Field name="fullName" label="Full Name" required /><Field name="email" label="Email" type="email" required /><Field name="whatsapp" label="WhatsApp Number" required />
       <label className="field"><span>Referral Code or Link</span><input value={referralCode} onChange={(event) => setReferralCode(cleanReferral(event.target.value))} placeholder="Optional" /></label>
       {message ? <p className={`form-message ${message.includes('Initializing') ? 'success' : 'error'}`}>{message}</p> : null}
-      <button className="btn btn-primary" type="submit">Pay {formatNaira(total)} with Paystack</button>
+      <button className="btn btn-primary" disabled={!quote || !selected.length} type="submit">Continue to Payment</button>
     </form></Card></div>
   </Section></PublicShell>
 }

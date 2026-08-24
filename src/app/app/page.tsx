@@ -1,83 +1,21 @@
-import { BarChart3, BriefcaseBusiness, FolderKanban, GraduationCap, Target } from 'lucide-react'
+import Link from 'next/link'
 import { AppShell } from '@/components/shell'
-import { ActionCard, ChecklistItem, LearningStep, MetricCard, ProgressBar } from '@/components/product'
 import { Card } from '@/components/ui'
+import { studentDashboard } from '@/lib/student-learning'
 
-export default function AppHomePage() {
-  return (
-    <AppShell title="Good morning. Here's your next best move.">
-      <div className="page-grid">
-        <div className="dashboard-grid">
-          <ActionCard eyebrow="Start Your Nexora Journey" title="Choose a skill path and begin building toward income." href="/app/programmes" action="Explore Programmes">
-            Pick one AI-powered programme, understand the track outcomes, then move into enrolment when you are ready.
-          </ActionCard>
-          <Card>
-            <h3>Onboarding Checklist</h3>
-            <p className="muted">Complete the essentials so your workspace can personalise learning, projects and opportunities.</p>
-            <ul className="checklist">
-              <ChecklistItem done>Account created</ChecklistItem>
-              <ChecklistItem>Complete profile</ChecklistItem>
-              <ChecklistItem>Choose programme</ChecklistItem>
-              <ChecklistItem>Complete payment</ChecklistItem>
-              <ChecklistItem>View first class</ChecklistItem>
-            </ul>
-          </Card>
-        </div>
+export const dynamic = 'force-dynamic'
+const money = (value: number) => `₦${Number(value || 0).toLocaleString('en-NG')}`
+const date = (value: string) => value ? new Date(value).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No due date'
 
-        <div className="metric-grid">
-          <MetricCard icon={GraduationCap} label="Programme Progress" value="-" note="Starts after enrolment." />
-          <MetricCard icon={FolderKanban} label="Projects Completed" value="0" note="Your first project unlocks after Module 1." />
-          <MetricCard icon={BriefcaseBusiness} label="Portfolio Progress" value="15%" note="Profile created; projects are next." />
-          <MetricCard icon={Target} label="Income Readiness" value="20%" note="Choose a track to improve readiness." />
-          <MetricCard icon={BarChart3} label="Opportunity Readiness" value="-" note="Calculated from profile, projects and portfolio." />
-        </div>
-
-        <div className="dashboard-grid">
-          <Card>
-            <h3>Your Learning Path</h3>
-            <p className="muted">This is the default path for every Nexora learner. Your exact modules appear after programme selection.</p>
-            <ul className="learning-path">
-              <LearningStep label="01 Foundations" state="current" />
-              <LearningStep label="02 Core Skills" state="locked" />
-              <LearningStep label="03 Applied Project" state="locked" />
-              <LearningStep label="04 Portfolio" state="locked" />
-              <LearningStep label="05 From Skill to Income" state="locked" />
-            </ul>
-          </Card>
-          <Card>
-            <h3>Income Readiness</h3>
-            <p className="price">20%</p>
-            <ProgressBar value={20} />
-            <ul className="checklist">
-              <ChecklistItem done>Profile started</ChecklistItem>
-              <ChecklistItem>Skill selected</ChecklistItem>
-              <ChecklistItem>Complete first project</ChecklistItem>
-              <ChecklistItem>Define your service</ChecklistItem>
-              <ChecklistItem>Build portfolio</ChecklistItem>
-            </ul>
-          </Card>
-        </div>
-
-        <div className="dashboard-grid">
-          <Card>
-            <p className="eyebrow">Next Live Class</p>
-            <h3>No class scheduled yet.</h3>
-            <p className="muted">Your programme manager will publish the next class here after your enrolment and track are confirmed.</p>
-            <div className="card-actions">
-              <a className="btn btn-secondary" href="/app/programmes">View Programme</a>
-              <a className="btn btn-ghost" href="/app/classes">Open Classes</a>
-            </div>
-          </Card>
-          <Card>
-            <h3>Recent Activity</h3>
-            <ul className="timeline-list">
-              <li><span>Profile</span><strong>Account workspace created</strong><small>Today</small></li>
-              <li><span>Programmes</span><strong>AI Income Accelerator is available</strong><small>Now</small></li>
-              <li><span>Partner</span><strong>Partner activation is ready when you are</strong><small>Now</small></li>
-            </ul>
-          </Card>
-        </div>
-      </div>
-    </AppShell>
-  )
+export default async function AppHomePage() {
+  const dashboard = await studentDashboard()
+  return <AppShell title={`Welcome back, ${dashboard.name}`}><div className="page-grid student-dashboard">
+    <section><div className="section-heading"><div><p className="eyebrow">My Courses</p><h2>Your learning</h2></div><Link className="btn btn-secondary" href="/app/programmes">Browse courses</Link></div>
+      {dashboard.enrolments.length ? <div className="grid-3">{dashboard.enrolments.map((enrolment: any) => <Card key={enrolment.id}><h3>{enrolment.programmes?.name}</h3><p className="muted">{enrolment.programmes?.short_description || 'Continue your course lessons, classes and assignments.'}</p><p className="course-price">{money(enrolment.programmes?.price_ngn)}</p><Link className="btn btn-primary" href={`/app/programmes/${enrolment.programmes?.slug}`}>Continue Learning</Link></Card>)}</div> : <Card><h3>No active courses yet</h3><p className="muted">Choose your first course to begin learning.</p><Link className="btn btn-primary" href="/checkout">Choose courses</Link></Card>}
+    </section>
+    <div className="dashboard-grid"><Card><p className="eyebrow">Upcoming Class</p>{dashboard.upcoming ? <><h3>{dashboard.upcoming.title}</h3><p>{date(dashboard.upcoming.session_date)} · {dashboard.upcoming.start_time || 'Time to be announced'}</p><p className="muted">{dashboard.upcoming.class?.programmes?.name || dashboard.upcoming.class?.name}</p>{dashboard.upcoming.meeting_url ? <a className="btn btn-primary" href={dashboard.upcoming.meeting_url} target="_blank" rel="noreferrer">Join Class</a> : <span className="status-pill warning">Meeting link pending</span>}</> : <><h3>No class scheduled</h3><p className="muted">Your next published class will appear here.</p><Link className="btn btn-secondary" href="/app/classes">View classes</Link></>}</Card>
+      <Card><div className="section-heading"><div><p className="eyebrow">Recent Assignments</p><h3>Keep up with your work</h3></div><Link href="/app/assignments">View all</Link></div>{dashboard.assignments.length ? <ul className="compact-list">{dashboard.assignments.map((assignment: any) => <li key={assignment.id}><div><strong>{assignment.title}</strong><span>{assignment.classes?.programmes?.name || assignment.classes?.name}</span></div><div><small>{date(assignment.due_at)}</small><span className={`status-pill ${assignment.submission ? 'success' : 'warning'}`}>{assignment.submission ? assignment.submission.status : 'Pending'}</span></div></li>)}</ul> : <p className="muted">No assignments have been published yet.</p>}</Card>
+    </div>
+    {dashboard.recordings.length ? <section><p className="eyebrow">Recent Class Recordings</p><div className="grid-2">{dashboard.recordings.map((recording: any) => <Card key={recording.id}><h3>{recording.title}</h3><p className="muted">{recording.class?.programmes?.name || recording.class?.name}</p>{recording.external_url ? <a className="btn btn-secondary" href={recording.external_url} target="_blank" rel="noreferrer">Watch Recording</a> : null}</Card>)}</div></section> : null}
+  </div></AppShell>
 }

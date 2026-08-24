@@ -21,6 +21,9 @@ export async function finalizeSuccessfulPaystackPayment(reference: string, _even
   const referralCode = text(metadata.referral_code, 120)
   const referral = referralCode ? await resolveSupabaseReferral(referralCode).catch(() => null) : null
   const supabase = createSupabaseAdminClient()
+  const { data: expectedPayment, error: expectedError } = await supabase.from('payments').select('id, amount_ngn, subtotal_ngn, status, user_id').eq('paystack_reference', reference).single()
+  if (expectedError || !expectedPayment) throw new Error(expectedError?.message || 'Payment record was not found')
+  if (amount !== Number(expectedPayment.amount_ngn)) throw new Error(`Verified amount mismatch for ${reference}`)
   const { data: payment, error: paymentError } = await supabase.from('payments').update({ amount_ngn: amount, status: 'PAID', paid_at: transaction.paid_at || new Date().toISOString(), referral_code_id: referral?.id || null, raw_payload: transaction, updated_at: new Date().toISOString() }).eq('paystack_reference', reference).select('id, user_id').single()
   if (paymentError) throw paymentError
   const { data: items, error: itemsError } = await supabase.from('payment_items').select('enrolment_id, amount_ngn, programmes(programme_code, name, slug)').eq('payment_id', payment.id)
@@ -29,7 +32,7 @@ export async function finalizeSuccessfulPaystackPayment(reference: string, _even
   const { error: enrolmentError } = await supabase.from('enrolments').update({ status: 'ENROLLED', referral_code_id: referral?.id || null, updated_at: new Date().toISOString() }).in('id', enrolmentIds)
   if (enrolmentError) throw enrolmentError
   if (referral?.partner_id) {
-    await supabase.from('commissions').upsert({ partner_id: referral.partner_id, payment_id: payment.id, level: 'L1', rate: 15, amount_ngn: Math.round(amount * 0.15), status: 'PENDING' }, { onConflict: 'partner_id,payment_id,level' }).throwOnError()
+    await supabase.from('commissions').upsert({ partner_id: referral.partner_id, payment_id: payment.id, level: 'L1', rate: 15, amount_ngn: Math.round(Number(expectedPayment.subtotal_ngn || amount) * 0.15), status: 'PENDING' }, { onConflict: 'partner_id,payment_id,level' }).throwOnError()
   }
   if (referralCode) await recordSupabaseReferralEvent({ referralCode, eventType: 'PAYMENT_SUCCEEDED', paymentReference: reference, pageUrl: '/payment/success' }).catch(() => undefined)
   const courses = items.map((item: any) => item.programmes).filter(Boolean)

@@ -5,12 +5,12 @@ import { programmes } from '@/config/programmes'
 
 export default function AppProgrammesPage() {
   return (
-    <AppShell title="Explore Programmes">
+    <AppShell title="My Courses">
       <div className="page-grid">
         <Card>
-          <p className="eyebrow">Programme Discovery</p>
-          <h3>Choose the pathway that matches what you want to build.</h3>
-          <p className="muted">Career learners can choose one AI Income Accelerator track. Business owners should use the Business Transformation Programme.</p>
+          <p className="eyebrow">Course Catalogue</p>
+          <h3>Choose one or more practical AI courses.</h3>
+          <p className="muted">Each course costs ₦10,000 and has its own enrolment, classes and assignments.</p>
         </Card>
         <div className="grid-2">
           {programmes.map((programme) => <ProgrammeCard key={programme.code} programme={programme} />)}

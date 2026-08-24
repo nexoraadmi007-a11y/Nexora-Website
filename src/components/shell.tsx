@@ -28,46 +28,30 @@ import {
   User,
   Users,
   WalletCards,
+  Menu,
+  X,
   type LucideIcon,
 } from 'lucide-react'
 import { ButtonLink } from './ui'
-import { aiIncomeTracks, programmes } from '@/config/programmes'
+import { programmes } from '@/config/programmes'
 
 const publicLinks = [
-  ['Programmes', '/programmes'],
-  ['For Businesses', '/business'],
-  ['Opportunities', '/opportunities'],
-  ['Partners', '/partners'],
+  ['Courses', '/programmes'],
   ['About', '/about'],
-  ['Resources', '/resources'],
+  ['Help', '/help'],
 ]
 
 type NavItem = { label: string; href: string; icon: LucideIcon }
 type NavGroup = { title?: string; items: NavItem[] }
 
 const appGroups: NavGroup[] = [
-  { items: [{ label: 'Home', href: '/app', icon: Home }, { label: 'Programmes', href: '/app/programmes', icon: Sparkles }] },
-  {
-    title: 'Learning',
-    items: [
-      { label: 'Learning', href: '/app/learning', icon: BookOpen },
-      { label: 'Live Classes', href: '/app/classes', icon: CalendarDays },
-      { label: 'Projects', href: '/app/projects', icon: FolderKanban },
-      { label: 'Portfolio', href: '/app/portfolio', icon: BriefcaseBusiness },
-    ],
-  },
-  { title: 'Career', items: [{ label: 'Opportunities', href: '/app/opportunities', icon: Megaphone }, { label: 'Resources', href: '/app/resources', icon: Library }] },
-  {
-    title: 'Partner',
-    items: [
-      { label: 'Overview', href: '/app/partner', icon: HandCoins },
-      { label: 'Referrals', href: '/app/partner/referrals', icon: Users },
-      { label: 'Earnings', href: '/app/partner/earnings', icon: WalletCards },
-      { label: 'Partner Resources', href: '/app/partner/resources', icon: Library },
-      { label: 'Growth Copilot', href: '/app/partner/copilot', icon: Sparkles },
-    ],
-  },
-  { title: 'Account', items: [{ label: 'Help', href: '/help', icon: CircleHelp }, { label: 'Settings', href: '/app/settings', icon: Settings }] },
+  { items: [
+    { label: 'Dashboard', href: '/app', icon: Home },
+    { label: 'My Courses', href: '/app/programmes', icon: BookOpen },
+    { label: 'Classes', href: '/app/classes', icon: CalendarDays },
+    { label: 'Assignments', href: '/app/assignments', icon: FileText },
+    { label: 'Profile', href: '/app/profile', icon: User },
+  ] },
 ]
 
 const adminGroups: NavGroup[] = [
@@ -122,18 +106,14 @@ function NavGroups({ groups }: { groups: NavGroup[] }) {
   )
 }
 
-function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; title: string; admin?: boolean }) {
+function WorkspaceHeader({ eyebrow, title, admin = false, onMenu }: { eyebrow: string; title: string; admin?: boolean; onMenu?: () => void }) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [logoutOpen, setLogoutOpen] = useState(false)
   const searchItems = useMemo(() => [
-    ...programmes.map((programme) => ({ title: programme.name, type: 'Programme', href: `/app/programmes/${programme.slug}` })),
-    ...aiIncomeTracks.map((track) => ({ title: track.name, type: 'Track', href: `/programmes/ai-income-accelerator/${track.slug}` })),
-    { title: 'Live Classes', type: 'Class', href: '/app/classes' },
-    { title: 'Projects', type: 'Project', href: '/app/projects' },
-    { title: 'Career Resources', type: 'Resource', href: '/app/resources/career' },
-    { title: 'Income Resources', type: 'Resource', href: '/app/resources/income' },
-    { title: 'Opportunities', type: 'Opportunity', href: '/app/opportunities' },
+    ...programmes.map((programme) => ({ title: programme.name, type: 'Course', href: `/app/programmes/${programme.slug}` })),
+    { title: 'Classes', type: 'Class', href: '/app/classes' },
+    { title: 'Assignments', type: 'Assignment', href: '/app/assignments' },
     { title: 'Support', type: 'Help', href: '/help' },
   ], [])
   const results = query.trim()
@@ -151,6 +131,7 @@ function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; t
   return (
     <div className="workspace-top">
       <div>
+        {onMenu ? <button className="mobile-menu-button" type="button" aria-label="Open navigation" onClick={onMenu}><Menu size={20} /></button> : null}
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
       </div>
@@ -164,14 +145,14 @@ function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; t
               if (event.key === 'Escape') setQuery('')
               if (event.key === 'Enter' && results[0]) router.push(results[0].href)
             }}
-            placeholder="Search programmes, classes, resources..."
+            placeholder="Search courses and classes..."
             value={query}
           />
         </label>
         {query ? (
           <div className="search-panel">
             <p>Search Nexora</p>
-            {results.length ? results.map((item) => <Link key={item.href} href={item.href} onClick={() => setQuery('')}><strong>{item.title}</strong><span>{item.type}</span></Link>) : <div className="search-empty">No results for "{query}". Try another term or browse programmes.</div>}
+            {results.length ? results.map((item) => <Link key={item.href} href={item.href} onClick={() => setQuery('')}><strong>{item.title}</strong><span>{item.type}</span></Link>) : <div className="search-empty">No results for "{query}". Try another term or browse courses.</div>}
           </div>
         ) : null}
         <Link href={admin ? '/admin/notifications' : '/app/notifications'} className="icon-shell" aria-label="Notifications"><Bell size={18} /><span /></Link>
@@ -181,7 +162,7 @@ function WorkspaceHeader({ eyebrow, title, admin = false }: { eyebrow: string; t
             <Link href={admin ? '/admin/profile' : '/app/profile'}>{admin ? 'Admin Profile' : 'Profile'}</Link>
             <Link href={admin ? '/admin/settings' : '/app/settings'}>{admin ? 'Admin Settings' : 'Settings'}</Link>
             {admin ? <Link href="/admin/settings#security">Security</Link> : <Link href="/app/billing">Billing</Link>}
-            {admin ? <Link href="/admin/audit">Audit Log</Link> : <Link href="/app/partner/payment-details">Partner Settings</Link>}
+            {admin ? <Link href="/admin/audit">Audit Log</Link> : null}
             <Link href="/help">Help</Link>
             <button type="button" onClick={() => setLogoutOpen(true)}>Log Out</button>
           </div>
@@ -222,16 +203,19 @@ export function PublicShell({ children }: { children: ReactNode }) {
       {children}
       <footer className="footer">
         <p>Nexora Institute</p>
-        <p>Learn. Build. Earn. Work.</p>
+        <p>Learn. Attend. Complete.</p>
       </footer>
     </>
   )
 }
 
 export function AppShell({ children, title = 'Member Platform' }: { children: ReactNode; title?: string }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {menuOpen ? <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setMenuOpen(false)} /> : null}
+      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
+        <button className="sidebar-close" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><X size={20} /></button>
         <Link href="/app" className="brand compact">
           <Image src="/nexora-mark.png" alt="" width={30} height={30} />
           <span>Nexora Institute</span>
@@ -239,7 +223,7 @@ export function AppShell({ children, title = 'Member Platform' }: { children: Re
         <NavGroups groups={appGroups} />
       </aside>
       <main className="workspace">
-        <WorkspaceHeader eyebrow="Workspace" title={title} />
+        <WorkspaceHeader eyebrow="Student Portal" title={title} onMenu={() => setMenuOpen(true)} />
         <div className="workspace-body">{children}</div>
       </main>
     </div>
