@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "build:next": "next build",
-    "test": "node --experimental-strip-types scripts/test-accelerator-products.mjs && node --experimental-strip-types scripts/test-paystack-pricing.mjs",
+    "test": "node --experimental-strip-types scripts/test-accelerator-products.mjs && node --experimental-strip-types scripts/test-paystack-pricing.mjs && node scripts/test-growth-associate-referrals.mjs",
     "test:admin-auth": "node scripts/test-admin-auth-separation.mjs",
     "test:learning-lifecycle": "node scripts/test-learning-lifecycle.mjs",
     "start": "next start",

@@ -31,8 +31,11 @@ export async function finalizeSuccessfulPaystackPayment(reference: string, _even
   const enrolmentIds = items.map((item) => item.enrolment_id)
   const { error: enrolmentError } = await supabase.from('enrolments').update({ status: 'ENROLLED', referral_code_id: referral?.id || null, updated_at: new Date().toISOString() }).in('id', enrolmentIds)
   if (enrolmentError) throw enrolmentError
-  if (referral?.partner_id) {
-    await supabase.from('commissions').upsert({ partner_id: referral.partner_id, payment_id: payment.id, level: 'L1', rate: 15, amount_ngn: Math.round(Number(expectedPayment.subtotal_ngn || amount) * 0.15), status: 'PENDING' }, { onConflict: 'partner_id,payment_id,level' }).throwOnError()
+  if (referral?.partner_id && payment.user_id) {
+    const referralPartner = Array.isArray(referral.partners) ? referral.partners[0] : referral.partners
+    if (referralPartner?.user_id !== payment.user_id && referralPartner?.status === 'ACTIVE') {
+      await supabase.from('referral_conversions').upsert({ partner_id: referral.partner_id, referral_code_id: referral.id, referred_user_id: payment.user_id, first_payment_id: payment.id, successful_at: transaction.paid_at || new Date().toISOString(), status: 'VALID' }, { onConflict: 'referred_user_id', ignoreDuplicates: true }).throwOnError()
+    }
   }
   if (referralCode) await recordSupabaseReferralEvent({ referralCode, eventType: 'PAYMENT_SUCCEEDED', paymentReference: reference, pageUrl: '/payment/success' }).catch(() => undefined)
   const courses = items.map((item: any) => item.programmes).filter(Boolean)

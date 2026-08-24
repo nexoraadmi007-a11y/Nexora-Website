@@ -74,7 +74,7 @@ const adminGroups: NavGroup[] = [
   {
     title: 'Growth',
     items: [
-      { label: 'Partners', href: '/admin/partners', icon: HandCoins },
+      { label: 'Growth Associates', href: '/admin/growth-associates', icon: HandCoins },
       { label: 'Referrals', href: '/admin/referrals', icon: LineChart },
       { label: 'Promos', href: '/admin/promos', icon: Megaphone },
     ],

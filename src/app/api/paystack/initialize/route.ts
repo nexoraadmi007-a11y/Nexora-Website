@@ -30,8 +30,12 @@ export async function POST(request: NextRequest) {
 
     const { data: existing } = await supabase.from('enrolments').select('programme_id, programmes(name)').eq('user_id', user.id).in('programme_id', quote.courses.map((course) => course.id)).in('status', ['ENROLLED', 'ACTIVE', 'COMPLETED'])
     if (existing?.length) return NextResponse.json({ error: `You are already enrolled in ${existing.map((item: any) => item.programmes?.name).filter(Boolean).join(', ')}.` }, { status: 409 })
-    const referralCode = cleanReferralCode(body.referralCode) || cleanReferralCode(request.cookies.get('nexora_referral_code')?.value)
-    const referral = referralCode ? await resolveSupabaseReferral(referralCode).catch(() => null) : null
+    const { data: profile } = await supabase.from('profiles').select('signup_referral_code').eq('id', user.id).maybeSingle()
+    const requestedReferralCode = cleanReferralCode(body.referralCode) || cleanReferralCode(request.cookies.get('nexora_referral_code')?.value)
+    const referralCode = cleanReferralCode(profile?.signup_referral_code) || requestedReferralCode
+    let referral = referralCode ? await resolveSupabaseReferral(referralCode).catch(() => null) : null
+    const referralPartner = Array.isArray(referral?.partners) ? referral.partners[0] : referral?.partners
+    if (referralPartner?.user_id === user.id || referralPartner?.status !== 'ACTIVE') referral = null
     const reference = `NEXORA-COURSES-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     const enrolments = [] as Array<{ id: string; programme_id: string }>

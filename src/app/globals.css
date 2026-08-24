@@ -831,6 +831,28 @@ tr:last-child td { border-bottom: 0; }
   font-weight: 850;
 }
 
+.associate-portal { min-height: 100vh; background: #f6f8fc; }
+.associate-login { min-height: 100vh; display: grid; place-items: center; padding: 20px; background: #f6f8fc; }
+.associate-login .card { width: min(460px,100%); }
+.associate-header { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px clamp(18px,4vw,48px); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.96); }
+.associate-header p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+.associate-header nav { display: flex; gap: 18px; overflow-x: auto; }
+.associate-header nav a { white-space: nowrap; color: var(--muted); font-weight: 750; }
+.associate-content { display: grid; gap: 22px; width: min(1180px,calc(100% - 32px)); margin: 0 auto; padding: 42px 0 64px; }
+.associate-content h1 { margin-bottom: 4px; }
+.associate-metrics .card { min-height: 130px; }
+.metric-value { display: block; margin-top: 10px; font-size: clamp(27px,4vw,40px); }
+.referral-url { display: block; overflow-wrap: anywhere; margin: 12px 0 18px; padding: 14px; border-radius: 10px; background: #f1f4fa; }
+.responsive-table { width: 100%; overflow-x: auto; }
+.responsive-table table { width: 100%; min-width: 720px; border-collapse: collapse; }
+.responsive-table th,.responsive-table td { padding: 13px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.responsive-table td small { display: block; color: var(--muted); }
+.own-rank { background: #eef4ff; }
+.compact-form,.payout-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.compact-form input { min-width: 140px; }
+.payout-form { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.payout-form strong { min-width: 220px; }
+
 .footer {
   display: flex;
   justify-content: space-between;
@@ -858,6 +880,9 @@ tr:last-child td { border-bottom: 0; }
   .section-heading, .compact-list li { align-items: flex-start; flex-direction: column; }
   .compact-list li > div:last-child { justify-items: start; }
   .assignment-card { grid-template-columns: 1fr; }
+  .associate-header { align-items: flex-start; flex-direction: column; }
+  .associate-header nav { width: 100%; padding-bottom: 5px; }
+  .associate-content { padding-top: 26px; }
 }
 
 @media (max-width: 430px) {

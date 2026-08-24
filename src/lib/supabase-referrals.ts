@@ -32,7 +32,7 @@ export async function resolveSupabaseReferral(referralCode: string) {
   const supabase = createSupabaseAdminClient()
   const { data, error } = await supabase
     .from('referral_codes')
-    .select('id, code, partner_id, referral_url, partners(id, partner_id, full_name, email)')
+    .select('id, code, partner_id, referral_url, partners(id, user_id, partner_id, full_name, email, status)')
     .eq('code', code)
     .eq('active', true)
     .maybeSingle()
