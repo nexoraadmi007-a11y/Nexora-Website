@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/admin-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
-import { getGrowthAssociatePortalUrl } from '@/lib/growth-associate-urls'
+import { getGrowthAssociatePortalUrl, publicSiteUrl } from '@/lib/growth-associate-urls'
 import { legacyAssociateHrFields } from '@/lib/legacy-associate-sync'
 
 export async function POST(request: NextRequest) {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       await db.from('admin_audit_logs').insert({ admin_user_id: admin.user.id, admin_email: admin.user.email, action: `COMMISSION_${status}`, entity: 'associate_monthly_performance', entity_id: performanceId, new_value: { amount, status }, metadata: { reason } }).throwOnError()
     }
     const returnTo = String(form.get('returnTo') || '/admin/growth-associates')
-    return NextResponse.redirect(new URL(returnTo.startsWith('/admin/') ? returnTo : '/admin/growth-associates', request.url), 303)
+    return NextResponse.redirect(new URL(returnTo.startsWith('/admin/') ? returnTo : '/admin/growth-associates', publicSiteUrl()), 303)
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Action failed' }, { status: 400 })
   }
