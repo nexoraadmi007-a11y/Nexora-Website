@@ -55,38 +55,34 @@ const appGroups: NavGroup[] = [
 ]
 
 const adminGroups: NavGroup[] = [
-  { title: 'Overview', items: [{ label: 'Overview', href: '/admin', icon: LayoutDashboard }, { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 }] },
+  { title: 'Overview', items: [{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard }] },
   {
-    title: 'Academic',
+    title: 'Students',
     items: [
       { label: 'Students', href: '/admin/students', icon: Users },
       { label: 'Enrollments', href: '/admin/enrollments', icon: GraduationCap },
       { label: 'Payments', href: '/admin/payments', icon: CreditCard },
-      { label: 'Users', href: '/admin/users', icon: Users },
-      { label: 'Programmes', href: '/admin/programmes', icon: GraduationCap },
-      { label: 'Tracks', href: '/admin/tracks', icon: BookOpen },
-      { label: 'Cohorts', href: '/admin/cohorts', icon: CalendarDays },
-      { label: 'Classes', href: '/admin/classes', icon: CalendarDays },
-      { label: 'Projects', href: '/admin/projects', icon: FolderKanban },
     ],
   },
-  { title: 'Career', items: [{ label: 'Opportunities', href: '/admin/opportunities', icon: Megaphone }] },
+  {
+    title: 'Learning',
+    items: [
+      { label: 'Courses', href: '/admin/programmes', icon: GraduationCap },
+      { label: 'Classes', href: '/admin/classes', icon: CalendarDays },
+      { label: 'Assignments', href: '/admin/assignments', icon: FileText },
+    ],
+  },
   {
     title: 'Growth',
     items: [
       { label: 'Growth Associates', href: '/admin/growth-associates', icon: HandCoins },
       { label: 'Referrals', href: '/admin/referrals', icon: LineChart },
-      { label: 'Promos', href: '/admin/promos', icon: Megaphone },
-    ],
-  },
-  {
-    title: 'Finance',
-    items: [
+      { label: 'Leaderboard', href: '/admin/leaderboard', icon: BarChart3 },
       { label: 'Commissions', href: '/admin/commissions', icon: WalletCards },
       { label: 'Payouts', href: '/admin/payouts', icon: CreditCard },
     ],
   },
-  { title: 'System', items: [{ label: 'Integrations', href: '/admin/integrations', icon: Settings }, { label: 'Audit Log', href: '/admin/audit', icon: FileText }, { label: 'Settings', href: '/admin/settings', icon: Settings }] },
+  { title: 'System', items: [{ label: 'Settings', href: '/admin/settings', icon: Settings }] },
 ]
 
 function NavGroups({ groups }: { groups: NavGroup[] }) {

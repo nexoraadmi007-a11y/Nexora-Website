@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
       const { data: previous } = await db.from('partners').select('id,status').eq('id', id).single()
       await db.from('partners').update({ status, updated_at: new Date().toISOString() }).eq('id', id).throwOnError()
       await db.from('admin_audit_logs').insert({ admin_user_id: admin.user.id, admin_email: admin.user.email, action: 'ASSOCIATE_STATUS_CHANGED', entity: 'partners', entity_id: id, previous_value: previous, new_value: { status }, metadata: { reason } }).throwOnError()
+    } else if (action === 'assign_sponsor') {
+      const sponsorPartnerId = String(form.get('sponsorPartnerId') || '') || null
+      if (sponsorPartnerId === id) throw new Error('An associate cannot sponsor themselves.')
+      const { data: previous } = await db.from('partners').select('id,sponsor_partner_id').eq('id', id).single()
+      await db.from('partners').update({ sponsor_partner_id: sponsorPartnerId, updated_at: new Date().toISOString() }).eq('id', id).throwOnError()
+      await db.from('admin_audit_logs').insert({ admin_user_id: admin.user.id, admin_email: admin.user.email, action: 'ASSOCIATE_SPONSOR_CHANGED', entity: 'partners', entity_id: id, previous_value: previous, new_value: { sponsor_partner_id: sponsorPartnerId }, metadata: { reason } }).throwOnError()
     } else if (action === 'invalidate_referral') {
       if (!reason) throw new Error('A reason is required.')
       const { data: previous } = await db.from('referral_conversions').select('*').eq('id', id).single()
@@ -32,7 +38,8 @@ export async function POST(request: NextRequest) {
       await db.from('associate_monthly_performance').update({ status, updated_at: new Date().toISOString() }).eq('id', performanceId).throwOnError()
       await db.from('admin_audit_logs').insert({ admin_user_id: admin.user.id, admin_email: admin.user.email, action: `COMMISSION_${status}`, entity: 'associate_monthly_performance', entity_id: performanceId, new_value: { amount, status }, metadata: { reason } }).throwOnError()
     }
-    return NextResponse.redirect(new URL('/admin/growth-associates', request.url), 303)
+    const returnTo = String(form.get('returnTo') || '/admin/growth-associates')
+    return NextResponse.redirect(new URL(returnTo.startsWith('/admin/') ? returnTo : '/admin/growth-associates', request.url), 303)
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Action failed' }, { status: 400 })
   }
