@@ -2,8 +2,9 @@
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { PublicShell } from '@/components/shell'
-import { Card, Field, Section } from '@/components/ui'
+import { Card, Section } from '@/components/ui'
 import { COURSE_CATALOGUE, coursePriceNgn, findCourse } from '@/lib/accelerator-products'
 
 function formatNaira(value: number) { return `₦${value.toLocaleString('en-NG')}` }
@@ -13,6 +14,7 @@ function cleanReferral(value: string) {
 
 function CheckoutInner() {
   const params = useSearchParams()
+  const router = useRouter()
   const [selected, setSelected] = useState<string[]>(() => {
     const requested = [...params.getAll('course'), params.get('programme') || '', params.get('track') || '']
     return Array.from(new Set(requested.map((item) => findCourse(item)?.code).filter(Boolean) as string[]))
@@ -20,6 +22,9 @@ function CheckoutInner() {
   const [referralCode, setReferralCode] = useState('')
   const [message, setMessage] = useState('')
   const [quote, setQuote] = useState<{ subtotal: number; processingFee: number; total: number } | null>(null)
+  const [identity, setIdentity] = useState<{ fullName: string; email: string; whatsapp: string } | null>(null)
+  const [identityReady, setIdentityReady] = useState(false)
+  const [associateSession, setAssociateSession] = useState(false)
   const selectedCourses = useMemo(() => COURSE_CATALOGUE.filter((course) => selected.includes(course.code)), [selected])
 
   useEffect(() => {
@@ -28,6 +33,23 @@ function CheckoutInner() {
     const code = cleanReferral(fromUrl || fromStorage)
     if (code) { setReferralCode(code); window.localStorage.setItem('nexora_referral_code', code) }
   }, [params])
+
+  useEffect(() => {
+    fetch('/api/checkout/context', { cache: 'no-store' }).then((response) => response.json()).then((result) => {
+      setAssociateSession(Boolean(result.associateSession))
+      if (result.authenticated && result.identity) {
+        setIdentity(result.identity)
+        if (result.identity.referralCode) setReferralCode(result.identity.referralCode)
+      }
+    }).catch(() => undefined).finally(() => setIdentityReady(true))
+  }, [])
+
+  async function switchToStudent() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    const next = `${window.location.pathname}${window.location.search}`
+    router.push(`/login?next=${encodeURIComponent(next)}`)
+    router.refresh()
+  }
 
   useEffect(() => {
     if (!selected.length) { setQuote(null); return }
@@ -47,10 +69,10 @@ function CheckoutInner() {
     event.preventDefault()
     if (!selected.length) { setMessage('Select at least one course.'); return }
     setMessage('Initializing payment...')
-    const form = new FormData(event.currentTarget)
+    if (!identity) { setMessage('Log in with the student account before continuing to payment.'); return }
     const response = await fetch('/api/paystack/initialize', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName: form.get('fullName'), email: form.get('email'), phone: form.get('whatsapp'), referralCode, courseCodes: selected, sourcePage: '/checkout' }),
+      body: JSON.stringify({ fullName: identity.fullName, email: identity.email, phone: identity.whatsapp, referralCode, courseCodes: selected, sourcePage: '/checkout' }),
     })
     const result = await response.json().catch(() => ({}))
     if (response.ok && result.authorizationUrl) { window.location.href = result.authorizationUrl; return }
@@ -69,10 +91,9 @@ function CheckoutInner() {
       <div className="payment-summary"><h3>Payment summary</h3>{selectedCourses.map((course) => <div key={course.code}><span>{course.name}</span><strong>{formatNaira(coursePriceNgn)}</strong></div>)}
         <hr/><div><span>Course subtotal</span><strong>{formatNaira(quote?.subtotal || 0)}</strong></div><div><span>Processing fee</span><strong>{formatNaira(quote?.processingFee || 0)}</strong></div><div className="payment-total"><span>Total payable</span><strong>{formatNaira(quote?.total || 0)}</strong></div>
       </div>
-      <Field name="fullName" label="Full Name" required /><Field name="email" label="Email" type="email" required /><Field name="whatsapp" label="WhatsApp Number" required />
-      <label className="field"><span>Referral Code or Link</span><input value={referralCode} onChange={(event) => setReferralCode(cleanReferral(event.target.value))} placeholder="Optional" /></label>
+      {!identityReady ? <p className="muted">Loading your registration details…</p> : identity ? <div className="payment-identity"><p className="eyebrow">Student details</p><p><strong>{identity.fullName}</strong></p><p>{identity.email}</p><p>{identity.whatsapp}</p><p><strong>Referral:</strong> {referralCode || 'None'}</p></div> : <div className="form-message error"><p>{associateSession ? 'You are currently signed in as a Growth Associate. Use the student account created during registration to pay.' : 'Log in with the student account created during registration to continue.'}</p><button className="btn btn-secondary" type="button" onClick={switchToStudent}>{associateSession ? 'Continue with student account' : 'Log in to continue'}</button></div>}
       {message ? <p className={`form-message ${message.includes('Initializing') ? 'success' : 'error'}`}>{message}</p> : null}
-      <button className="btn btn-primary" disabled={!quote || !selected.length} type="submit">Continue to Payment</button>
+      <button className="btn btn-primary" disabled={!quote || !selected.length || !identity} type="submit">Continue to Payment</button>
     </form></Card></div>
   </Section></PublicShell>
 }

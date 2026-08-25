@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from './supabase/admin'
-import { recordSupabaseReferralEvent, resolveSupabaseReferral } from './supabase-referrals'
+import { recordSupabaseReferralEvent } from './supabase-referrals'
 
 const text = (value: unknown, max = 254) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 
@@ -18,27 +18,27 @@ export async function finalizeSuccessfulPaystackPayment(reference: string, _even
   if (transaction.status !== 'success') return { ok: false as const, status: transaction.status || 'unknown', reference }
   const amount = Math.round(Number(transaction.amount || 0) / 100)
   const metadata = transaction.metadata || {}
-  const referralCode = text(metadata.referral_code, 120)
-  const referral = referralCode ? await resolveSupabaseReferral(referralCode).catch(() => null) : null
   const supabase = createSupabaseAdminClient()
-  const { data: expectedPayment, error: expectedError } = await supabase.from('payments').select('id, amount_ngn, subtotal_ngn, status, user_id').eq('paystack_reference', reference).single()
+  const { data: expectedPayment, error: expectedError } = await supabase.from('payments').select('id, amount_ngn, subtotal_ngn, status, user_id, referral_code_id').eq('paystack_reference', reference).single()
   if (expectedError || !expectedPayment) throw new Error(expectedError?.message || 'Payment record was not found')
   if (amount !== Number(expectedPayment.amount_ngn)) throw new Error(`Verified amount mismatch for ${reference}`)
-  const { data: payment, error: paymentError } = await supabase.from('payments').update({ amount_ngn: amount, status: 'PAID', paid_at: transaction.paid_at || new Date().toISOString(), referral_code_id: referral?.id || null, raw_payload: transaction, updated_at: new Date().toISOString() }).eq('paystack_reference', reference).select('id, user_id').single()
+  const { data: referral } = expectedPayment.referral_code_id ? await supabase.from('referral_codes').select('id,code,partner_id,active,partners(id,user_id,status)').eq('id', expectedPayment.referral_code_id).maybeSingle() : { data: null }
+  const referralPartner = Array.isArray(referral?.partners) ? referral.partners[0] : referral?.partners
+  const validReferral = referral?.active && referralPartner?.status === 'ACTIVE' && referralPartner?.user_id !== expectedPayment.user_id ? referral : null
+  const { data: payment, error: paymentError } = await supabase.from('payments').update({ amount_ngn: amount, status: 'PAID', paid_at: transaction.paid_at || new Date().toISOString(), referral_code_id: validReferral?.id || null, raw_payload: transaction, updated_at: new Date().toISOString() }).eq('paystack_reference', reference).select('id, user_id').single()
   if (paymentError) throw paymentError
   const { data: items, error: itemsError } = await supabase.from('payment_items').select('enrolment_id, amount_ngn, programmes(programme_code, name, slug)').eq('payment_id', payment.id)
   if (itemsError || !items?.length) throw new Error(itemsError?.message || 'Payment has no course items')
   const enrolmentIds = items.map((item) => item.enrolment_id)
-  const { error: enrolmentError } = await supabase.from('enrolments').update({ status: 'ENROLLED', referral_code_id: referral?.id || null, updated_at: new Date().toISOString() }).in('id', enrolmentIds)
+  const { error: enrolmentError } = await supabase.from('enrolments').update({ status: 'ENROLLED', referral_code_id: validReferral?.id || null, updated_at: new Date().toISOString() }).in('id', enrolmentIds)
   if (enrolmentError) throw enrolmentError
-  if (referral?.partner_id && payment.user_id) {
-    const referralPartner = Array.isArray(referral.partners) ? referral.partners[0] : referral.partners
+  if (validReferral?.partner_id && payment.user_id) {
     if (referralPartner?.user_id !== payment.user_id && referralPartner?.status === 'ACTIVE') {
-      await supabase.from('referral_conversions').upsert({ partner_id: referral.partner_id, referral_code_id: referral.id, referred_user_id: payment.user_id, first_payment_id: payment.id, successful_at: transaction.paid_at || new Date().toISOString(), status: 'VALID' }, { onConflict: 'referred_user_id', ignoreDuplicates: true }).throwOnError()
+      await supabase.from('referral_conversions').upsert({ partner_id: validReferral.partner_id, referral_code_id: validReferral.id, referred_user_id: payment.user_id, first_payment_id: payment.id, successful_at: transaction.paid_at || new Date().toISOString(), status: 'VALID' }, { onConflict: 'referred_user_id', ignoreDuplicates: true }).throwOnError()
     }
   }
-  if (referralCode) await recordSupabaseReferralEvent({ referralCode, eventType: 'PAYMENT_SUCCEEDED', paymentReference: reference, pageUrl: '/payment/success' }).catch(() => undefined)
+  if (validReferral?.code) await recordSupabaseReferralEvent({ referralCode: validReferral.code, eventType: 'PAYMENT_SUCCEEDED', paymentReference: reference, pageUrl: '/payment/success' }).catch(() => undefined)
   const courses = items.map((item: any) => item.programmes).filter(Boolean)
   const fullName = text(metadata.full_name, 160)
-  return { ok: true as const, reference, enrollmentId: enrolmentIds[0], enrollmentIds: enrolmentIds, amount, paidAt: transaction.paid_at || new Date().toISOString(), programme: { code: 'COURSES', name: courses.map((course: any) => course.name).join(', '), selectedTracks: courses.map((course: any) => course.name), selectedTrackSlugs: courses.map((course: any) => course.slug) }, customer: { fullName, firstName: fullName.split(/\s+/)[0] || 'there', email: text(transaction.customer?.email) }, referral: { referralCode, ambassadorId: referral?.partner_id || '', attributionStatus: referral ? 'APPROVED' : 'UNATTRIBUTED', attributionSource: referral ? 'DIRECT_REFERRAL' : 'ADMIN_CONFIRMED' }, group: null }
+  return { ok: true as const, reference, enrollmentId: enrolmentIds[0], enrollmentIds: enrolmentIds, amount, paidAt: transaction.paid_at || new Date().toISOString(), programme: { code: 'COURSES', name: courses.map((course: any) => course.name).join(', '), selectedTracks: courses.map((course: any) => course.name), selectedTrackSlugs: courses.map((course: any) => course.slug) }, customer: { fullName, firstName: fullName.split(/\s+/)[0] || 'there', email: text(transaction.customer?.email) }, referral: { referralCode: validReferral?.code || '', ambassadorId: validReferral?.partner_id || '', attributionStatus: validReferral ? 'APPROVED' : 'UNATTRIBUTED', attributionSource: validReferral ? 'DIRECT_REFERRAL' : 'ADMIN_CONFIRMED' }, group: null }
 }

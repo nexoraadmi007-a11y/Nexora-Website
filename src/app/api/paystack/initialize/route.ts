@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     let referral = referralCode ? await resolveSupabaseReferral(referralCode).catch(() => null) : null
     const referralPartner = Array.isArray(referral?.partners) ? referral.partners[0] : referral?.partners
     if (referralPartner?.user_id === user.id || referralPartner?.status !== 'ACTIVE') referral = null
+    if (referralCode && !referral) return NextResponse.json({ error: 'This referral ID is invalid, inactive, or belongs to this account.' }, { status: 400 })
     const reference = `NEXORA-COURSES-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     const enrolments = [] as Array<{ id: string; programme_id: string }>
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const { error: itemsError } = await supabase.from('payment_items').insert(enrolments.map((enrolment) => ({ payment_id: payment.id, programme_id: enrolment.programme_id, enrolment_id: enrolment.id, amount_ngn: quote.courses.find((course) => course.id === enrolment.programme_id)?.price_ngn || 0 })))
     if (itemsError) throw itemsError
 
-    const paystack = await fetch('https://api.paystack.co/transaction/initialize', { method: 'POST', headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, amount: quote.total * 100, currency: 'NGN', reference, callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'}/payment/success?reference=${reference}`, metadata: { full_name: fullName, phone, course_codes: codes.join(','), course_names: quote.courses.map((course) => course.name).join(', '), subtotal: quote.subtotal, processing_fee: quote.processingFee, expected_amount: quote.total, referral_code: referralCode, supabase_payment_id: payment.id } }) })
+    const paystack = await fetch('https://api.paystack.co/transaction/initialize', { method: 'POST', headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, amount: quote.total * 100, currency: 'NGN', reference, callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nexoragroup.ink'}/payment/success?reference=${reference}`, metadata: { full_name: fullName, phone, course_codes: codes.join(','), course_names: quote.courses.map((course) => course.name).join(', '), subtotal: quote.subtotal, processing_fee: quote.processingFee, expected_amount: quote.total, referral_code: referral?.code || '', supabase_payment_id: payment.id } }) })
     const result = await paystack.json()
     if (!paystack.ok || !result.status) throw new Error(result.message || 'Paystack initialization failed')
     return NextResponse.json({ authorizationUrl: result.data.authorization_url, reference, subtotal: quote.subtotal, processingFee: quote.processingFee, amount: quote.total, courses: quote.courses.map((course) => ({ code: course.programme_code, name: course.name, price: course.price_ngn })) })
