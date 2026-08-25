@@ -10,6 +10,12 @@ export function normalizeWhatsAppNumber(value: string) {
   return `+${normalized}`
 }
 
+export function growthAssociateAuthEmail(normalizedPhone: string) {
+  const digits = normalizedPhone.replace(/\D/g, '')
+  if (!/^\d{11,15}$/.test(digits)) throw new Error('Invalid Growth Associate login number.')
+  return `ga-${digits}@auth.nexoragroup.ink`
+}
+
 export async function generateGrowthId(db: SupabaseClient) {
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const suffix = randomBytes(5).toString('hex').slice(0, 6).toUpperCase()

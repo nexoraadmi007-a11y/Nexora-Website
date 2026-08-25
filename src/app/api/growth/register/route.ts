@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { generateGrowthId, normalizeWhatsAppNumber, validateAssociatePassword } from '@/lib/growth-associate-auth'
+import { generateGrowthId, growthAssociateAuthEmail, normalizeWhatsAppNumber, validateAssociatePassword } from '@/lib/growth-associate-auth'
 import { getGrowthAssociateReferralUrl } from '@/lib/growth-associate-urls'
 import { listPaystackBanks, resolvePaystackAccount } from '@/lib/paystack-bank'
 
@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
 
     const growthId = await generateGrowthId(db)
     const created = await db.auth.admin.createUser({
-      phone,
+      email: growthAssociateAuthEmail(phone),
       password,
-      phone_confirm: true,
+      email_confirm: true,
       app_metadata: { role: 'growth_associate' },
       user_metadata: { full_name: fullName, whatsapp: phone },
     })
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = await createSupabaseServerClient()
-    const login = await auth.auth.signInWithPassword({ phone, password })
+    const login = await auth.auth.signInWithPassword({ email: growthAssociateAuthEmail(phone), password })
     if (login.error) throw login.error
     return NextResponse.json({ ok: true, growthId, bankVerificationPending: !verified })
   } catch (error) {
