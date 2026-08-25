@@ -78,10 +78,9 @@ const adminGroups: NavGroup[] = [
       { label: 'Growth Associates', href: '/admin/growth-associates', icon: HandCoins },
       { label: 'Referrals', href: '/admin/referrals', icon: LineChart },
       { label: 'Leaderboard', href: '/admin/leaderboard', icon: BarChart3 },
-      { label: 'Commissions', href: '/admin/commissions', icon: WalletCards },
-      { label: 'Payouts', href: '/admin/payouts', icon: CreditCard },
     ],
   },
+  { title: 'Finance', items: [{ label: 'Commissions', href: '/admin/commissions', icon: WalletCards }, { label: 'Payouts', href: '/admin/payouts', icon: CreditCard }] },
   { title: 'System', items: [{ label: 'Settings', href: '/admin/settings', icon: Settings }] },
 ]
 

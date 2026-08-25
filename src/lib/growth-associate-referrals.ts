@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getGrowthAssociatePortalUrl, getGrowthAssociateReferralUrl } from '@/lib/growth-associate-urls'
 
 export const MONTHLY_TARGET = 30
 export const LEVEL_1_COMMISSION_NGN = 1500
@@ -23,7 +24,7 @@ export async function requireGrowthAssociateDashboard() {
   const { data: { user } } = await auth.auth.getUser()
   if (!user?.email) return null
   const db = createSupabaseAdminClient()
-  const partnerFields = 'id,user_id,partner_id,full_name,email,whatsapp,status,gender,institution,field_of_study,nysc_information,location,created_at,referral_codes(id,code,referral_url,active)'
+  const partnerFields = '*,referral_codes(id,code,referral_url,active)'
   let { data: partner } = await db.from('partners').select(partnerFields).eq('user_id', user.id).maybeSingle()
   if (!partner) {
     const lookup = await db.from('partners').select(partnerFields).ilike('email', user.email).maybeSingle()
@@ -50,7 +51,8 @@ export async function requireGrowthAssociateDashboard() {
   const events = eventsResult.data || []
   const clicks = events.filter((item: any) => item.event_type === 'LINK_CLICKED').length
   const leaderboard = (leaderboardResult.data || []).filter((item: any) => item.partners?.status === 'ACTIVE').map((item: any, index: number) => ({ rank: index + 1, name: item.partners?.full_name || item.partners?.partner_id || 'Associate', referrals: item.successful_referrals, target: 30, commission: item.commission_amount_ngn, partnerId: item.partner_id }))
-  const referral = (partner.referral_codes || []).find((item: any) => item.active) || partner.referral_codes?.[0]
+  const storedReferral = (partner.referral_codes || []).find((item: any) => item.active) || partner.referral_codes?.[0]
+  const referral = storedReferral ? { ...storedReferral, referral_url: getGrowthAssociateReferralUrl(storedReferral.code) } : null
   const commissions = commissionsResult.data || []
   return {
     partner, referral, current, performances, payouts: payoutsResult.data || [], leaderboard,
@@ -70,10 +72,14 @@ export async function adminGrowthReferralData(requestedMonth?: string) {
   const month = normalizeMonth(requestedMonth)
   const db = createSupabaseAdminClient()
   const [partners, performance, conversions, payouts] = await Promise.all([
-    db.from('partners').select('id,partner_id,full_name,email,whatsapp,status,gender,institution,field_of_study,nysc_information,location,created_at,sponsor_partner_id,referral_codes(code,referral_url,active)').order('full_name'),
+    db.from('partners').select('*,referral_codes(code,referral_url,active)').order('full_name'),
     db.from('associate_monthly_performance').select('*').eq('month_start', month).order('successful_referrals', { ascending: false }),
     db.from('referral_conversions').select('*,partners(full_name,partner_id),referral_codes(code),payments(paystack_reference,status,payment_items(programmes(name)))').order('successful_at', { ascending: false }).limit(500),
     db.from('payout_requests').select('*,partners(full_name,partner_id),associate_monthly_performance(month_start,commission_amount_ngn)').order('created_at', { ascending: false }).limit(300),
   ])
-  return { month, partners: partners.data || [], performance: performance.data || [], conversions: conversions.data || [], payouts: payouts.data || [] }
+  return { month, partners: (partners.data || []).map((partner: any) => ({
+    ...partner,
+    portal_url: getGrowthAssociatePortalUrl(partner.partner_id),
+    referral_codes: (partner.referral_codes || []).map((code: any) => ({ ...code, referral_url: getGrowthAssociateReferralUrl(code.code) })),
+  })), performance: performance.data || [], conversions: conversions.data || [], payouts: payouts.data || [] }
 }
