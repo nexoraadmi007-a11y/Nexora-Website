@@ -22,24 +22,25 @@ function maskName(value = '') {
 export async function requireGrowthAssociateDashboard() {
   const auth = await createSupabaseServerClient()
   const { data: { user } } = await auth.auth.getUser()
-  if (!user?.email) return null
+  if (!user) return null
   const db = createSupabaseAdminClient()
   const partnerFields = '*,referral_codes(id,code,referral_url,active)'
   let { data: partner } = await db.from('partners').select(partnerFields).eq('user_id', user.id).maybeSingle()
-  if (!partner) {
+  if (!partner && user.email) {
     const lookup = await db.from('partners').select(partnerFields).ilike('email', user.email).maybeSingle()
     partner = lookup.data
     if (partner && !partner.user_id) await db.from('partners').update({ user_id: user.id, updated_at: new Date().toISOString() }).eq('id', partner.id)
   }
   if (!partner || partner.status !== 'ACTIVE') return null
   const currentMonth = monthStart()
-  const [performanceResult, historyResult, eventsResult, payoutsResult, leaderboardResult, commissionsResult] = await Promise.all([
+  const [performanceResult, historyResult, eventsResult, payoutsResult, leaderboardResult, commissionsResult, bankResult] = await Promise.all([
     db.from('associate_monthly_performance').select('*').eq('partner_id', partner.id).order('month_start', { ascending: false }),
     db.from('referral_conversions').select('id,referred_user_id,first_payment_id,successful_at,status,commission_amount_ngn').eq('partner_id', partner.id).order('successful_at', { ascending: false }).limit(200),
     db.from('referral_events').select('event_type,occurred_at').eq('partner_id', partner.id).gte('occurred_at', `${currentMonth}T00:00:00+01:00`).limit(2000),
     db.from('payout_requests').select('*').eq('partner_id', partner.id).order('created_at', { ascending: false }),
     db.from('associate_monthly_performance').select('partner_id,successful_referrals,commissionable_referrals,commission_amount_ngn,partners(full_name,partner_id,status)').eq('month_start', currentMonth).order('successful_referrals', { ascending: false }),
     db.from('commissions').select('amount_ngn,status,level,created_at').eq('partner_id', partner.id),
+    db.from('partner_bank_accounts').select('account_name,bank_name,account_number_last_four,verification_status').eq('partner_id', partner.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ])
   const userIds = (historyResult.data || []).map((item: any) => item.referred_user_id)
   const paymentIds = (historyResult.data || []).map((item: any) => item.first_payment_id)
@@ -55,7 +56,7 @@ export async function requireGrowthAssociateDashboard() {
   const referral = storedReferral ? { ...storedReferral, referral_url: getGrowthAssociateReferralUrl(storedReferral.code) } : null
   const commissions = commissionsResult.data || []
   return {
-    partner, referral, current, performances, payouts: payoutsResult.data || [], leaderboard,
+    partner, referral, bank: bankResult.data, current, performances, payouts: payoutsResult.data || [], leaderboard,
     position: leaderboard.find((item: any) => item.partnerId === partner.id)?.rank || null,
     clicks, conversionRate: clicks ? Math.round((Number(current.successful_referrals) / clicks) * 1000) / 10 : null,
     commissionSummary: {
