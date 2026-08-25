@@ -4,7 +4,7 @@ import { sendTelegramMessage } from '@/lib/telegram'
 import { createRecord, escapeFormula, listRecords } from '@/lib/airtable'
 import { createSupabaseAdminClient, hasSupabaseAdminConfig } from '@/lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
-import { cleanReferralCode, recordSupabaseReferralEvent } from '@/lib/supabase-referrals'
+import { cleanReferralCode, recordSupabaseReferralEvent, resolveSupabaseReferral } from '@/lib/supabase-referrals'
 
 export const runtime = 'nodejs'
 
@@ -69,20 +69,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must contain at least 8 characters, including a letter and a number.' }, { status: 400 })
     }
 
+    if (referralCode) {
+      const referral = await resolveSupabaseReferral(referralCode)
+      if (!referral || (referral.partners as any)?.status !== 'ACTIVE') {
+        return NextResponse.json({ error: 'This referral ID is invalid or inactive. Please check it and try again.' }, { status: 400 })
+      }
+    }
+
     let supabaseUserId = text(body.supabaseUserId, 80)
     let supabaseNotice = ''
 
-    if (hasSupabaseAdminConfig()) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      if (!supabaseUrl || !anonKey) throw new Error('Supabase public auth client is not configured.')
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (supabaseUrl && anonKey) {
       const supabaseAuth = createClient(supabaseUrl, anonKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false,
         },
       })
-      const supabase = createSupabaseAdminClient()
+      const supabase = hasSupabaseAdminConfig() ? createSupabaseAdminClient() : null
+      if (supabase) {
+        const { data: existingUsers, error: lookupError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        if (lookupError) throw new Error(`Supabase account lookup failed: ${lookupError.message}`)
+        if (existingUsers.users.some((user) => user.email?.toLowerCase() === email)) {
+          return NextResponse.json({ error: 'This email is already registered. Please log in or use a different email.' }, { status: 409 })
+        }
+      }
       const { data: createdUser, error: createUserError } = await supabaseAuth.auth.signUp({
         email,
         password,
@@ -99,6 +112,7 @@ export async function POST(request: NextRequest) {
 
       if (createUserError) {
         if (/already registered|already been registered|already exists/i.test(createUserError.message)) {
+          if (!supabase) throw new Error('This email is already registered. Please log in instead.')
           const { data: users, error: lookupError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
           if (lookupError) throw new Error(`Supabase account lookup failed: ${lookupError.message}`)
           const matchedUser = users?.users.find((user) => user.email?.toLowerCase() === email)
@@ -109,11 +123,14 @@ export async function POST(request: NextRequest) {
           throw new Error(`Supabase account creation failed: ${createUserError.message}`)
         }
       } else {
+        if (createdUser.user?.identities?.length === 0) {
+          return NextResponse.json({ error: 'This email is already registered. Please log in or use a different email.' }, { status: 409 })
+        }
         supabaseUserId = createdUser.user?.id || ''
         supabaseNotice = 'Account created. Please check your email and verify your account before logging in.'
       }
 
-      if (supabaseUserId) {
+      if (supabaseUserId && supabase) {
         const { error: profileError } = await supabase.from('profiles').upsert({
           id: supabaseUserId,
           full_name: fullName,
