@@ -14,9 +14,18 @@ export async function studentClasses() {
   return data || []
 }
 
+export async function studentEnrolments() {
+  const { db, user } = await requireStudent()
+  const { data } = await db.from('enrolments').select('id,status,created_at,programmes(id,name,slug)').eq('user_id', user.id).in('status', ['ENROLLED', 'ACTIVE', 'COMPLETED']).order('created_at', { ascending: false })
+  return data || []
+}
+
 export async function studentSessions() {
-  const { db } = await requireStudent()
-  const { data } = await db.from('live_sessions').select('*,classes(name,title,cohort,programmes(name))').eq('published',true).order('session_date')
+  const { db, user } = await requireStudent()
+  const { data: memberships } = await db.from('class_memberships').select('class_id').eq('user_id', user.id).eq('status', 'ACTIVE')
+  const classIds = (memberships || []).map((item) => item.class_id)
+  if (!classIds.length) return []
+  const { data } = await db.from('live_sessions').select('*,classes(name,title,cohort,programmes(name))').in('class_id', classIds).eq('published',true).order('session_date')
   return data || []
 }
 
