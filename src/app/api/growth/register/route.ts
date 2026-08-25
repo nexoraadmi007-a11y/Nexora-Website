@@ -29,8 +29,16 @@ export async function POST(request: NextRequest) {
     const banks = await listPaystackBanks()
     const bank = banks.find((item) => item.code === bankCode)
     if (!bank) throw new Error('Select a valid bank.')
-    const verified = await resolvePaystackAccount({ accountNumber, bankCode, profileName: accountName })
-    if (verified.status === 'MISMATCH') throw new Error('The account name does not match the bank account. Please check it and try again.')
+    if (!/^\d{10}$/.test(accountNumber)) throw new Error('Enter a valid 10-digit account number.')
+    let verified: { accountName: string; status: string; score: number; accountNumberLastFour: string } | null = null
+    try {
+      verified = await resolvePaystackAccount({ accountNumber, bankCode, profileName: accountName })
+      if (verified.status === 'MISMATCH') throw new Error('The account name does not match the bank account. Please check it and try again.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      if (message.includes('does not match')) throw error
+      console.warn('Paystack account resolution unavailable; payout details were not activated', { bankCode, reason: message })
+    }
 
     const growthId = await generateGrowthId(db)
     const created = await db.auth.admin.createUser({
@@ -49,13 +57,15 @@ export async function POST(request: NextRequest) {
     createdPartnerId = partnerId
     const referralInsert = await db.from('referral_codes').insert({ partner_id: partnerId, code: growthId, referral_url: getGrowthAssociateReferralUrl(growthId), active: true })
     if (referralInsert.error) throw referralInsert.error
-    const bankInsert = await db.from('partner_bank_accounts').insert({ partner_id: partnerId, profile_name: fullName, bank_name: bank.name, bank_code: bankCode, account_number_last_four: verified.accountNumberLastFour, account_name: verified.accountName, verification_status: verified.status === 'MATCH' ? 'VERIFIED' : 'MANUAL_REVIEW', name_match_score: verified.score, verified_at: verified.status === 'MATCH' ? new Date().toISOString() : null })
-    if (bankInsert.error) throw bankInsert.error
+    if (verified) {
+      const bankInsert = await db.from('partner_bank_accounts').insert({ partner_id: partnerId, profile_name: fullName, bank_name: bank.name, bank_code: bankCode, account_number_last_four: verified.accountNumberLastFour, account_name: verified.accountName, verification_status: verified.status === 'MATCH' ? 'VERIFIED' : 'MANUAL_REVIEW', name_match_score: verified.score, verified_at: verified.status === 'MATCH' ? new Date().toISOString() : null })
+      if (bankInsert.error) throw bankInsert.error
+    }
 
     const auth = await createSupabaseServerClient()
     const login = await auth.auth.signInWithPassword({ phone, password })
     if (login.error) throw login.error
-    return NextResponse.json({ ok: true, growthId })
+    return NextResponse.json({ ok: true, growthId, bankVerificationPending: !verified })
   } catch (error) {
     if (createdPartnerId) await db.from('partners').delete().eq('id', createdPartnerId)
     if (createdUserId) await db.auth.admin.deleteUser(createdUserId)
