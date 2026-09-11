@@ -3,9 +3,23 @@ import { growthAssociateAuthEmail, normalizeWhatsAppNumber } from '@/lib/growth-
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+async function readBody(request: NextRequest) {
+  const type = request.headers.get('content-type') || ''
+  if (type.includes('application/json')) return { data: await request.json(), form: false }
+  const form = await request.formData()
+  return { data: Object.fromEntries(form.entries()), form: true }
+}
+
+function redirectWith(path: string, key: 'error' | 'message', value: string, request: NextRequest) {
+  const url = new URL(path, request.url)
+  url.searchParams.set(key, value)
+  return NextResponse.redirect(url, 303)
+}
+
 export async function POST(request: NextRequest) {
+  const parsed = await readBody(request)
   try {
-    const body = await request.json()
+    const body = parsed.data
     const phone = normalizeWhatsAppNumber(String(body.whatsapp || ''))
     const auth = await createSupabaseServerClient()
     const result = await auth.auth.signInWithPassword({ email: growthAssociateAuthEmail(phone), password: String(body.password || '') })
@@ -15,8 +29,11 @@ export async function POST(request: NextRequest) {
       await auth.auth.signOut()
       throw new Error('This Growth Associate account is not active.')
     }
+    if (parsed.form) return NextResponse.redirect(new URL('/growth-associate', request.url), 303)
     return NextResponse.json({ ok: true })
   } catch (error) {
-    return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : 'Sign in failed.' }, { status: 401 })
+    const message = error instanceof Error ? error.message : 'Sign in failed.'
+    if (parsed.form) return redirectWith('/growth/login', 'error', message, request)
+    return NextResponse.json({ ok: false, message }, { status: 401 })
   }
 }

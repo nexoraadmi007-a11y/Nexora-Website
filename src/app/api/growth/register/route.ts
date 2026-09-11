@@ -7,12 +7,26 @@ import { listPaystackBanks, resolvePaystackAccount } from '@/lib/paystack-bank'
 
 export const runtime = 'nodejs'
 
+async function readBody(request: NextRequest) {
+  const type = request.headers.get('content-type') || ''
+  if (type.includes('application/json')) return { data: await request.json(), form: false }
+  const form = await request.formData()
+  return { data: Object.fromEntries(form.entries()), form: true }
+}
+
+function redirectWith(path: string, key: 'error' | 'message', value: string, request: NextRequest) {
+  const url = new URL(path, request.url)
+  url.searchParams.set(key, value)
+  return NextResponse.redirect(url, 303)
+}
+
 export async function POST(request: NextRequest) {
   let createdUserId: string | null = null
   let createdPartnerId: string | null = null
   const db = createSupabaseAdminClient()
+  const parsed = await readBody(request)
   try {
-    const body = await request.json()
+    const body = parsed.data
     const fullName = String(body.fullName || '').trim().replace(/\s+/g, ' ')
     const phone = normalizeWhatsAppNumber(String(body.whatsapp || ''))
     const accountName = String(body.accountName || '').trim()
@@ -24,7 +38,11 @@ export async function POST(request: NextRequest) {
 
     const existing = await db.from('partners').select('id').eq('whatsapp_normalized', phone).maybeSingle()
     if (existing.error) throw existing.error
-    if (existing.data) return NextResponse.json({ ok: false, message: 'An account already exists for this WhatsApp number. Please sign in.' }, { status: 409 })
+    if (existing.data) {
+      const message = 'An account already exists for this WhatsApp number. Please sign in.'
+      if (parsed.form) return redirectWith('/growth/login', 'message', message, request)
+      return NextResponse.json({ ok: false, message }, { status: 409 })
+    }
 
     const banks = await listPaystackBanks()
     const bank = banks.find((item) => item.code === bankCode)
@@ -65,12 +83,14 @@ export async function POST(request: NextRequest) {
     const auth = await createSupabaseServerClient()
     const login = await auth.auth.signInWithPassword({ email: growthAssociateAuthEmail(phone), password })
     if (login.error) throw login.error
+    if (parsed.form) return NextResponse.redirect(new URL('/growth-associate', request.url), 303)
     return NextResponse.json({ ok: true, growthId, bankVerificationPending: !verified })
   } catch (error) {
     if (createdPartnerId) await db.from('partners').delete().eq('id', createdPartnerId)
     if (createdUserId) await db.auth.admin.deleteUser(createdUserId)
     const message = error instanceof Error ? error.message : 'Registration failed. Please try again.'
     console.error('Growth Associate registration failed', message)
+    if (parsed.form) return redirectWith('/growth/register', 'error', message, request)
     return NextResponse.json({ ok: false, message }, { status: 400 })
   }
 }
