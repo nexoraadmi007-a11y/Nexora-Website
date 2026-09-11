@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateSupabaseSession } from '@/lib/supabase/middleware'
-import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '@/lib/admin-session'
 
 export async function middleware(request: NextRequest) {
   const referralCode = request.nextUrl.searchParams.get('ref')?.trim()
   const response = NextResponse.next()
+
   if (referralCode) {
     response.cookies.set('nexora_referral_code', referralCode, {
       httpOnly: false,
@@ -21,13 +21,11 @@ export async function middleware(request: NextRequest) {
       path: '/',
     })
   }
-  const nextResponse = await updateSupabaseSession(request, response)
+
   const pathname = request.nextUrl.pathname
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login') && !pathname.startsWith('/admin/setup') && !pathname.startsWith('/admin/access-denied')) {
-    const session = await verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)
-    if (!session) return NextResponse.redirect(new URL('/admin/login', request.url))
-  }
-  return nextResponse
+  if (pathname.startsWith('/admin')) return response
+
+  return updateSupabaseSession(request, response)
 }
 
 export const config = {
