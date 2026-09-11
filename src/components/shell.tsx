@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Library,
   LineChart,
+  Mail,
   Megaphone,
   Search,
   Settings,
@@ -76,6 +77,7 @@ const adminGroups: NavGroup[] = [
     title: 'Growth',
     items: [
       { label: 'Growth Associates', href: '/admin/growth-associates', icon: HandCoins },
+      { label: 'Email Associates', href: '/admin/email-associates', icon: Mail },
       { label: 'Referrals', href: '/admin/referrals', icon: LineChart },
       { label: 'Leaderboard', href: '/admin/leaderboard', icon: BarChart3 },
     ],
@@ -242,3 +244,4 @@ export function AdminShell({ children, title = 'Admin Operating System' }: { chi
     </div>
   )
 }
+
