@@ -900,3 +900,26 @@ tr:last-child td { border-bottom: 0; }
   .btn { width: 100%; }
   .card-actions { display: grid; }
 }
+
+.auth-standalone {
+  color: var(--text);
+}
+
+.auth-standalone .card {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--line);
+  background: white;
+  box-shadow: 0 22px 70px rgba(15, 23, 42, .12);
+}
+
+.auth-standalone h1 {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.auth-standalone p {
+  margin: 0;
+}
