@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+const SESSION_REFRESH_TIMEOUT_MS = 1800
+
 export async function updateSupabaseSession(request: NextRequest, response: NextResponse) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -18,6 +20,14 @@ export async function updateSupabaseSession(request: NextRequest, response: Next
     },
   })
 
-  await supabase.auth.getUser()
+  try {
+    await Promise.race([
+      supabase.auth.getUser(),
+      new Promise((resolve) => setTimeout(resolve, SESSION_REFRESH_TIMEOUT_MS)),
+    ])
+  } catch (error) {
+    console.warn('Supabase session refresh skipped in middleware', error instanceof Error ? error.message : error)
+  }
+
   return response
 }
