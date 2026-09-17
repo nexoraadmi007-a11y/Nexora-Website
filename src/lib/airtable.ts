@@ -1,4 +1,4 @@
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || 'appNkFVWpoI8ihHmA'
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || ''
 const AIRTABLE_API = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
 
 export type AirtableRecord<T> = {

@@ -5,121 +5,35 @@ services:
     buildCommand: npm ci --registry=https://registry.npmjs.org && npm run build
     startCommand: npm run start -- -p $PORT
     envVars:
-      - key: AIRTABLE_BASE_ID
-        value: appNkFVWpoI8ihHmA
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: ADMIN_SESSION_SECRET
-        generateValue: true
-      - key: NEXORA_BOOTSTRAP_ADMIN_EMAILS
-        sync: false
-      - key: NEXORA_ADMIN_BOOTSTRAP_SECRET
-        sync: false
-      - key: AIRTABLE_TOKEN
-        sync: false
-      - key: APIFY_API_TOKEN
-        sync: false
-      - key: APIFY_LEAD_ACTOR_ID
-        sync: false
-      - key: APIFY_LEAD_TASK_ID
-        sync: false
-      - key: APIFY_BUSINESS_LEAD_ACTOR_ID
-        value: apify/google-search-scraper
-      - key: GROWTH_AUTOMATION_SECTORS
-        value: Instagram fashion vendor Lagos,Instagram skincare vendor Abuja,Facebook shoe seller Ibadan,Instagram wig seller Nigeria,WhatsApp business fashion Lagos
-      - key: GROWTH_AUTOMATION_LOCATIONS
-        value: Nigeria
-      - key: GROWTH_AUTOMATION_IMPORT_LIMIT
-        value: "10"
-      - key: GROWTH_AUTOMATION_ASSIGN_COUNT
-        value: "10"
-      - key: ENABLE_INDIVIDUAL_GROWTH_ENGINE
-        value: "false"
-      - key: ENABLE_BUSINESS_LEAD_DISCOVERY
-        value: "true"
-      - key: ENABLE_INDIVIDUAL_LEAD_DISCOVERY
-        value: "false"
-      - key: ENABLE_ASSOCIATE_LEAD_DELIVERY
-        value: "false"
-      - key: ENABLE_ADMIN_LEAD_TEST_DELIVERY
-        value: "true"
-      - key: ENABLE_SME_GROWTH_ENGINE
-        value: "true"
-      - key: ENABLE_CORPORATE_GROWTH_ENGINE
-        value: "false"
-      - key: ENABLE_AUTOMATIC_LEAD_ALLOCATION
-        value: "false"
-      - key: ENABLE_REFERRAL_REPAIR
-        value: "true"
-      - key: DEFAULT_DAILY_INDIVIDUAL_LEAD_QUOTA
-        value: "10"
-      - key: INDIVIDUAL_BATCH_PROCESSED_THRESHOLD
-        value: "8"
-      - key: GROWTH_ALLOCATION_MODE
-        value: MANUAL_ADMIN
-      - key: CRON_SECRET
-        sync: false
-      - key: PAYSTACK_SECRET_KEY
-        sync: false
-      - key: NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-        sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_WEBHOOK_SECRET
-        sync: false
-      - key: TELEGRAM_QUEUE_SECRET
-        sync: false
-      - key: TELEGRAM_ADMIN_CHAT_ID
-        sync: false
-      - key: GROWTH_ADMIN_SECRET
-        sync: false
-      - key: CALENDLY_EVENT_TYPE_URL
-        sync: false
-      - key: CALENDLY_WEBHOOK_SECRET
-        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: NEXORA_EMAIL_FROM
         sync: false
+      - key: NEXORA_LEAD_NOTIFICATION_EMAIL
+        sync: false
+      - key: NEXORA_GENERAL_COMMUNITY_URL
+        sync: false
+      - key: NEXORA_AMBASSADOR_COMMUNITY_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: AIRTABLE_TOKEN
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.nexoragroup.ink
-      - key: CAREER_GROUP_AI_CONTENT_CREATION_URL
-        value: https://chat.whatsapp.com/DapD6KbAZwOIiBSABvwVA3?s=cl&p=a&ilr=4&amv=2
-      - key: CAREER_GROUP_UI_UX_DESIGNER_URL
-        value: https://chat.whatsapp.com/IgzwgLpx0afCloe9pX45Sh?s=cl&p=a&ilr=4&amv=2
-      - key: CAREER_GROUP_AI_FINANCIAL_ANALYST_URL
-        value: https://chat.whatsapp.com/I1OzIy04WQsJAiQ6NzMaWE?s=cl&p=a&ilr=4&amv=2
-      - key: BATP_GROUP_URL
-        value: https://chat.whatsapp.com/GFihizHReFx27VhmqK9Wai?s=cl&p=a&ilr=4&amv=2
-
-  - type: cron
-    name: nexora-growth-daily-automation
-    runtime: node
-    schedule: "0 8 * * 1-5"
-    buildCommand: npm ci --registry=https://registry.npmjs.org
-    startCommand: node scripts/run-growth-automation.mjs
-    envVars:
-      - key: NEXT_PUBLIC_SITE_URL
-        value: https://www.nexoragroup.ink
-      - key: GROWTH_AUTOMATION_URL
-        value: https://www.nexoragroup.ink/api/growth/daily-automation
-      - key: GROWTH_AUTOMATION_IMPORT_LIMIT
-        value: "10"
-      - key: GROWTH_AUTOMATION_ASSIGN_COUNT
-        value: "0"
-      - key: ENABLE_BUSINESS_LEAD_DISCOVERY
-        value: "true"
-      - key: ENABLE_INDIVIDUAL_LEAD_DISCOVERY
-        value: "false"
-      - key: ENABLE_ASSOCIATE_LEAD_DELIVERY
-        value: "false"
-      - key: ENABLE_ADMIN_LEAD_TEST_DELIVERY
-        value: "true"
-      - key: TELEGRAM_QUEUE_SECRET
-        sync: false
-      - key: CRON_SECRET
-        sync: false

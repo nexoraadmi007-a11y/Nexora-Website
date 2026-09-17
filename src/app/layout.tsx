@@ -1,23 +1,13 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { ReferralTracker } from '@/components/referral-tracker'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Nexora Institute | V2 Foundation',
-  description: 'Nexora Institute platform V2 foundation after safe legacy product-layer reset.',
-  icons: {
-    icon: '/nexora-mark.png',
-  },
+  title: 'Nexora Institute | Building Africa\'s AI-ready workforce',
+  description: 'Practical AI training for Nigerian professionals, NYSC members, graduates and organizations.',
+  keywords: ['Nexora Institute', 'AI training Nigeria', 'AI training for professionals', 'corporate AI training'],
+  icons: { icon: '/nexora-mark.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <Suspense fallback={null}><ReferralTracker /></Suspense>
-        {children}
-      </body>
-    </html>
-  )
+  return <html lang="en"><body>{children}</body></html>
 }

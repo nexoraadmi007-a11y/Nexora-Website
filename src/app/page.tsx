@@ -1,4 +1,6 @@
-import { PublicShell } from '@/components/shell'
-import { ButtonLink, Card, Section } from '@/components/ui'
-import { programmes, formatNaira } from '@/config/programmes'
-export default function HomePage() { return <PublicShell><section className="hero"><div className="container hero-grid"><div><p className="eyebrow">Focused AI learning</p><h1>Learn practical AI skills.</h1><p className="lead">Choose a focused course, attend live classes, watch recordings and complete practical assignments.</p><div className="actions"><ButtonLink href="/programmes">View Courses</ButtonLink><ButtonLink href="/signup" variant="secondary">Create Account</ButtonLink></div></div><Card><p className="eyebrow">Three independent courses</p>{programmes.map((course) => <div className="course-mini" key={course.code}><strong>{course.name}</strong><span>{formatNaira(course.priceNgn)}</span></div>)}</Card></div></section><Section eyebrow="Courses" title="Choose one or more courses."><div className="grid-3">{programmes.map((course) => <Card key={course.code}><h3>{course.name}</h3><p className="muted">{course.proposition}</p><p className="price">{formatNaira(course.priceNgn)}</p><ButtonLink href={`/checkout?course=${course.slug}`}>Select Course</ButtonLink></Card>)}</div></Section><Section eyebrow="How it works" title="Learn, attend and complete."><div className="grid-3"><Card><h3>1. Choose</h3><p className="muted">Select one or more independent courses.</p></Card><Card><h3>2. Attend</h3><p className="muted">Join published live classes and watch available recordings.</p></Card><Card><h3>3. Complete</h3><p className="muted">View and submit your course assignments.</p></Card></div></Section></PublicShell> }
+import InstituteHome from './institute-home'
+
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ interest?: string; programme?: string }> }) {
+  const { interest, programme } = await searchParams
+  return <InstituteHome interest={interest} programme={programme} />
+}

@@ -1,4 +1,13 @@
-import { compareAccountName } from '@/lib/product-rules'
+function compareAccountName(profileName: string, accountName: string) {
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(Boolean).sort()
+  const profile = normalize(profileName)
+  const account = normalize(accountName)
+  if (!profile.length || !account.length) return 'MANUAL_REVIEW'
+  const score = profile.filter((part) => account.includes(part)).length / Math.max(profile.length, account.length)
+  if (score >= 0.85) return 'VERIFIED'
+  if (score >= 0.55) return 'POSSIBLE_MATCH'
+  return 'MISMATCH'
+}
 
 export type PaystackBank = {
   name: string
